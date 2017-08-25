@@ -9,7 +9,7 @@ import requests
 class Collector(AbstractCollector):
     def collect(self):
         try:
-            with open('awmproxies') as f:
+            with open('proxies') as f:
                 return f.read().splitlines()
         except:
             return []

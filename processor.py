@@ -10,7 +10,10 @@ from queue import Queue
 
 import logging
 
-import pydevd
+try:
+    import pydevd
+except:
+    pass
 
 class Processor():
     def __init__(self, threads_count=10):
