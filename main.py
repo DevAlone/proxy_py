@@ -25,7 +25,7 @@ class ProgrammKiller:
 if __name__ == "__main__":
     killer = ProgrammKiller()
 
-    proxyProcessor = Processor(2)
+    proxyProcessor = Processor(25)
     proxyProcessor.addCollector(Collector1())
     # proxyProcessor.addCollector(Collector2())
 

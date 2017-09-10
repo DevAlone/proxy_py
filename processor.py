@@ -47,7 +47,10 @@ class Processor():
 
         self.logger.debug('processor initialization...')
 
-        server.runServer(self)
+        server.runServer(
+            self,
+            settings.PROXY_PROVIDER_SERVER['HOST'],
+            settings.PROXY_PROVIDER_SERVER['PORT'])
 
     def stop(self, waitUntilFinishes=True):
         print('exiting...')
