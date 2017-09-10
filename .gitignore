@@ -1,3 +1,6 @@
 .ropeproject
 __init__.py
 __pycache__
+.idea/
+db.sqlite3
+processor.log*

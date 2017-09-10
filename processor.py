@@ -1,6 +1,14 @@
-from . import http_requests
-from .proxy import Proxy
-from . import server
+import os
+import django
+
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "settings")
+django.setup()
+
+from django.conf import settings
+
+import http_requests
+from core.models import Proxy
+import server
 
 from threading import Thread
 import time
@@ -31,15 +39,22 @@ class Processor():
         self.logger.setLevel(logging.DEBUG)
         debugFileHandler = logging.FileHandler('processor.log.debug')
         debugFileHandler.setLevel(logging.DEBUG)
-        # fileHandler = logging.FileHandler('processor.log')
-        # fileHandler.setLevel(logging.INFO)
+        infoLogFileHandler = logging.FileHandler('processor.log')
+        infoLogFileHandler.setLevel(logging.INFO)
 
         self.logger.addHandler(debugFileHandler)
-        # self.logger.addHandler(fileHandler)
+        self.logger.addHandler(infoLogFileHandler)
 
         self.logger.debug('processor initialization...')
 
         server.runServer(self)
+
+    def stop(self, waitUntilFinishes=True):
+        print('exiting...')
+        self.isAlive = False
+        server.stopServer()
+        if waitUntilFinishes:
+            self.join()
 
     def mainThreadHandler(self):
         def processCollector(collector):
@@ -51,43 +66,42 @@ class Processor():
 
         def processProxy(proxy):
             self.logger.debug('start processing proxy {0}'.format(proxy.toUrl()))
-            proxy.lastCheckResult = self.checkProxy(proxy)
+            checkResult = self.checkProxy(proxy)
 
-            if proxy.lastCheckResult:
+            if checkResult:
                 self.logger.debug('proxy {0} works'.format(proxy.toUrl()))
                 proxy.numberOfBadChecks = 0
             else:
                 proxy.numberOfBadChecks += 1
 
             if proxy.numberOfBadChecks > 3:
-                try:
-                    self.proxies.remove(proxy)
-                    self.logger.debug('removing proxy {0}'.format(proxy.toUrl()))
-                except:
-                    pass
+                proxy.badProxy = True
+                self.logger.debug('removing proxy {0}'.format(proxy.toUrl()))
+
             proxy.lastCheckedTime = time.time()
+            proxy.save()
+
 
         i = 0
-        while True:
+        while self.isAlive:
+            # process collectors
             for collector in self.collectors:
                 if time.time() >= collector.lastProcessedTime + \
                         collector.processingPeriod:
                     self.tasks.put([processCollector, collector])
 
             # check proxies
-            # TODO: make several checks
-
-            for proxy in self.proxies:
-                # print(proxy.toUrl())
+            for proxy in Proxy.objects.all().filter(badProxy=False):
+                # TODO: maybe add check for existent in queue
                 if time.time() >= proxy.lastCheckedTime + \
-                        proxy.checkingPeriod and proxy:
+                        settings.PROXY_CHECKING_PERIOD:
                     self.tasks.put([processProxy, proxy])
                     proxy.lastCheckedTime = time.time()
 
             time.sleep(5)
 
     def worker(self):
-        while True:
+        while self.isAlive:
             item = self.tasks.get()
             if item is not None:
                 # process task
@@ -96,32 +110,37 @@ class Processor():
                 time.sleep(1)
 
     def addCollector(self, collector):
-        # if type(collector) != Collector:
-        #     raise Exception('type of collector shoud be "Collector"')
         self.collectors.append(collector)
 
-    def addProxy(self, proxy):
-        if type(proxy) != Proxy:
-            raise Exception('type of proxy shoud be "Proxy"')
-        self.proxies.add(proxy)
-        self.logger.debug('add proxy {0}'.format(proxy.toUrl()))
+    def addProxy(self, address):
+        # TODO: check address
+        try:
+            proxy = Proxy.objects.get(address=address)
+            self.logger.debug('proxy {0} already exist'.format(proxy.toUrl()))
+        except Proxy.DoesNotExist:
+            proxy = Proxy()
+            proxy.address = address
+            self.logger.debug('add proxy {0}'.format(proxy.toUrl()))
+            proxy.save()
 
     # http://icanhazip.com/
     def checkProxy(self, proxy):
         try:
-            if http_requests.get('http://icanhazip.com/', proxy)['code'] != 200:
+            if http_requests.get('http://icanhazip.com/', proxy, timeout=10)['code'] != 200:
                 return False
         except Exception as ex:
             return False
         return True
 
     # TODO: add proxy with domains
+    # TODO: add proxy with authorization
     def processRawProxies(self, proxies):
         def processRawProxy(proxy):
             protocols = self.detectProtocols(proxy)
             ipPort = proxy.split(':')
             if len(protocols) > 0:
-                self.addProxy(Proxy(protocols, ipPort[0], ipPort[1]))
+                for protocol in protocols:
+                    self.addProxy(protocol + "://" + ipPort[0] + ":" + ipPort[1])
             else:
                 self.logger.debug('unable to determine protocol of raw proxy {0}'.format(proxy))
 
@@ -134,26 +153,27 @@ class Processor():
             elif re.match(
                     r'^[a-z0-9]+://([0-9]{1,3}\.){3}[0-9]{1,3}:[0-9]{1,5}$',
                     proxy):
+                # protocol://domain:port
                 data = proxy.split(':')
                 protocol = data[0]
                 # TODO: check protocol, must be http or socks or socks5
                 ip = data[1][2:]
                 port = data[2]
-                self.addProxy(Proxy([protocol], ip, port))
+                self.addProxy(protocol + "://" + ip + ":" + port)
 
     def detectProtocols(self, rawProxy):
         result = []
-        for i in range(2):
+        for i, proxies in enumerate([{
+                'http': 'http://' + rawProxy,
+                'https': 'https://' + rawProxy
+            }, {
+                'http': 'socks5h://' + rawProxy,
+                'https': 'socks5h://' + rawProxy
+            }]):
             # TODO: add other test sites
             try:
-                if i == 0:
-                    res = requests.get('https://wtfismyip.com/text', timeout=5,
-                                    proxies={'http': 'http://' + rawProxy,
-                                             'https': 'https://' + rawProxy})
-                elif i == 1:
-                    res = requests.get('https://wtfismyip.com/text', timeout=5,
-                                   proxies={'http': 'socks5h://' + rawProxy,
-                                            'https': 'socks5h://' + rawProxy})
+                res = requests.get('https://wtfismyip.com/text',
+                                   timeout=5, proxies=proxies)
                 if res.status_code == 200:
                     result.append("http" if i == 0 else "socks5")
             except Exception as ex:
@@ -164,11 +184,14 @@ class Processor():
         for thread in self.threads:
             thread.join()
         self.mainThread.join()
+        server.stopServer()
+        if server.serverThread is not None:
+            server.serverThread.join()
 
     threads = []
     mainThread = None
     threads_count = 0
     tasks = Queue()
     collectors = []
-    proxies = set()
     logger = None
+    isAlive = True

@@ -1,9 +1,11 @@
 
 
 class AbstractCollector:
-    # this method should return proxies in any of foramts:
+    # this method should return proxies in any of following formats:
     # ip:port
+    # domain:port
     # protocol://ip:port
+    # protocol://domain:port
     def collect(self):
         return []
 
