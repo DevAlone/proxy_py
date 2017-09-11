@@ -1,5 +1,3 @@
-
-
 class AbstractCollector:
     # this method should return proxies in any of following formats:
     # ip:port

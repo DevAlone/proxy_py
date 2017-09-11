@@ -4,3 +4,4 @@ __pycache__
 .idea/
 db.sqlite3
 processor.log*
+pages_collector_debug_log

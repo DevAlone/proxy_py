@@ -1,3 +1,5 @@
+# TODO: refactor this shit
+
 from socketserver import BaseRequestHandler, TCPServer
 from threading import Thread
 import time

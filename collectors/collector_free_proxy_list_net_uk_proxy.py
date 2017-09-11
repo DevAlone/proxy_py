@@ -10,7 +10,7 @@ class Collector(AbstractCollector):
     def collect(self):
         result = []
 
-        html = requests.get('https://free-proxy-list.net/').text
+        html = requests.get('https://free-proxy-list.net/uk-proxy.html').text
         tree = lxml.html.fromstring(html)
         tableElement = \
             tree.xpath(".//table[@id='proxylisttable']")[0]
