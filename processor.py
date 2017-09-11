@@ -74,6 +74,7 @@ class Processor():
             if checkResult:
                 self.logger.debug('proxy {0} works'.format(proxy.toUrl()))
                 proxy.numberOfBadChecks = 0
+                proxy.badProxy = False
             else:
                 proxy.numberOfBadChecks += 1
 
@@ -88,32 +89,42 @@ class Processor():
         i = 0
         while self.isAlive:
             # process collectors
-            for collector in self.collectors:
+            for collector in list(self.collectors.values()):
                 if time.time() >= collector.lastProcessedTime + \
                         collector.processingPeriod:
                     self.tasks.put([processCollector, collector])
 
             # check proxies
-            for proxy in Proxy.objects.all().filter(badProxy=False):
-                # TODO: maybe add check for existent in queue
+            for proxy in Proxy.objects.all():
                 if time.time() >= proxy.lastCheckedTime + \
-                        settings.PROXY_CHECKING_PERIOD:
+                        (settings.BAD_PROXY_CHECKING_PERIOD if proxy.badProxy else settings.PROXY_CHECKING_PERIOD):
                     self.tasks.put([processProxy, proxy])
                     proxy.lastCheckedTime = time.time()
 
-            time.sleep(5)
+            self.tasks.join()
+            time.sleep(1)
 
     def worker(self):
         while self.isAlive:
             item = self.tasks.get()
             if item is not None:
                 # process task
-                item[0](*item[1:])
+                try:
+                    item[0](*item[1:])
+                except Exception as ex:
+                    self.logger.error("Exception in worker: " + str(ex))
+                    print("Exception in worker(see logs for details)")
+                except:
+                    self.logger.error("Exception in worker")
+                    print("Exception in worker")
+                finally:
+                    self.tasks.task_done()
             else:
                 time.sleep(1)
 
-    def addCollector(self, collector):
-        self.collectors.append(collector)
+    def addCollectorOfType(self, collectorType):
+        if collectorType not in self.collectors:
+            self.collectors[collectorType] = collectorType()
 
     def addProxy(self, address):
         # TODO: check address
@@ -195,6 +206,6 @@ class Processor():
     mainThread = None
     threads_count = 0
     tasks = Queue()
-    collectors = []
+    collectors = {}
     logger = None
     isAlive = True

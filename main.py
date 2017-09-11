@@ -1,14 +1,12 @@
 #!/usr/bin/env python3
 
-
 import requests
 from processor import Processor
-from collectors.collector_free_proxy_list_net import Collector as Collector1
-from collectors.collector_awmproxy_net import Collector as Collector2
 from core.models import Proxy
 
 import time
 import signal
+import os
 
 proxies = []
 
@@ -26,17 +24,26 @@ if __name__ == "__main__":
     killer = ProgrammKiller()
 
     proxyProcessor = Processor(25)
-    proxyProcessor.addCollector(Collector1())
-    # proxyProcessor.addCollector(Collector2())
+
+    dirPath = os.path.dirname(os.path.realpath(__file__))
 
     while True:
-        print('main thread: proxies count is' +
+        try:
+            fromScriptVariables = {}
+            exec(open(os.path.join(dirPath, 'collectors_list.py')).read(), fromScriptVariables)
+            for CollectorType in fromScriptVariables['collectorTypes']:
+                proxyProcessor.addCollectorOfType(CollectorType)
+        except:
+            print('some shit happened with file collectors_list.py')
+        try:
+            print('main thread: proxies count is' +
               str(Proxy.objects.count()))
-        # for proxy in proxyProcessor.proxies:
-        #     print('main thread: ' + proxy.toUrl())
+        except:
+            print('some shit happened')
+
         if killer.kill:
             proxyProcessor.stop()
             break
-        time.sleep(1)
+        time.sleep(10)
 
     proxyProcessor.join()

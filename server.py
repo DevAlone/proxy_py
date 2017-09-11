@@ -20,8 +20,11 @@ serverRunning = False
 class TCPHandler(BaseRequestHandler):
     def handle(self):
         result = ""
-        for proxy in Proxy.objects.all().filter(badProxy=False):
-            result += proxy.toUrl() + "\n"
+        try:
+            for proxy in Proxy.objects.all().filter(badProxy=False):
+                result += proxy.toUrl() + "\n"
+        except:
+            pass  # TODO: log it
         self.request.sendall(result.encode())
         # self.data = self.request.recv(1024).strip()
         # self.request.sendall(self.data.upper())
