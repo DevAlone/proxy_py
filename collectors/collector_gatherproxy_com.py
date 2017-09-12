@@ -19,7 +19,7 @@ class Collector(PagesCollector):
         }
         html = requests.post('http://www.gatherproxy.com/proxylist/anonymity/?t=Elite', data=formData).text
         tableElement = \
-            tree.xpath(".//table[@id='tblproxy']")[0]
+            html.xpath(".//table[@id='tblproxy']")[0]
         tableText = lxml.etree.tostring(tableElement).decode()
         matches = re.findall(r"document\.write\('([0-9\.]+)'\).+?document\.write\(gp\.dep\('(.+?)'\)\)", tableText, re.DOTALL)
         for m in matches:
