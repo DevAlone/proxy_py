@@ -1,7 +1,6 @@
 from collectors.pages_collector import PagesCollector
 
-import http_requests as requests
-
+import requests
 import lxml.html
 import lxml.etree
 import re
@@ -19,7 +18,6 @@ class Collector(PagesCollector):
             'Uptime': 0
         }
         html = requests.post('http://www.gatherproxy.com/proxylist/anonymity/?t=Elite', data=formData).text
-        tree = lxml.html.fromstring(html)
         tableElement = \
             tree.xpath(".//table[@id='tblproxy']")[0]
         tableText = lxml.etree.tostring(tableElement).decode()

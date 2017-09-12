@@ -1,7 +1,6 @@
 from collectors.pages_collector import PagesCollector
 
-import http_requests as requests
-
+import requests
 import lxml.html
 import lxml.etree
 import re

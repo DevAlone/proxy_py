@@ -2,19 +2,18 @@
 
 # TODO: fix socks proxies
 
+import init_django
+
+import settings
 import requests
 from processor import Processor
 from core.models import Proxy
 import proxy_provider_server
 from program_killer import ProgrammKiller
 
-from django.conf import settings
 import time
 import os
 from threading import Thread
-
-os.environ.setdefault("DJANGO_SETTINGS_MODULE", "settings")
-django.setup()
 
 proxies = []
 
