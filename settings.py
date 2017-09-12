@@ -3,9 +3,9 @@ import os
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
 # change it before deploying
-SECRET_KEY='sadfsadfkjl324h5kl23jklj231$@!#$SadfgasdjkfhJKHSJLKADH7234@#',
+SECRET_KEY = 'sadfsadfkjl324h5kl23jklj231$@!#$SadfgasdjkfhJKHSJLKADH7234@#',
 
-DATABASES={
+DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql_psycopg2',
         'NAME': 'proxy_py',
@@ -18,12 +18,12 @@ DATABASES={
     },
 }
 
-INSTALLED_APPS=[
+INSTALLED_APPS = [
     "core",
 ]
 
-PROXY_CHECKING_PERIOD=5*60
-BAD_PROXY_CHECKING_PERIOD=10*60
+PROXY_CHECKING_PERIOD = 5*60
+BAD_PROXY_CHECKING_PERIOD = 10*60
 
 PROXY_PROVIDER_SERVER = {
     'HOST': 'localhost',

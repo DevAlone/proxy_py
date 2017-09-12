@@ -13,7 +13,7 @@ except:
 serverThread = None
 host = None
 port = None
-collector = None
+processor = None
 server = None
 isAlive = True
 serverRunning = False
@@ -46,11 +46,11 @@ def _runServer():
             time.sleep(5)
 
 
-def runServer(lcollector, lhost = "localhost", lport = 55555):
-    global collector, serverThread, host, port
+def runServer(lprocessor, lhost = "localhost", lport = 55555):
+    global processor, serverThread, host, port
     host = lhost
     port = lport
-    collector = lcollector
+    processor = lprocessor
     serverThread = Thread(target=_runServer)
     serverThread.start()
 

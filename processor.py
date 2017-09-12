@@ -1,21 +1,16 @@
 import os
 import django
 
-os.environ.setdefault("DJANGO_SETTINGS_MODULE", "settings")
-django.setup()
+
+from core.models import Proxy
+import proxy_utils
 
 from django.conf import settings
 
-import http_requests
-from core.models import Proxy
-import server
-
 from threading import Thread
 import time
-import requests
 import re
 from queue import Queue
-
 import logging
 
 try:
@@ -23,6 +18,9 @@ try:
 except:
     pass
 
+
+# main class which collects proxies from collectors
+# checks them and saves in database
 class Processor():
     def __init__(self, threads_count=10):
         self.threads_count = threads_count
@@ -47,15 +45,10 @@ class Processor():
 
         self.logger.debug('processor initialization...')
 
-        server.runServer(
-            self,
-            settings.PROXY_PROVIDER_SERVER['HOST'],
-            settings.PROXY_PROVIDER_SERVER['PORT'])
 
     def stop(self, waitUntilFinishes=True):
         print('exiting...')
         self.isAlive = False
-        server.stopServer()
         if waitUntilFinishes:
             self.join()
 
@@ -69,7 +62,7 @@ class Processor():
 
         def processProxy(proxy):
             self.logger.debug('start processing proxy {0}'.format(proxy.toUrl()))
-            checkResult = self.checkProxy(proxy)
+            checkResult = proxy_utils.checkProxy(proxy)
 
             if checkResult:
                 self.logger.debug('proxy {0} works'.format(proxy.toUrl()))
@@ -105,6 +98,7 @@ class Processor():
             self.tasks.join()
             time.sleep(0.5)
 
+
     def worker(self):
         while self.isAlive:
             item = self.tasks.get()
@@ -123,9 +117,11 @@ class Processor():
             else:
                 time.sleep(1)
 
+
     def addCollectorOfType(self, collectorType):
         if collectorType not in self.collectors:
             self.collectors[collectorType] = collectorType()
+
 
     def addProxy(self, address):
         # TODO: check address
@@ -138,20 +134,12 @@ class Processor():
             self.logger.debug('add proxy {0}'.format(proxy.toUrl()))
             proxy.save()
 
-    # http://icanhazip.com/
-    def checkProxy(self, proxy):
-        try:
-            if http_requests.get('http://google.com', proxy, timeout=10) is None:
-                return False
-        except Exception as ex:
-            return False
-        return True
 
     # TODO: add proxy with domains
     # TODO: add proxy with authorization
     def processRawProxies(self, proxies):
         def processRawProxy(proxy):
-            protocols = self.detectProtocols(proxy)
+            protocols = proxy_utils.detectRawProxyProtocols(proxy)
             ipPort = proxy.split(':')
             if len(protocols) > 0:
                 for protocol in protocols:
@@ -176,40 +164,11 @@ class Processor():
                 port = data[2]
                 self.addProxy(protocol + "://" + ip + ":" + port)
 
-    def detectProtocols(self, rawProxy):
-        result = []
-        proxiesTypesList = [( 'http', {
-                'http': 'http://' + rawProxy,
-                'https': 'https://' + rawProxy
-            }), ( 'socks5', {
-                'http': 'socks5://' + rawProxy,
-                'https': 'socks5://' + rawProxy
-            }), ( 'socks4', {
-                'http': 'socks4://' + rawProxy,
-                'https': 'socks4://' + rawProxy
-            }), ( 'socks', {
-                'http': 'socks://' + rawProxy,
-                'https': 'socks://' + rawProxy
-            })]
-        for i, proxies in enumerate(proxiesTypesList):
-            # TODO: add other test sites
-            try:
-                # TODO: remove redirect forwarding
-                res = requests.get('http://google.com', timeout=10,
-                                   proxies=proxies[1])
-                if res.status_code == 200:
-                    result.append(proxies[0])
-            except Exception as ex:
-                pass
-        return result
-
     def join(self):
         for thread in self.threads:
             thread.join()
         self.mainThread.join()
-        server.stopServer()
-        if server.serverThread is not None:
-            server.serverThread.join()
+
 
     threads = []
     mainThread = None

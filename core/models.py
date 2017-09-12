@@ -14,6 +14,7 @@ class Proxy(models.Model):
     numberOfBadChecks = models.IntegerField(default=0)
     badProxy = models.BooleanField(default=False)
 
+
     def toUrl(self, protocol=None):
         # TODO: cache it
         matches = re.match(PROXY_VALIDATE_REGEX, self.address)
@@ -33,9 +34,26 @@ class Proxy(models.Model):
             return res
         return self.address
 
+
     def getProtocol(self):
         matches = re.match(PROXY_VALIDATE_REGEX, self.address)
         return matches.group('protocol')
+
+
+    def toRawProxy(self):
+        matches = re.match(PROXY_VALIDATE_REGEX, self.address)
+        res = matches['protocol'] + '://'
+        if 'login' in matches and 'password' in matches:
+            res += matches['login'] + ':' + matches['password'] + '@'
+        res += matches['domain'] + ':' + matches['port']
+        return res
+
+
+    def fromString(proxyStr):
+        proxy = Proxy()
+        proxy.address = proxyStr
+        return proxy
+
 
     class Meta:
         indexes = [
