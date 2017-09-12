@@ -27,4 +27,7 @@ def post(url, data=None, json=None, **kwargs):
         if 'User-Agent' not in kwargs['headers']:
             kwargs['headers']['User-Agent'] = getRandomUserAgent()
 
+    if 'timeout' not in kwargs:
+        kwargs['timeout'] = 10
+
     return requests.post(url, data, json, **kwargs)

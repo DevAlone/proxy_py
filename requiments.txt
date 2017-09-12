@@ -2,3 +2,4 @@ lxml
 requests
 requests[socks]
 django
+psycopg2

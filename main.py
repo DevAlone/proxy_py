@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 
+# TODO: fix socks proxies
+
 import requests
 from processor import Processor
 from core.models import Proxy
@@ -27,7 +29,7 @@ class ProgrammKiller:
 if __name__ == "__main__":
     killer = ProgrammKiller()
 
-    proxyProcessor = Processor(25)
+    proxyProcessor = Processor(100)
 
     dirPath = os.path.dirname(os.path.realpath(__file__))
 
@@ -37,11 +39,20 @@ if __name__ == "__main__":
             exec(open(os.path.join(dirPath, 'collectors_list.py')).read(), fromScriptVariables)
             for CollectorType in fromScriptVariables['collectorTypes']:
                 proxyProcessor.addCollectorOfType(CollectorType)
+        except Exception as ex:
+            print('some shit happened with file collectors_list.py: ' + repr(ex))
         except:
             print('some shit happened with file collectors_list.py')
+
+
+
         try:
             print('main thread: proxies count is' +
               str(Proxy.objects.count()))
+            print('processor tasks count is ' +
+                  str(proxyProcessor.tasks.qsize()))
+        except Exception as ex:
+            print('some shit happened: ' + repr(ex))
         except:
             print('some shit happened')
 

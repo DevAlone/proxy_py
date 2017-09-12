@@ -78,7 +78,7 @@ class Processor():
             else:
                 proxy.numberOfBadChecks += 1
 
-            if proxy.numberOfBadChecks > 3:
+            if proxy.numberOfBadChecks > 5:
                 proxy.badProxy = True
                 self.logger.debug('removing proxy {0}'.format(proxy.toUrl()))
 
@@ -101,8 +101,9 @@ class Processor():
                     self.tasks.put([processProxy, proxy])
                     proxy.lastCheckedTime = time.time()
 
+            # TODO: make it better
             self.tasks.join()
-            time.sleep(1)
+            time.sleep(0.5)
 
     def worker(self):
         while self.isAlive:
@@ -177,19 +178,25 @@ class Processor():
 
     def detectProtocols(self, rawProxy):
         result = []
-        for i, proxies in enumerate([{
+        proxiesTypesList = [( 'http', {
                 'http': 'http://' + rawProxy,
                 'https': 'https://' + rawProxy
-            }, {
-                'http': 'socks5h://' + rawProxy,
-                'https': 'socks5h://' + rawProxy
-            }]):
+            }), ( 'socks5', {
+                'http': 'socks5://' + rawProxy,
+                'https': 'socks5://' + rawProxy
+            }), ( 'socks4', {
+                'http': 'socks4://' + rawProxy,
+                'https': 'socks4://' + rawProxy
+            }), ( 'socks', {
+                'http': 'socks://' + rawProxy,
+                'https': 'socks://' + rawProxy
+            })]
+        for i, proxies in enumerate(proxiesTypesList):
             # TODO: add other test sites
             try:
-                res = requests.get('https://wtfismyip.com/text',
-                                   timeout=5, proxies=proxies)
+                res = requests.get('http://icanhazip.com', timeout=10, proxies=proxies[1])
                 if res.status_code == 200:
-                    result.append("http" if i == 0 else "socks5")
+                    result.append(proxies[0])
             except Exception as ex:
                 pass
         return result

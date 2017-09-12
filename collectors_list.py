@@ -8,6 +8,8 @@ from collectors.collector_free_proxy_list_net_uk_proxy import Collector as Colle
 from collectors.collector_socks_proxy_net import Collector as Collector6
 from collectors.collector_sslproxies_org import Collector as Collector7
 from collectors.collector_us_proxy_org import Collector as Collector8
+from collectors.collector_premproxy_com import Collector as Collector9
+from collectors.collector_premproxy_com_socks_list import Collector as Collector10
 
 collectorTypes = [
     Collector1,
@@ -18,4 +20,6 @@ collectorTypes = [
     Collector6,
     Collector7,
     Collector8,
+    Collector9,
+    Collector10,
 ]
