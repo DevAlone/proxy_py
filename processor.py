@@ -141,7 +141,7 @@ class Processor():
     # http://icanhazip.com/
     def checkProxy(self, proxy):
         try:
-            if http_requests.get('http://icanhazip.com/', proxy, timeout=10)['code'] != 200:
+            if http_requests.get('http://google.com', proxy, timeout=10) is None:
                 return False
         except Exception as ex:
             return False
@@ -194,7 +194,9 @@ class Processor():
         for i, proxies in enumerate(proxiesTypesList):
             # TODO: add other test sites
             try:
-                res = requests.get('http://icanhazip.com', timeout=10, proxies=proxies[1])
+                # TODO: remove redirect forwarding
+                res = requests.get('http://google.com', timeout=10,
+                                   proxies=proxies[1])
                 if res.status_code == 200:
                     result.append(proxies[0])
             except Exception as ex:
