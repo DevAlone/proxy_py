@@ -5,6 +5,8 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 # change it before deploying
 SECRET_KEY = 'sadfsadfkjl324h5kl23jklj231$@!#$SadfgasdjkfhJKHSJLKADH7234@#',
 
+ALLOWED_HOSTS = ['localhost']
+
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql_psycopg2',
