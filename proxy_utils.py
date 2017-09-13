@@ -34,7 +34,7 @@ def requestThroughProxy(proxy, url, **kwargs):
 # TODO: add multiple checks with several sites
 def checkProxy(proxy):
     try:
-        getThroughProxy(proxy, 'http://google.com', timeout=10)
+        getThroughProxy(proxy, 'http://icanhazip.com', timeout=10)
     except Exception as ex:
         return False
     return True
@@ -55,7 +55,7 @@ def detectRawProxyProtocols(rawProxy):
         # TODO: add other test sites
         try:
             # TODO: remove redirect forwarding
-            res = requests.get('http://google.com', timeout=10,
+            res = requests.get('http://icanhazip.com', timeout=10,
                                proxies=getProxyDict(rawProxy, protocol))
             if res.status_code == 200:
                 result.append(protocol)

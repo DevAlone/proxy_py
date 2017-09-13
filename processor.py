@@ -89,7 +89,7 @@ class Processor():
 
             # check proxies
             for proxy in Proxy.objects.all():
-                if time.time() >= proxy.lastCheckedTime + \
+                 if time.time() >= proxy.lastCheckedTime + \
                         (settings.BAD_PROXY_CHECKING_PERIOD if proxy.badProxy else settings.PROXY_CHECKING_PERIOD):
                     self.tasks.put([processProxy, proxy])
                     proxy.lastCheckedTime = time.time()

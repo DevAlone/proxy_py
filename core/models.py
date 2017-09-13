@@ -42,10 +42,10 @@ class Proxy(models.Model):
 
     def toRawProxy(self):
         matches = re.match(PROXY_VALIDATE_REGEX, self.address)
-        res = matches['protocol'] + '://'
-        if 'login' in matches and 'password' in matches:
-            res += matches['login'] + ':' + matches['password'] + '@'
-        res += matches['domain'] + ':' + matches['port']
+        res = ""
+        if matches.group('login') is not None and matches.group('password') is not None:
+            res += matches.group('login') + ':' + matches.group('password') + '@'
+        res += matches.group('domain') + ':' + matches.group('port')
         return res
 
 
