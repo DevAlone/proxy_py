@@ -34,10 +34,13 @@ def requestThroughProxy(proxy, url, **kwargs):
 # TODO: add multiple checks with several sites
 def checkProxy(proxy):
     try:
-        getThroughProxy(proxy, 'http://icanhazip.com', timeout=10)
-    except Exception as ex:
+        res = getThroughProxy(proxy, 'http://pikagraphs.d3d.info/OK/',
+                              timeout=10)
+        if res.text == "OK":
+            return True
+    except Exception:
         return False
-    return True
+    return False
 
 
 # method gets proxy in any of the supported formats
