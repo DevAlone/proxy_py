@@ -105,8 +105,11 @@ class Processor():
 
     def worker(self):
         while self.isAlive:
-            if not self.tasks.empty():
+            item = None
+            try:
                 item = self.tasks.get(timeout=2)
+            except:
+                pass
             if item is not None:
                 # process task
                 try:
