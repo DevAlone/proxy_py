@@ -22,31 +22,34 @@ killer = ProgrammKiller()
 
 # thread which includes new collectors without restarting program
 def collectorsUpdater():
+    lastTimestamp = time.time()
     while not killer.kill:
         # include collectors on fly
-        try:
-            fromScriptVariables = {}
-            exec(open(os.path.join(dirPath, 'collectors_list.py')).read(), fromScriptVariables)
-            for CollectorType in fromScriptVariables['collectorTypes']:
-                proxyProcessor.addCollectorOfType(CollectorType)
-        except Exception as ex:
-            print('some shit happened with file collectors_list.py: ' + repr(ex))
-        except:
-            print('some shit happened with file collectors_list.py')
+        if lastTimestamp + 10 <= time.time():
+            try:
+                fromScriptVariables = {}
+                exec(open(os.path.join(dirPath, 'collectors_list.py')).read(), fromScriptVariables)
+                for CollectorType in fromScriptVariables['collectorTypes']:
+                    proxyProcessor.addCollectorOfType(CollectorType)
+            except Exception as ex:
+                print('some shit happened with file collectors_list.py: ' + repr(ex))
+            except:
+                print('some shit happened with file collectors_list.py')
+            lastTimestamp = time.time()
 
-        time.sleep(10)
+        time.sleep(1)
 
 
 if __name__ == "__main__":
     dirPath = os.path.dirname(os.path.realpath(__file__))
-    killer = ProgrammKiller()
+    # killer = ProgrammKiller()
 
     proxyProcessor = Processor(100)
 
-    proxy_provider_server.runServer(
-        proxyProcessor,
-        settings.PROXY_PROVIDER_SERVER['HOST'],
-        settings.PROXY_PROVIDER_SERVER['PORT'])
+    # proxy_provider_server.runServer(
+    #     proxyProcessor,
+    #     settings.PROXY_PROVIDER_SERVER['HOST'],
+    #     settings.PROXY_PROVIDER_SERVER['PORT'])
 
     collectorsUpdaterThread = Thread(target=collectorsUpdater)
     collectorsUpdaterThread.start()
@@ -64,13 +67,14 @@ if __name__ == "__main__":
         except:
             print('some shit happened')
 
-        if killer.kill:
-            proxyProcessor.stop()
-            break
+        # if killer.kill:
+        #     proxyProcessor.stop()
+        #     proxy_provider_server.stopServer()
+        #     break
         time.sleep(1)
 
-    collectorsUpdaterThread.join()
-    proxyProcessor.join()
-    proxy_provider_server.stopServer()
-    if proxy_provider_server.serverThread is not None:
-        proxy_provider_server.serverThread.join()
+    # collectorsUpdaterThread.join()
+    # proxyProcessor.join()
+    # proxy_provider_server.stopServer()
+    # if proxy_provider_server.serverThread is not None:
+    #     proxy_provider_server.serverThread.join()
