@@ -52,6 +52,7 @@ def runServer(lprocessor, lhost = "localhost", lport = 55555):
     port = lport
     processor = lprocessor
     serverThread = Thread(target=_runServer)
+    serverThread.daemon = True
     serverThread.start()
 
 
@@ -60,4 +61,4 @@ def stopServer():
     isAlive = False
     if server is not None and serverRunning:
         server.shutdown()
-    serverThread.join()
+    # serverThread.join()

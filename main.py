@@ -41,17 +41,19 @@ def collectorsUpdater():
 
 
 if __name__ == "__main__":
+    global killer
     dirPath = os.path.dirname(os.path.realpath(__file__))
-    # killer = ProgrammKiller()
+    killer = ProgrammKiller()
 
     proxyProcessor = Processor(100)
 
-    # proxy_provider_server.runServer(
-    #     proxyProcessor,
-    #     settings.PROXY_PROVIDER_SERVER['HOST'],
-    #     settings.PROXY_PROVIDER_SERVER['PORT'])
+    proxy_provider_server.runServer(
+        proxyProcessor,
+        settings.PROXY_PROVIDER_SERVER['HOST'],
+        settings.PROXY_PROVIDER_SERVER['PORT'])
 
     collectorsUpdaterThread = Thread(target=collectorsUpdater)
+    collectorsUpdaterThread.daemon = True
     collectorsUpdaterThread.start()
 
 
@@ -67,10 +69,10 @@ if __name__ == "__main__":
         except:
             print('some shit happened')
 
-        # if killer.kill:
-        #     proxyProcessor.stop()
-        #     proxy_provider_server.stopServer()
-        #     break
+        if killer.kill:
+            proxyProcessor.stop(False)
+            proxy_provider_server.stopServer()
+            break
         time.sleep(1)
 
     # collectorsUpdaterThread.join()

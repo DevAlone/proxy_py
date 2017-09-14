@@ -8,8 +8,8 @@ class ProgrammKiller:
         signal.signal(signal.SIGTERM, self.setKillFlag)
 
     def setKillFlag(self, signum, frame):
-        exit(1)
+        # exit(1)
         self.kill = True
         self.killingAttempts += 1
-        # if self.killingAttempts >= 3:
-        #     exit(1)
+        if self.killingAttempts >= 3:
+            exit(1)

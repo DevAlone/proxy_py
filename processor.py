@@ -27,10 +27,12 @@ class Processor():
         self.threads = []
         for i in range(self.threads_count):
             thread = Thread(target=self.worker)
+            thread.daemon = True
             thread.start()
             self.threads.append(thread)
 
         self.mainThread = Thread(target=self.mainThreadHandler)
+        self.daemon = True
         self.mainThread.start()
 
         self.logger = logging.getLogger('proxy_py/processor')
@@ -78,8 +80,6 @@ class Processor():
             proxy.lastCheckedTime = time.time()
             proxy.save()
 
-
-        i = 0
         while self.isAlive:
             # process collectors
             for collector in list(self.collectors.values()):
@@ -95,13 +95,17 @@ class Processor():
                     proxy.lastCheckedTime = time.time()
 
             # TODO: make it better
-            self.tasks.join()
-            time.sleep(0.5)
+            while self.tasks.qsize() > 0:
+                time.sleep(1)
+                if not self.isAlive:
+                    break
+            # self.tasks.join()
+            # time.sleep(0.5)
 
 
     def worker(self):
         while self.isAlive:
-            item = self.tasks.get()
+            item = self.tasks.get(timeout=2)
             if item is not None:
                 # process task
                 try:
