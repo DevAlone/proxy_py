@@ -7,3 +7,4 @@ processor.log*
 pages_collector_debug_log
 *.swp
 settings.py
+migrations
