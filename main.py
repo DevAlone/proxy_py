@@ -45,7 +45,7 @@ if __name__ == "__main__":
     dirPath = os.path.dirname(os.path.realpath(__file__))
     killer = ProgrammKiller()
 
-    proxyProcessor = Processor(100)
+    proxyProcessor = Processor(50)
 
     proxy_provider_server.runServer(
         proxyProcessor,
