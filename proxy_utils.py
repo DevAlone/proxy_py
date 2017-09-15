@@ -58,11 +58,12 @@ def detectRawProxyProtocols(rawProxy):
         # TODO: add other test sites
         try:
             # TODO: remove redirect forwarding
-            res = requests.get('http://icanhazip.com', timeout=10,
+            res = requests.get('http://pikagraphs.d3d.info/OK/', timeout=10,
                                proxies=getProxyDict(rawProxy, protocol))
-            if res.status_code == 200:
+            if res.text == "OK":
+                # if res.status_code == 200:
                 result.append(protocol)
-        except Exception as ex:
+        except:  # Exception as ex:
             pass
     return result
 
