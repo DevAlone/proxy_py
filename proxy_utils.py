@@ -63,6 +63,8 @@ def detectRawProxyProtocols(rawProxy):
             if res.text == "OK":
                 # if res.status_code == 200:
                 result.append(protocol)
+        except requests.exceptions.InvalidSchema as ex:
+            raise ex
         except:  # Exception as ex:
             pass
     return result
