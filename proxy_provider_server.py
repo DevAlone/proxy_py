@@ -24,7 +24,7 @@ class TCPHandler(BaseRequestHandler):
         result = ""
         try:
             for proxy in Proxy.objects.all().filter(badProxy=False):  # order_by('numberOfBadChecks')[:5000]:
-                result += proxy.toUrl() + "\n"
+                result += "{}\n".format(proxy.toUrl())
         except:
             pass  # TODO: log it
         self.request.sendall(result.encode())

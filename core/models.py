@@ -13,6 +13,7 @@ class Proxy(models.Model):
     lastCheckedTime = models.BigIntegerField(default=0)
     numberOfBadChecks = models.IntegerField(default=0)
     badProxy = models.BooleanField(default=False)
+    uptime = models.BigIntegerField(default=0)
 
 
     def toUrl(self, protocol=None):

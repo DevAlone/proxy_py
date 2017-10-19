@@ -69,6 +69,8 @@ class Processor():
             if checkResult:
                 self.logger.debug('proxy {0} works'.format(proxy.toUrl()))
                 proxy.numberOfBadChecks = 0
+                if proxy.badProxy:
+                    proxy.uptime = time.time()
                 proxy.badProxy = False
             else:
                 proxy.numberOfBadChecks += 1
@@ -139,6 +141,7 @@ class Processor():
         except Proxy.DoesNotExist:
             proxy = Proxy()
             proxy.address = address
+            proxy.uptime = time.time()
             self.logger.debug('add proxy {0}'.format(proxy.toUrl()))
             proxy.save()
 
