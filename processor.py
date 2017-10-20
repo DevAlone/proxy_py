@@ -38,7 +38,7 @@ class Processor():
             tasks = []
             for collector in list(self.collectors.values()):
                 if time.time() >= collector.lastProcessedTime + collector.processingPeriod:
-                    tasks.append(self._processCollector(collector))
+                    tasks.append(asyncio.ensure_future(self._processCollector(collector)))
 
             #     try:
             #         await task
@@ -51,7 +51,7 @@ class Processor():
             for proxy in Proxy.objects.all():
                 if time.time() >= proxy.lastCheckedTime + \
                         (settings.BAD_PROXY_CHECKING_PERIOD if proxy.badProxy else settings.PROXY_CHECKING_PERIOD):
-                    tasks.append(self._processProxy(proxy))
+                    tasks.append(asyncio.ensure_futureself._processProxy(proxy))
 
             loop.run_until_complete(asyncio.wait(tasks))
             tasks.clear()
