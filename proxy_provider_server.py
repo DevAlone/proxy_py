@@ -23,7 +23,7 @@ class TCPHandler(BaseRequestHandler):
     def handle(self):
         result = ""
         try:
-            for proxy in Proxy.objects.all().filter(badProxy=False):  # order_by('numberOfBadChecks')[:5000]:
+            for proxy in Proxy.objects.all().filter(badProxy=False).order_by('uptime'):
                 result += "{}\n".format(proxy.toUrl())
         except:
             pass  # TODO: log it
