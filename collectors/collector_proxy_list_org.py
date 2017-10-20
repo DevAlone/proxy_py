@@ -10,7 +10,7 @@ class Collector(PagesCollector):
     def __init__(self):
         self.pagesCount = 10
 
-    def processPage(self, pageIndex):
+    async def processPage(self, pageIndex):
         result = []
         html = requests.get('http://proxy-list.org/english/index.php?p={0}'.format(pageIndex + 1)).text
         tree = lxml.html.fromstring(html)

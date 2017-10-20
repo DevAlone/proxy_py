@@ -4,10 +4,10 @@ class AbstractCollector:
     # domain:port
     # protocol://ip:port
     # protocol://domain:port
-    def collect(self):
+    async def collect(self):
         return []
 
     # time in unix timestamp(seconds from 01.01.1970)
     lastProcessedTime = 0
     # processing period in seconds
-    processingPeriod = 60 * 10
+    processingPeriod = 60 * 15

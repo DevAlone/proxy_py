@@ -66,3 +66,9 @@ class Proxy(models.Model):
         return self.address
 
     __repr__ = __str__
+
+
+def getProxyOfProtocol(rawProxy, protocol):
+    proxy = Proxy()
+    proxy.address = "{}://{}".format(protocol, rawProxy)
+    return proxy

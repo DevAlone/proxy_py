@@ -3,20 +3,18 @@ from collectors.pages_collector import PagesCollector
 import requests
 import lxml.html
 import lxml.etree
-import re
-import base64
 
-class Collector(PagesCollector):
-    def __init__(self):
-        self.pagesCount = 20
+class BaseCollectorPremProxyCom(PagesCollector):
+    def __init__(self, url, pagesCount):
+        self.url = url
+        self.pagesCount = pagesCount
 
-    def processPage(self, pageIndex):
+    async def processPage(self, pageIndex):
         result = []
-        url  = 'https://premproxy.com/socks-list/'
         if pageIndex > 0:
-            url += '{0}.htm'.format(pageIndex + 1)
+            self.url += '{0}.htm'.format(pageIndex + 1)
 
-        html = requests.get(url=url).text
+        html = requests.get(url=self.url).text
         tree = lxml.html.fromstring(html)
         elements = \
             tree.xpath(".//td[starts-with(@data-label, 'IP:port')]")

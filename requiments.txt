@@ -4,3 +4,5 @@ requests[socks]
 pysocks
 django
 psycopg2
+aiohttp
+aiosocks

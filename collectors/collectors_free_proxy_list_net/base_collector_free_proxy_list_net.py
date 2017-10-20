@@ -1,16 +1,20 @@
-from .collector import AbstractCollector
+from collectors.collector import AbstractCollector
 import lxml.html
 import lxml.etree
 
-import requests
+import async_requests
 
 
 # TODO: add logging
-class Collector(AbstractCollector):
-    def collect(self):
+class BaseCollectorFreeProxyListNet(AbstractCollector):
+    def __init__(self, url):
+        self.url = url
+
+    async def collect(self):
         result = []
 
-        html = requests.get('https://socks-proxy.net/').text
+        res = await async_requests.get(self.url)
+        html = res.text
         tree = lxml.html.fromstring(html)
         tableElement = \
             tree.xpath(".//table[@id='proxylisttable']")[0]
@@ -22,4 +26,5 @@ class Collector(AbstractCollector):
                 result.append(str(ip) + ':' + str(port))
             except Exception as ex:
                 pass
+
         return result

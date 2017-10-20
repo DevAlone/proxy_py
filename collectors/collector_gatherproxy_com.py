@@ -10,7 +10,7 @@ class Collector(PagesCollector):
     def __init__(self):
         self.pagesCount = 57
 
-    def processPage(self, pageIndex):
+    async def processPage(self, pageIndex):
         result = []
         formData = {
             'Type': 'elite',
