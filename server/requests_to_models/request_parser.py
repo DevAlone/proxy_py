@@ -8,10 +8,10 @@ import re
 
 
 class RequestParser:
-    ALLOWED_CHARS = string.ascii_letters + string.digits + "/: !=><,-_"
+    ALLOWED_CHARS = string.ascii_letters + string.digits + "/: !=><,-*"
     MAXIMUM_STRING_REQUEST_LENGTH = 128
-    COMMA_SEPARATED_FIELDS = ["fields", "order_by"]
-    ALLOWED_FIELDS = ['model', 'method', 'fields', 'order_by']
+    COMMA_SEPARATED_KEYS = ["fields", "order_by"]
+    ALLOWED_KEYS = ['model', 'method', 'fields', 'order_by']
 
     def __init__(self, config):
         self.config = config
@@ -32,7 +32,7 @@ class RequestParser:
             keyVal = item.split(':')
             keyVal[0] = keyVal[0].strip()
             keyVal[1] = keyVal[1].strip()
-            if keyVal[0] in self.COMMA_SEPARATED_FIELDS:
+            if keyVal[0] in self.COMMA_SEPARATED_KEYS:
                 keyVal[1] = self._commaSeparatedFieldToList(keyVal[1])
                 if not len(keyVal[1]):
                     continue
@@ -42,19 +42,19 @@ class RequestParser:
 
         return self._parseDict(reqDict)
 
-    def _validateField(self, fieldName, fieldValue):
-        if fieldName not in self.ALLOWED_FIELDS:
-            raise ValidationError("field {} isn't allowed".format(fieldName))
+    def _validateField(self, key, value):
+        if key not in self.ALLOWED_KEYS:
+            raise ValidationError("key {} isn't allowed".format(key))
 
-        if type(fieldValue) is list:
-            for fieldValueItem in fieldValue:
-                self._validateField(fieldName, fieldValueItem)
+        if type(value) is list:
+            for valueItem in value:
+                self._validateField(key, valueItem)
             return
 
         # TODO: complete that
-        if fieldName in ['method', 'model', 'fields']:
-            if not re.match(r'^[a-zA-Z0-9_]+$', fieldValue):
-                raise ValidationError("'{}' value doesn't match to pattern ^[a-zA-Z0-9_]+$".format(fieldName))
+        if key in ['method', 'model', 'fields']:
+            if not re.match(r'^[a-zA-Z0-9_*]+$', value):
+                raise ValidationError("'{}' value doesn't match to pattern ^[a-zA-Z0-9_]+$".format(key))
 
     def _commaSeparatedFieldToList(self, stringField):
         return [val.strip() for val in stringField.split(',') if val]
@@ -107,7 +107,7 @@ class RequestParser:
         else:
             for field in reqDict['fields']:
                 if field not in config['fields']:
-                    raise ParseError("Field doesn't exist or isn't allowed")
+                    raise ParseError("Field '{}' doesn't exist or isn't allowed".format(field))
                 self.resultRequest['fields'].append(field)
 
         return self.resultRequest

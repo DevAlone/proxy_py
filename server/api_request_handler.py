@@ -4,6 +4,7 @@ from proxy_py import settings
 
 import re
 import json
+import urllib.parse
 
 class ApiRequestHandler:
     def __init__(self):
@@ -27,7 +28,7 @@ class ApiRequestHandler:
                 res = re.search(r'^(get|GET) (/.{1,' + str(maxReqLen) + '}/) (http|HTTP)', strRequest)
                 if res is None:
                     raise ParseError("Your request looks wrong")
-                strRequest = res.groups()[1]
+                strRequest = urllib.parse.unquote(res.groups()[1])
             except:
                 res = re.search(r'/.{1,' + str(maxReqLen) + '}/$', strRequest)
                 if res is None:
