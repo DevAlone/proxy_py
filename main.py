@@ -3,9 +3,9 @@
 # TODO: fix socks proxies
 
 import init_django
-import settings
+from proxy_py import settings
 from processor import Processor
-import proxy_provider_server
+from server import proxy_provider_server
 from program_killer import ProgrammKiller
 import collectors_list
 
@@ -22,8 +22,8 @@ if __name__ == "__main__":
 
     proxy_provider_server.runServer(
         proxyProcessor,
-        settings.PROXY_PROVIDER_SERVER['HOST'],
-        settings.PROXY_PROVIDER_SERVER['PORT'])
+        settings.PROXY_PROVIDER_SERVER_ADDRESS['HOST'],
+        settings.PROXY_PROVIDER_SERVER_ADDRESS['PORT'])
 
     try:
         proxyProcessor.exec(killer)
