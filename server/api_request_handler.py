@@ -7,11 +7,6 @@ import json
 import urllib.parse
 
 class ApiRequestHandler:
-    HTTP_HEADER = """HTTP/1.1 200 OK
-Server: Apache/1.3.37
-Content-Type: text/html; charset=utf-8
-
-"""
 
     def __init__(self):
         self.requestParser = RequestParser(settings.PROXY_PROVIDER_SERVER_API_CONFIG)
@@ -33,7 +28,7 @@ Content-Type: text/html; charset=utf-8
                 return self.index()
 
             try:
-                res = re.search(r'^(get|GET) (/.{1,' + str(maxReqLen) + '}/) (http|HTTP)', strRequest)
+                res = re.search(r'^(get|GET)\s+(/.{1,' + str(maxReqLen) + '}/?)\s+(http|HTTP)', strRequest)
                 if res is None:
                     raise ParseError("Your request looks wrong")
                 isRequestHttp = True
@@ -78,10 +73,14 @@ Content-Type: text/html; charset=utf-8
                 'error': 'Something very bad happened'
             }
 
-        return self.getRequest(isRequestHttp, (json.dumps(response) + '\n').encode('utf-8'))
+        return self.getResponse(isRequestHttp, (json.dumps(response) + '\n').encode('utf-8'))
 
     def index(self):
-        page = self.HTTP_HEADER + """<!DOCTYPE html>
+        page = """HTTP/1.1 200 OK
+Server: Apache/1.3.37
+Content-Type: text/html; charset=utf-8
+
+<!DOCTYPE html>
 <html>
 <head>
 <meta charset="UTF-8">
@@ -106,5 +105,13 @@ html, body {
 """
         return page.encode('utf-8')
 
-    def getRequest(self, isRequestHttp, bytesData):
-        return self.HTTP_HEADER.encode('utf-8') + bytesData if isRequestHttp else bytesData
+    def getResponse(self, isRequestHttp, bytesData):
+        return self.makeHttpResponse(bytesData) if isRequestHttp else bytesData
+
+    def makeHttpResponse(self, bytesData):
+        HTTP_HEADER = """HTTP/1.1 200 OK
+Server: Apache/1.3.37
+Content-Type: application/json; charset=utf-8
+
+"""
+        return HTTP_HEADER.encode('utf-8') + bytesData
