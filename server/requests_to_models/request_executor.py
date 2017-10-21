@@ -15,7 +15,7 @@ class RequestExecutor:
         Package = importlib.import_module(request['ClassName'][0])
         Class = getattr(Package, request['ClassName'][1])
 
-        queryset = Class.objects.all()
+        queryset = Class.objects.filter(badProxy=False)
         result = []
 
         for item in queryset:
