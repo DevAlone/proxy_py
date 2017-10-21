@@ -73,7 +73,7 @@ class Processor():
         if checkResult:
             self.logger.debug('proxy {0} works'.format(proxy.toUrl()))
             proxy.numberOfBadChecks = 0
-            if proxy.badProxy:
+            if proxy.badProxy or proxy.uptime == 0:
                 proxy.uptime = time.time()
             proxy.badProxy = False
         else:
