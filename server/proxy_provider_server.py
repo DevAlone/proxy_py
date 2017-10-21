@@ -26,7 +26,7 @@ serverRunning = False
 
 class TCPHandler(BaseRequestHandler):
     MAX_REQUEST_SIZE = 1024 # 1 KB
-    TIMEOUT = 5
+    TIMEOUT = 30
     def handle(self):
         self.request.settimeout(self.TIMEOUT)
 
