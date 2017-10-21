@@ -7,6 +7,12 @@ import json
 import urllib.parse
 
 class ApiRequestHandler:
+    HTTP_HEADER = """HTTP/1.1 200 OK
+Server: Apache/1.3.37
+Content-Type: text/html; charset=utf-8
+
+"""
+
     def __init__(self):
         self.requestParser = RequestParser(settings.PROXY_PROVIDER_SERVER_API_CONFIG)
         self.requestExecutor = RequestExecutor()
@@ -15,6 +21,8 @@ class ApiRequestHandler:
     # result is bytes array
     def handle(self, request):
         response = {}
+        isRequestHttp = False
+
 
         try:
             strRequest = request.decode('utf-8').strip()
@@ -28,11 +36,14 @@ class ApiRequestHandler:
                 res = re.search(r'^(get|GET) (/.{1,' + str(maxReqLen) + '}/) (http|HTTP)', strRequest)
                 if res is None:
                     raise ParseError("Your request looks wrong")
+                isRequestHttp = True
                 strRequest = urllib.parse.unquote(res.groups()[1])
             except:
                 res = re.search(r'/.{1,' + str(maxReqLen) + '}/$', strRequest)
                 if res is None:
                     raise ParseError("Your request looks wrong")
+                if strRequest.startswith('post') or strRequest.startswith('POST'):
+                    isRequestHttp = True
                 strRequest = res.group()
 
             reqDict = self.requestParser.parse(strRequest)
@@ -67,14 +78,10 @@ class ApiRequestHandler:
                 'error': 'Something very bad happened'
             }
 
-        return (json.dumps(response) + '\n').encode('utf-8')
+        return self.getRequest(isRequestHttp, (json.dumps(response) + '\n').encode('utf-8'))
 
     def index(self):
-        page = """HTTP/1.1 200 OK
-Server: Apache/1.3.37
-Content-Type: text/html; charset=utf-8
-
-<!DOCTYPE html>
+        page = self.HTTP_HEADER + """<!DOCTYPE html>
 <html>
 <head>
 <meta charset="UTF-8">
@@ -98,3 +105,6 @@ html, body {
 </html> 
 """
         return page.encode('utf-8')
+
+    def getRequest(self, isRequestHttp, bytesData):
+        return self.HTTP_HEADER.encode('utf-8') + bytesData if isRequestHttp else bytesData
