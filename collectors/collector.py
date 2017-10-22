@@ -10,4 +10,4 @@ class AbstractCollector:
     # time in unix timestamp(seconds from 01.01.1970)
     lastProcessedTime = 0
     # processing period in seconds
-    processingPeriod = 60 * 15
+    processingPeriod = 60 * 30

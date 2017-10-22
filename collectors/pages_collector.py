@@ -21,4 +21,4 @@ class PagesCollector(AbstractCollector):
     pagesCount = 0
     currentPage = 0
 
-    processingPeriod = 60 * 2
+    processingPeriod = 60 * 10
