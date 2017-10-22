@@ -8,7 +8,7 @@ import async_requests
 async def checkProxy(proxy):
     try:
         res = await async_requests.get(
-            'http://pikagraphs.d3d.info/OK/',
+            'https://pikagraphs.d3d.info/OK/',
             proxy=proxy.toUrl(),
             timeout=10,
             headers={'User-Agent': getRandomUserAgent()},
@@ -36,7 +36,7 @@ async def detectRawProxyProtocols(rawProxy):
         # TODO: add other test sites
         try:
             res = await async_requests.get(
-                'http://pikagraphs.d3d.info/OK/',
+                'https://pikagraphs.d3d.info/OK/',
                 proxy="{}://{}".format(protocol, rawProxy),
                 timeout=10,
                 headers={'User-Agent': getRandomUserAgent()},
