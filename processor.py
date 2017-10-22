@@ -53,10 +53,12 @@ class Processor():
                         (settings.BAD_PROXY_CHECKING_PERIOD if proxy.badProxy else settings.PROXY_CHECKING_PERIOD):
                     tasks.append(asyncio.ensure_future(self._processProxy(proxy)))
                     if len(tasks) > 500:
-                        break
+                        loop.run_until_complete(asyncio.wait(tasks))
+                        tasks.clear()
 
-            loop.run_until_complete(asyncio.wait(tasks))
-            tasks.clear()
+            if len(tasks) > 0:
+                loop.run_until_complete(asyncio.wait(tasks))
+                tasks.clear()
 
     async def _processCollector(self, collector):
         # TODO: make it async
