@@ -81,7 +81,7 @@ class Processor():
         else:
             proxy.numberOfBadChecks += 1
 
-        if proxy.numberOfBadChecks > 5:
+        if proxy.numberOfBadChecks > 3:
             proxy.badProxy = True
             self.logger.debug('removing proxy {0}'.format(proxy.toUrl()))
 
