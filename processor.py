@@ -52,7 +52,7 @@ class Processor():
                 if time.time() >= proxy.lastCheckedTime + \
                         (settings.BAD_PROXY_CHECKING_PERIOD if proxy.badProxy else settings.PROXY_CHECKING_PERIOD):
                     tasks.append(asyncio.ensure_future(self._processProxy(proxy)))
-                    if len(tasks) > 500:
+                    if len(tasks) > 1000:
                         loop.run_until_complete(asyncio.wait(tasks))
                         tasks.clear()
 
