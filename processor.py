@@ -96,11 +96,12 @@ class Processor():
         # TODO: check address
         try:
             proxy = Proxy.objects.get(address=address)
-            self.logger.debug('proxy {0} already exist'.format(proxy.toUrl()))
+            self.logger.debug('proxy {0} already exists'.format(proxy.toUrl()))
         except Proxy.DoesNotExist:
             proxy = Proxy()
             proxy.address = address
             proxy.uptime = time.time()
+            proxy.lastCheckedTime = time.time()
             self.logger.debug('add proxy {0}'.format(proxy.toUrl()))
             proxy.save()
 
