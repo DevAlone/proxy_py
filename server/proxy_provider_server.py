@@ -70,7 +70,7 @@ class ProxyProviderServer(asyncore.dispatcher):
     def __init__(self, host, port, processor):
         super(ProxyProviderServer, self).__init__()
         self.create_socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.socket.settimeout(1)
+        # self.socket.settimeout(1)
         self.set_reuse_addr()
         self.bind((host, port))
         self.listen(5)
