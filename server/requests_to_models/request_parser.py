@@ -6,119 +6,122 @@ import copy
 
 import re
 
-
 class RequestParser:
     ALLOWED_CHARS = string.ascii_letters + string.digits + "/: !=><,-*"
-    MAXIMUM_STRING_REQUEST_LENGTH = 128
-    COMMA_SEPARATED_KEYS = ["fields", "order_by"]
-    ALLOWED_KEYS = ['model', 'method', 'fields', 'order_by']
+    COMMA_SEPARATED_KEYS = {"fields", "order_by"}
+    ALLOWED_KEYS = {'model', 'method', 'fields', 'filter', 'order_by', 'limit', 'offset'}
+    MAXIMUM_KEY_LENGTH = 64
+    MAXIMUM_VALUE_LENGTH = 512
 
     def __init__(self, config):
         self.config = config
-        self._validateConfig()
+        self._validate_config()
 
-    # input is string
-    def parse(self, request):
-        if len(request) > self.MAXIMUM_STRING_REQUEST_LENGTH:
-            raise ParseError("Your're request is too long. Maximum request is {} symbols"
-                             .format(self.MAXIMUM_STRING_REQUEST_LENGTH))
+    def parse(self, request : dict):
+        for key in request.keys():
+            request[key] = str(request[key])
+            if key in self.COMMA_SEPARATED_KEYS:
+                request[key] = self._comma_separated_field_to_list(request[key])
+            self._validate_key_value(key, request[key])
 
-        request = self._keepAllowedChars(request)
+        return self._parseDict(request)
 
-        items = [item for item in request.split('/') if item]
+    def _validate_key_value(self, key, value):
+        self._validate_key(key)
 
-        reqDict = {}
-        for item in items:
-            keyVal = item.split(':')
-            keyVal[0] = keyVal[0].strip()
-            keyVal[1] = keyVal[1].strip()
-            if keyVal[0] in self.COMMA_SEPARATED_KEYS:
-                keyVal[1] = self._commaSeparatedFieldToList(keyVal[1])
-                if not len(keyVal[1]):
-                    continue
-            self._validateField(*keyVal)
+        if len(key) > self.MAXIMUM_KEY_LENGTH:
+            raise ValidationError(
+                'Some key is too big. Maximum allowed length is {}'.format(self.MAXIMUM_KEY_LENGTH))
+        if len(value) > self.MAXIMUM_VALUE_LENGTH:
+            raise ValidationError(
+                'Some value is too big. Maximum allowed length is {}'.format(self.MAXIMUM_VALUE_LENGTH))
 
-            reqDict[keyVal[0]] = keyVal[1]
-
-        return self._parseDict(reqDict)
-
-    def _validateField(self, key, value):
-        if key not in self.ALLOWED_KEYS:
-            raise ValidationError("key {} isn't allowed".format(key))
-
+        # validate list types
         if type(value) is list:
-            for valueItem in value:
-                self._validateField(key, valueItem)
+            for value_item in value:
+                self._validate_key_value(key, value_item)
             return
 
-        # TODO: complete that
-        if key in ['method', 'model', 'fields']:
-            if not re.match(r'^[a-zA-Z0-9_*]+$', value):
-                raise ValidationError("'{}' value doesn't match to pattern ^[a-zA-Z0-9_]+$".format(key))
+        if key in {'model', 'method', 'fields', 'order_by'}:
+            self._validate_value_regex(key, value, r'^[a-zA-Z][a-zA-Z0-9_]+$')
+        elif key in {'filter'}:
+            self._validate_value_regex(key, value, r'^[a-zA-Z0-9_]+$')
+            pass
+        elif key in {'limit', 'offset'}:
+            if type(value) is not int:
+                raise ValidationError("Value of key '{}' should be int".format(key))
+            pass
+        else:
+            # It means I forget to add validation of field
+            raise ValidationError('Server Error')
 
-    def _commaSeparatedFieldToList(self, stringField):
-        return [val.strip() for val in stringField.split(',') if val]
+    def _validate_value_regex(self, key, value, pattern):
+        if not re.match(pattern, value):
+            raise ValidationError("Value of key '{}' doesn't match to pattern {}".format(key, pattern))
 
-    def _keepAllowedChars(self, request):
-        request = request.strip()
-        res = ""
-        for ch in request:
-            if ch == ' ' and res[-1] == ch:
-                continue
+    def _validate_key(self, key):
+        if type(key) is not str:
+            raise ValidationError("Key {} is not string".format(key))
+        if not re.match(r'^[a-zA-Z][a-zA-Z0-9_]+$', key):
+            raise ValidationError("Key '{}' doesn't match to pattern ^[a-zA-Z][a-zA-Z0-9_]+$".format(key))
+        if key not in self.ALLOWED_KEYS:
+            raise ValidationError("Key '{}' isn't allowed".format(key))
 
-            if ch in self.ALLOWED_CHARS:
-                res += ch
+    def _comma_separated_field_to_list(self, stringField):
+        result = []
+        for val in stringField.split(','):
+            val = val.strip()
+            if val:
+                result.append(val)
+        return result
 
-        return res
-
-    def _parseDict(self, reqDict):
-        self.resultRequest = {}
-        if 'model' not in reqDict:
+    def _parseDict(self, req_dict):
+        self.result_request = {}
+        if 'model' not in req_dict:
             raise ParseError("You should specify 'model'")
 
-        if reqDict['model'] not in self.config:
+        if req_dict['model'] not in self.config:
             raise  ParseError("Model doesn't exist or isn't allowed")
 
-        config = self.config[reqDict['model']]
+        config = self.config[req_dict['model']]
 
-        self.resultRequest['ClassName'] = config['modelClass']
+        self.result_request['ClassName'] = config['modelClass']
 
-        if 'method' not in reqDict:
+        if 'method' not in req_dict:
             raise ParseError("You should specify 'method'")
 
-        if reqDict['method'] not in config['methods']:
+        if req_dict['method'] not in config['methods']:
             raise ParseError("Method doesn't exist or isn't allowed")
 
-        self.resultRequest['method'] = reqDict['method']
+        self.result_request['method'] = req_dict['method']
 
-        config = config['methods'][reqDict['method']]
+        config = config['methods'][req_dict['method']]
         return {
             'get': self._get,
-        }[reqDict['method']](reqDict, config)
+        }[req_dict['method']](req_dict, config)
 
-    def _get(self, reqDict, config):
-        if 'fields' not in reqDict:
-            reqDict['fields'] = ["*"]
-
-        self.resultRequest['fields'] = []
-
-        if len(reqDict['fields']) == 1 and reqDict['fields'][0] == '*':
-            self.resultRequest['fields'] = copy.copy(config['fields'])
+    def _get(self, req_dict, config):
+        if 'fields' not in req_dict:
+            req_dict['fields'] = ["*"]
+            self.result_request['fields'] = copy.copy(config['fields'])
         else:
-            for field in reqDict['fields']:
+            self.result_request['fields'] = []
+
+            for field in req_dict['fields']:
                 if field not in config['fields']:
                     raise ParseError("Field '{}' doesn't exist or isn't allowed".format(field))
-                self.resultRequest['fields'].append(field)
+                self.result_request['fields'].append(field)
 
-        return self.resultRequest
+        return self.result_request
 
-    def _validateConfig(self):
+    def _validate_config(self):
         if False:
             raise ConfigFormatError()
 
 
 class ParseError(Exception):
     pass
+
 
 class ValidationError(ParseError):
     pass

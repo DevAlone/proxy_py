@@ -8,75 +8,70 @@ import urllib.parse
 
 class ApiRequestHandler:
 
-    def __init__(self):
+    def __init__(self, logger):
         self.requestParser = RequestParser(settings.PROXY_PROVIDER_SERVER_API_CONFIG)
         self.requestExecutor = RequestExecutor()
+        self._logger = logger
 
     # input is bytes array
     # result is bytes array
-    def handle(self, request):
-        response = {}
-        isRequestHttp = False
-
-
+    def handle(self, client_address, http_method, headers, post_data):
         try:
-            strRequest = request.decode('utf-8').strip()
-            # find request
-            maxReqLen = self.requestParser.MAXIMUM_STRING_REQUEST_LENGTH
-
-            if re.search(r'^(get|GET)\s+/\s+(http|HTTP)', strRequest):
+            if http_method == 'get':
                 return self.index()
 
-            try:
-                res = re.search(r'^(get|GET)\s+(/.{1,' + str(maxReqLen) + '}/?)\s+(http|HTTP)', strRequest)
-                if res is None:
-                    raise ParseError("Your request looks wrong")
-                isRequestHttp = True
-                strRequest = urllib.parse.unquote(res.groups()[1])
-            except:
-                res = re.search(r'/.{1,' + str(maxReqLen) + '}/$', strRequest)
-                if res is None:
-                    raise ParseError("Your request looks wrong")
-                if strRequest.startswith('post') or strRequest.startswith('POST'):
-                    isRequestHttp = True
-                strRequest = res.group()
+            # strRequest = urllib.parse.unquote(res.groups()[1])
 
-            reqDict = self.requestParser.parse(strRequest)
+            try:
+                json_data = json.loads(post_data)
+            except:
+                raise ParseError("Your request doesn't look like json. Maybe it's not json?")
+
+            reqDict = self.requestParser.parse(json_data)
 
             response = {
                 'status': 'ok',
                 'data': self.requestExecutor.execute(reqDict)
             }
         except ParseError as ex:
-            print(repr(ex))
+            self._logger.warning(
+                "Error during parsing request. \nClient: {} \nRequest: {} \nException: {}".format(
+                    client_address,
+                    (http_method, headers, post_data),
+                    ex)
+            )
+
             response = {
                 'status': 'error',
                 'error': str(ex)
             }
         except ExecutionError as ex:
-            print(repr(ex))
+            self._logger.warning(
+                "Error during execution request. \nClient: {} \nRequest: {} \nException: {}".format(
+                    client_address,
+                    (http_method, headers, post_data),
+                    ex)
+            )
+
             response = {
                 'status': 'error',
                 'error': 'error during execution request'
             }
-        except Exception as ex:
-            print(repr(ex))
-            # TODO: log it
-            raise ex
-            response = {
-                'status': 'error',
-                'error': 'Something bad happened'
-            }
         except:
+            self._logger.exception("Error in ApiRequestHandler. \nClient: {} \nRequest: {}".format(
+                    client_address,
+                    (http_method, headers, post_data))
+            )
+
             response = {
                 'status': 'error',
                 'error': 'Something very bad happened'
             }
 
-        return self.getResponse(isRequestHttp, (json.dumps(response) + '\n').encode('utf-8'))
+        return self.make_http_response(json.dumps(response).encode('utf-8'))
 
     def index(self):
-        page = """HTTP/1.1 200 OK
+        return b"""HTTP/1.1 200 OK
 Server: Apache/1.3.37
 Content-Type: text/html; charset=utf-8
 
@@ -103,15 +98,11 @@ html, body {
 
 </html> 
 """
-        return page.encode('utf-8')
 
-    def getResponse(self, isRequestHttp, bytesData):
-        return self.makeHttpResponse(bytesData) if isRequestHttp else bytesData
-
-    def makeHttpResponse(self, bytesData):
-        HTTP_HEADER = """HTTP/1.1 200 OK
+    def make_http_response(self, bytesData):
+        HTTP_HEADER = b"""HTTP/1.1 200 OK
 Server: Apache/1.3.37
 Content-Type: application/json; charset=utf-8
 
 """
-        return HTTP_HEADER.encode('utf-8') + bytesData
+        return HTTP_HEADER + bytesData
