@@ -25,10 +25,10 @@ _logger.addHandler(info_file_handler)
 
 _api_request_handler = ApiRequestHandler(_logger)
 
+TIMEOUT = 30
 
 class RequestHandler(asyncore.dispatcher_with_send):
     MAX_REQUEST_SIZE = 1024  # 1 KB
-    # TIMEOUT = 30
     TCP_REQUEST_THRESHOLD = 10
 
     def handle_read(self):
@@ -70,7 +70,8 @@ class ProxyProviderServer(asyncore.dispatcher):
     def __init__(self, host, port, processor):
         super(ProxyProviderServer, self).__init__()
         self.create_socket(socket.AF_INET, socket.SOCK_STREAM)
-        # self.socket.settimeout(1)
+        # TODO: set timeout
+        self.socket.settimeout(TIMEOUT)
         self.set_reuse_addr()
         self.bind((host, port))
         self.listen(5)
