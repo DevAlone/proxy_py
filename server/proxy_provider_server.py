@@ -1,8 +1,10 @@
 from core.models import Proxy
 from server.api_request_handler import ApiRequestHandler
 
-import asyncore
-import socket
+import asyncio
+import aiohttp
+import aiohttp.web
+
 import threading
 import logging
 import re
@@ -26,39 +28,7 @@ _logger.addHandler(info_file_handler)
 _api_request_handler = ApiRequestHandler(_logger)
 
 
-class RequestHandler(asyncore.dispatcher_with_send):
-    MAX_REQUEST_SIZE = 1024  # 1 KB
-    TCP_REQUEST_THRESHOLD = 10
-
-    def handle_read(self):
-        try:
-            client_address = self.socket.getpeername()
-
-            data = self.recv(self.MAX_REQUEST_SIZE)
-            if data:
-                if len(data) < self.TCP_REQUEST_THRESHOLD:
-                    for urlData in self.getUrls():
-                        self.send(urlData)
-                else:
-                    method, url, headers, post_data = parse_http(data.decode('utf-8'))
-                    if method is not None:
-                        self.send(_api_request_handler.handle(client_address, method, headers, post_data))
-                    else:
-                        self.send(b"It's not a request\n")
-        except:
-            _logger.exception("Error in RequestHandler")
-        finally:
-            self.close()
-
-    def getUrls(self):
-        try:
-            for proxy in Proxy.objects.all().filter(badProxy=False).order_by('uptime'):
-                yield "{}\n".format(proxy.toUrl()).encode('utf-8')
-        except:
-            _logger.exception("Error in RequestHandler.getUrls(self)")
-
-
-class ProxyProviderServer(asyncore.dispatcher):
+class ProxyProviderServer:
     @staticmethod
     def get_proxy_provider_server(host, port, processor):
         global _proxy_provider_server
@@ -67,86 +37,83 @@ class ProxyProviderServer(asyncore.dispatcher):
         return _proxy_provider_server
 
     def __init__(self, host, port, processor):
-        super(ProxyProviderServer, self).__init__()
-        self.create_socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.set_reuse_addr()
-        self.bind((host, port))
-        self.listen(5)
-
         self._processor = processor
-        self._thread = threading.Thread(target=self.worker)
-        self._is_alive = False
+        self.host = host
+        self.port = port
 
-    def handle_accept(self):
-        pair = self.accept()
-        if pair is not None:
-            sock, addr = pair
-            _logger.info("Connection from {}".format(addr))
-            handler = RequestHandler(sock)
+    async def start(self, loop):
+        app = aiohttp.web.Application()
+        app.router.add_post('/', self.post)
+        app.router.add_get('/', self.get)
 
-    def start(self):
-        self._is_alive = True
-        self._thread.start()
+        server = await loop.create_server(app.make_handler(), self.host, self.port)
+        return server
 
-    def stop(self):
-        self._is_alive = False
-        # TODO: stop asyncore loop
+    async def post(self, request):
+        client_address = request.transport.get_extra_info('peername')
 
-    def join(self):
-        self._thread.join()
+        data = await request.json()
 
-    def worker(self):
-        while self._is_alive:
-            try:
-                asyncore.loop()
-            except:
-                _logger.exception("Error in ProxyProviderServer")
+        return aiohttp.web.json_response(_api_request_handler.handle(client_address, data))
 
+    async def get(self, request):
+        return aiohttp.web.Response(text="""HTTP/1.1 200 OK
+Server: Apache/1.3.37
+Content-Type: text/html; charset=utf-8
 
-def parse_http(str_request):
-    def split_lines(lines):
-        buffer = ""
-        for ch in lines:
-            if ch == '\n':
-                yield buffer
-                buffer = ""
-            elif ch != '\r':
-                buffer += ch
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>title</title>
+<style>
+html, body {
+    width: 100%;
+    height: 100%;
+    background: #eee;
+    padding: 0;
+    margin: 0;
+    line-height: 0;
+}
+</style>
+</head>
+<body>
 
-        if buffer:
-            yield buffer
+<iframe width="100%" height="100%" src="https://www.youtube.com/embed/7OBx-YwPl8g?rel=0&autoplay=1" frameborder="0" allowfullscreen></iframe>
+</body>
 
-    def split_by_first(line, ch):
-        pos = line.find(ch)
-        if pos != -1:
-            return line[:pos], line[pos + 1:]
-        else:
-            return (line, '')
+</html>
+""")
 
 
-    method = None
-    url = None
-    headers = {}
-    post_data = ""
-    if str_request.startswith('get') or str_request.startswith('GET'):
-        method = 'get'
-    elif str_request.startswith('post') or str_request.startswith('POST'):
-        method = 'post'
-    else:
-        return method, url, headers, post_data
 
-    in_headers = True
-    for i, line in enumerate(split_lines(str_request)):
-        if i == 0:
-            res = re.search(r'^[a-zA-Z]+\s+(.+)\s+', line)
-            if res is not None:
-                url = res.group(1)
-        elif len(line) == 0:
-            in_headers = False
-        elif in_headers:
-            key_val = split_by_first(line, ':')
-            headers[key_val[0]] = key_val[1]
-        else:
-            post_data += line + '\n'
-
-    return method, url, headers, post_data
+# class RequestHandler(asyncore.dispatcher_with_send):
+#     MAX_REQUEST_SIZE = 1024  # 1 KB
+#     TCP_REQUEST_THRESHOLD = 10
+#
+#     def handle_read(self):
+#         try:
+#             client_address = self.socket.getpeername()
+#
+#             data = self.recv(self.MAX_REQUEST_SIZE)
+#             if data:
+#                 if len(data) < self.TCP_REQUEST_THRESHOLD:
+#                     for urlData in self.getUrls():
+#                         self.send(urlData)
+#                 else:
+#                     method, url, headers, post_data = parse_http(data.decode('utf-8'))
+#                     if method is not None:
+#                         self.send(_api_request_handler.handle(client_address, method, headers, post_data))
+#                     else:
+#                         self.send(b"It's not a request\n")
+#         except:
+#             _logger.exception("Error in RequestHandler")
+#         finally:
+#             self.close()
+#
+#     def getUrls(self):
+#         try:
+#             for proxy in Proxy.objects.all().filter(badProxy=False).order_by('uptime'):
+#                 yield "{}\n".format(proxy.toUrl()).encode('utf-8')
+#         except:
+#             _logger.exception("Error in RequestHandler.getUrls(self)")

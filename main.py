@@ -2,6 +2,8 @@
 
 # TODO: fix socks proxies
 
+import asyncio
+
 import init_django
 from proxy_py import settings
 from processor import Processor
@@ -24,11 +26,11 @@ if __name__ == "__main__":
         settings.PROXY_PROVIDER_SERVER_ADDRESS['PORT'],
         proxy_processor,
     )
-    proxy_provider_server.start()
+
+    loop = asyncio.get_event_loop()
+    loop.run_until_complete(proxy_provider_server.start(loop))
 
     try:
-        proxy_processor.exec(killer)
+        proxy_processor.exec(killer, loop)
     except Exception as ex:
         print("Some shit happened: {}".format(ex))
-
-    proxy_provider_server.stop()

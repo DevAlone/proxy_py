@@ -32,8 +32,7 @@ class Processor():
 
         self.logger.debug('processor initialization...')
 
-    def exec(self, killer):
-        loop = asyncio.get_event_loop()
+    def exec(self, killer, loop):
         while not killer.kill:
             tasks = []
             for collector in list(self.collectors.values()):
