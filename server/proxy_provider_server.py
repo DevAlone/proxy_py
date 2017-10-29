@@ -52,20 +52,23 @@ class ProxyProviderServer:
     async def post(self, request):
         client_address = request.transport.get_extra_info('peername')
 
-        data = await request.json()
+        try:
+            data = await request.json()
+            response = _api_request_handler.handle(client_address, data)
+        except:
+            response = {
+                'status': "error",
+                'error': "Your request doesn't look like request",
+            }
 
-        return aiohttp.web.json_response(_api_request_handler.handle(client_address, data))
+        return aiohttp.web.json_response(response)
 
     async def get(self, request):
-        return aiohttp.web.Response(text="""HTTP/1.1 200 OK
-Server: Apache/1.3.37
-Content-Type: text/html; charset=utf-8
-
-<!DOCTYPE html>
+        return aiohttp.web.Response(headers={'Content-Type': 'text/html'}, body="""<!DOCTYPE html>
 <html>
 <head>
 <meta charset="UTF-8">
-<title>title</title>
+<title>Go away!</title>
 <style>
 html, body {
     width: 100%;

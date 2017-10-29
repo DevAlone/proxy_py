@@ -32,7 +32,7 @@ class Processor():
 
         self.logger.debug('processor initialization...')
 
-    def exec(self, killer, loop):
+    async def exec(self, killer, loop):
         while not killer.kill:
             tasks = []
             for collector in list(self.collectors.values()):
@@ -52,11 +52,11 @@ class Processor():
                         (settings.BAD_PROXY_CHECKING_PERIOD if proxy.badProxy else settings.PROXY_CHECKING_PERIOD):
                     tasks.append(asyncio.ensure_future(self._processProxy(proxy)))
                     if len(tasks) > 1000:
-                        loop.run_until_complete(asyncio.wait(tasks))
+                        await asyncio.wait(tasks)
                         tasks.clear()
 
             if len(tasks) > 0:
-                loop.run_until_complete(asyncio.wait(tasks))
+                await asyncio.wait(tasks)
                 tasks.clear()
 
     async def _processCollector(self, collector):

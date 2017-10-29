@@ -25,7 +25,11 @@ class RequestExecutor:
                 obj[fieldName] = getattr(item, fieldName)
             result.append(obj)
 
-        return result
+        return {
+            'data': result,
+            'count': Class.objects.count(),
+            'last_page': True,
+        }
 
 
 class ExecutionError(Exception):

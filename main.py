@@ -31,6 +31,6 @@ if __name__ == "__main__":
     loop.run_until_complete(proxy_provider_server.start(loop))
 
     try:
-        proxy_processor.exec(killer, loop)
+        loop.run_until_complete(proxy_processor.exec(killer, loop))
     except Exception as ex:
         print("Some shit happened: {}".format(ex))

@@ -21,8 +21,8 @@ class ApiRequestHandler:
 
             response = {
                 'status': 'ok',
-                'data': self.requestExecutor.execute(reqDict)
             }
+            response.update(self.requestExecutor.execute(reqDict))
         except ParseError as ex:
             self._logger.warning(
                 "Error during parsing request. \nClient: {} \nRequest: {} \nException: {}".format(
