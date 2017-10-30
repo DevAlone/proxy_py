@@ -4,7 +4,7 @@ import requests
 import async_requests
 
 
-TIMEOUT = 5
+TIMEOUT = 10
 
 
 # TODO: add multiple checks with several sites
