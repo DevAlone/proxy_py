@@ -70,15 +70,15 @@ class Processor():
 
         if check_result:
             self.logger.debug('proxy {0} works'.format(proxy.to_url()))
-            proxy.numberOfBadChecks = 0
-            if proxy.bad_broxy or proxy.uptime == 0:
+            proxy.number_of_bad_checks = 0
+            if proxy.bad_proxy or proxy.uptime == 0:
                 proxy.uptime = time.time()
             proxy.bad_proxy = False
         else:
             proxy.number_of_bad_checks += 1
             proxy.uptime = time.time()
 
-        if proxy.numberOfBadChecks > 3:
+        if proxy.number_of_bad_checks > 3:
             proxy.bad_proxy = True
             self.logger.debug('removing proxy {0}...'.format(proxy.to_url()))
 
