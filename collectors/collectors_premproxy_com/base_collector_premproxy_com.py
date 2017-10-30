@@ -7,7 +7,7 @@ import lxml.etree
 class BaseCollectorPremProxyCom(PagesCollector):
     def __init__(self, url, pagesCount):
         self.url = url
-        self.pagesCount = pagesCount
+        self.pages_count = pagesCount
 
     async def processPage(self, page_index):
         result = []

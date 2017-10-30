@@ -1,6 +1,6 @@
 from collectors.pages_collector import PagesCollector
 
-import requests
+import async_requests
 import lxml.html
 import lxml.etree
 import re
@@ -8,7 +8,7 @@ import base64
 
 class Collector(PagesCollector):
     def __init__(self):
-        self.pagesCount = 57
+        self.pages_count = 57
 
     async def processPage(self, page_index):
         result = []
@@ -17,7 +17,8 @@ class Collector(PagesCollector):
             'PageIdx': page_index + 1,
             'Uptime': 0
         }
-        html = requests.post('http://www.gatherproxy.com/proxylist/anonymity/?t=Elite', data=formData).text
+        res = await async_requests.post('http://www.gatherproxy.com/proxylist/anonymity/?t=Elite', data=formData)
+        html = res.text
         tree = lxml.html.fromstring(html)
         tableElement = \
             tree.xpath(".//table[@id='tblproxy']")[0]

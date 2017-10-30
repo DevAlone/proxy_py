@@ -37,53 +37,78 @@ class Processor():
 
     async def exec(self, killer, loop : asyncio.BaseEventLoop):
         while not killer.kill:
-            tasks = []
-            for collector in list(self.collectors.values()):
-                if time.time() >= collector.last_processing_time + collector.processing_period:
-                    tasks.append(asyncio.ensure_future(self._process_collector(collector)))
+            try:
+                tasks = []
+                for collector in list(self.collectors.values()):
+                    if time.time() >= collector.last_processing_time + collector.processing_period:
+                        collector.last_processing_time = time.time()
+                        tasks.append(asyncio.ensure_future(self._process_collector(collector)))
 
-            # check proxies
-            for proxy in Proxy.objects.all():
-                if time.time() >= proxy.last_check_time + \
-                        (settings.BAD_PROXY_CHECKING_PERIOD if proxy.bad_proxy else settings.PROXY_CHECKING_PERIOD):
-                    tasks.append(asyncio.ensure_future(self._process_proxy(proxy)))
-                    if len(tasks) > 500:
-                        await asyncio.wait(tasks)
-                        # loop.run_until_complete(asyncio.wait(tasks))
-                        tasks.clear()
+                # check proxies
+                for proxy in Proxy.objects.all():
+                    if time.time() >= proxy.last_check_time + \
+                            (settings.BAD_PROXY_CHECKING_PERIOD if proxy.bad_proxy else settings.PROXY_CHECKING_PERIOD):
+                        proxy.last_check_time = time.time()
+                        tasks.append(asyncio.ensure_future(self._process_proxy(proxy)))
+                        if len(tasks) > 500:
+                            await asyncio.wait(tasks)
+                            # loop.run_until_complete(asyncio.wait(tasks))
+                            tasks.clear()
 
-            if len(tasks) > 0:
-                await asyncio.wait(tasks)
-                # loop.run_until_complete(asyncio.wait(tasks))
-                tasks.clear()
+                if len(tasks) > 0:
+                    await asyncio.wait(tasks)
+                    # loop.run_until_complete(asyncio.wait(tasks))
+                    tasks.clear()
+            except KeyboardInterrupt as ex:
+                raise ex
+            except Exception as ex:
+                self.logger.exception(ex)
+            except:
+                self.logger.error("some shit happened")
 
     async def _process_collector(self, collector):
-        self.logger.debug('start processing collector of type "' + str(type(collector)) + '"')
-        proxies = await collector.collect()
-        self.logger.debug('got {0} proxies from collector of type {1}'.format(len(proxies), type(collector)))
-        await self.process_raw_proxies(proxies)
-        collector.last_processing_time = time.time()
+        try:
+            self.logger.debug('start processing collector of type "' + str(type(collector)) + '"')
+            proxies = await collector.collect()
+            self.logger.debug('got {0} proxies from collector of type {1}'.format(len(proxies), type(collector)))
+            await self.process_raw_proxies(proxies)
+            collector.last_processing_time = time.time()
+        except KeyboardInterrupt as ex:
+            raise ex
+        except Exception as ex:
+            self.logger.error("Error in collector")
+            self.logger.exception(ex)
+        except:
+            self.logger.error("some shit happened")
 
     async def _process_proxy(self, proxy : Proxy):
-        self.logger.debug('start processing proxy {0}'.format(proxy.to_url()))
-        check_result = await proxy_utils.check_proxy(proxy)
+        try:
+            self.logger.debug('start processing proxy {0}'.format(proxy.to_url()))
+            check_result = await proxy_utils.check_proxy(proxy)
 
-        if check_result:
-            self.logger.debug('proxy {0} works'.format(proxy.to_url()))
-            proxy.number_of_bad_checks = 0
-            if proxy.bad_proxy or proxy.uptime == 0:
+            if check_result:
+                self.logger.debug('proxy {0} works'.format(proxy.to_url()))
+                proxy.number_of_bad_checks = 0
+                if proxy.bad_proxy or proxy.uptime == 0:
+                    proxy.uptime = time.time()
+                proxy.bad_proxy = False
+            else:
+                proxy.number_of_bad_checks += 1
                 proxy.uptime = time.time()
-            proxy.bad_proxy = False
-        else:
-            proxy.number_of_bad_checks += 1
-            proxy.uptime = time.time()
 
-        if proxy.number_of_bad_checks > 3:
-            proxy.bad_proxy = True
-            self.logger.debug('removing proxy {0}...'.format(proxy.to_url()))
+            if proxy.number_of_bad_checks > 3:
+                proxy.bad_proxy = True
+                self.logger.debug('removing proxy {0}...'.format(proxy.to_url()))
 
-        proxy.last_check_time = int(time.time())
-        proxy.save()
+            proxy.last_check_time = int(time.time())
+            proxy.save()
+        except KeyboardInterrupt as ex:
+            raise ex
+        except Exception as ex:
+            self.logger.error("Error during processing proxy")
+            self.logger.exception(ex)
+        except:
+            self.logger.error("some shit happened")
 
     def add_collector_of_type(self, CollectorType):
         if CollectorType not in self.collectors:
@@ -129,14 +154,12 @@ class Processor():
             await asyncio.wait(tasks)
 
     async def process_raw_proxy(self, domain, port, protocol=None, auth_data=None):
-        try:
-            proxy = Proxy.objects.get(domain=domain, port=port, auth_data=auth_data)
+        proxies = Proxy.objects.filter(domain=domain, port=port, auth_data=auth_data)
+        if proxies:
             self.logger.debug('proxy with domain {}, port {} and auth_data {} already exists'.format(
                 domain, port, auth_data
             ))
             return
-        except Proxy.DoesNotExist:
-            pass
 
         raw_proxy = ""
         if auth_data is not None:

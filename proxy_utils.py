@@ -4,13 +4,16 @@ import requests
 import async_requests
 
 
+TIMEOUT = 5
+
+
 # TODO: add multiple checks with several sites
 async def check_proxy(proxy):
     try:
         res = await async_requests.get(
             'https://pikagraphs.d3d.info/OK/',
             proxy=proxy.to_url(),
-            timeout=10,
+            timeout=TIMEOUT,
             headers={'User-Agent': get_random_user_agent()},
         )
         if res.status == 200 and res.text == "OK":
@@ -38,7 +41,7 @@ async def detect_raw_proxy_protocols(raw_proxy):
             res = await async_requests.get(
                 'https://pikagraphs.d3d.info/OK/',
                 proxy="{}://{}".format(protocol, raw_proxy),
-                timeout=10,
+                timeout=TIMEOUT,
                 headers={'User-Agent': get_random_user_agent()},
             )
 

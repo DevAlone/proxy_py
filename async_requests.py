@@ -27,6 +27,9 @@ async def request(type, url, *args, **kwargs):
         sessionKwargs['cookies'] = kwargs['cookies']
         del kwargs['cookies']
 
+    if 'timeout' not in kwargs:
+        kwargs['timeout'] = 10
+
     async with aiohttp.ClientSession(**sessionKwargs) as session:
         async with session.request(type, url, **kwargs) as response:
             status = response.status
