@@ -6,10 +6,13 @@ from .collector_gatherproxy_com import Collector as Collector1
 from .collector_proxy_list_org import Collector as Collector2
 from .collector_checkerproxy_net import Collector as Collector3
 
+from .backup_collector.collector_backup import Collector as BackupCollector
+
 collectors = [
     Collector1,
     Collector2,
     Collector3,
+    BackupCollector,
 ]
 
 collectors.extend(collectors_free_proxy_list_net_list.collectors)
