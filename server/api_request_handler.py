@@ -9,20 +9,20 @@ import urllib.parse
 class ApiRequestHandler:
 
     def __init__(self, logger):
-        self.requestParser = RequestParser(settings.PROXY_PROVIDER_SERVER_API_CONFIG)
-        self.requestExecutor = RequestExecutor()
+        self.request_parser = RequestParser(settings.PROXY_PROVIDER_SERVER_API_CONFIG)
+        self.request_executor = RequestExecutor()
         self._logger = logger
 
     # input is bytes array
     # result is bytes array
     def handle(self, client_address, post_data):
         try:
-            reqDict = self.requestParser.parse(post_data)
+            reqDict = self.request_parser.parse(post_data)
 
             response = {
                 'status': 'ok',
             }
-            response.update(self.requestExecutor.execute(reqDict))
+            response.update(self.request_executor.execute(reqDict))
         except ParseError as ex:
             self._logger.warning(
                 "Error during parsing request. \nClient: {} \nRequest: {} \nException: {}".format(

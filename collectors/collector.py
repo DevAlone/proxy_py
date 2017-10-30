@@ -8,6 +8,6 @@ class AbstractCollector:
         return []
 
     # time in unix timestamp(seconds from 01.01.1970)
-    lastProcessedTime = 0
+    last_processing_time = 0
     # processing period in seconds
-    processingPeriod = 60 * 30
+    processing_period = 60 * 30

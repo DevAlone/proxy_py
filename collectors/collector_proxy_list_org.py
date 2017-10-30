@@ -10,9 +10,9 @@ class Collector(PagesCollector):
     def __init__(self):
         self.pagesCount = 10
 
-    async def processPage(self, pageIndex):
+    async def processPage(self, page_index):
         result = []
-        html = requests.get('http://proxy-list.org/english/index.php?p={0}'.format(pageIndex + 1)).text
+        html = requests.get('http://proxy-list.org/english/index.php?p={0}'.format(page_index + 1)).text
         tree = lxml.html.fromstring(html)
         proxyElements = \
             tree.xpath(".//div[@id='proxy-table']//div[@class='table']//li[@class='proxy']")

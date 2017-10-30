@@ -15,14 +15,16 @@ class RequestExecutor:
         Package = importlib.import_module(request['ClassName'][0])
         Class = getattr(Package, request['ClassName'][1])
 
-        queryset = Class.objects.filter(badProxy=False)
+        # TODO: remove bad_proxy
+        queryset = Class.objects.filter(bad_proxy=False)
         result = []
 
         for item in queryset:
             obj = {}
 
-            for fieldName in request['fields']:
-                obj[fieldName] = getattr(item, fieldName)
+            for field_name in request['fields']:
+                obj[field_name] = getattr(item, field_name)
+
             result.append(obj)
 
         return {

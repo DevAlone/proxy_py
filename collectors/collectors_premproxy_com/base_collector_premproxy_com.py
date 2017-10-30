@@ -9,10 +9,10 @@ class BaseCollectorPremProxyCom(PagesCollector):
         self.url = url
         self.pagesCount = pagesCount
 
-    async def processPage(self, pageIndex):
+    async def processPage(self, page_index):
         result = []
-        if pageIndex > 0:
-            self.url += '{0}.htm'.format(pageIndex + 1)
+        if page_index > 0:
+            self.url += '{0}.htm'.format(page_index + 1)
 
         html = requests.get(url=self.url).text
         tree = lxml.html.fromstring(html)

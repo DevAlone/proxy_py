@@ -5,70 +5,71 @@ PROXY_VALIDATE_REGEX = \
 r'^(?P<protocol>[a-z0-9]+)://((?P<login>[a-zA-Z0-9_\.]+):(?P<password>[a-zA-Z0-9_\.]+)@)?(?P<domain>([a-z0-9_]+\.)+[a-z0-9_]+):(?P<port>[0-9]{1,5})/?$'
 
 class Proxy(models.Model):
-    # TODO: add address validation
-    # http://user:password@proxy.asdf.asdf.ru:8080/
-    address = models.CharField(max_length=255, primary_key=True)
-    whiteIp = models.GenericIPAddressField(null=True)
+    PROTOCOLS = (
+        'http',
+        'socks4',
+        'socks5',
+    )
+
+    _protocol = models.IntegerField()
+    auth_data = models.CharField(max_length=64, null=True)
+    domain = models.CharField(max_length=128)
+    port = models.PositiveIntegerField()
+
+    white_ip_v4 = models.BinaryField(max_length=4, null=True)
+    white_ip_v6 = models.BinaryField(max_length=16, null=True)
+
     # TODO: maybe change to unsigned type
-    lastCheckedTime = models.BigIntegerField(default=0)
-    numberOfBadChecks = models.IntegerField(default=0)
-    badProxy = models.BooleanField(default=False)
+    last_check_time = models.BigIntegerField(default=0)
+    number_of_bad_checks = models.IntegerField(default=0)
+    bad_proxy = models.BooleanField(default=False)
     uptime = models.BigIntegerField(default=0)
 
 
-    def toUrl(self, protocol=None):
-        # TODO: cache it
-        matches = re.match(PROXY_VALIDATE_REGEX, self.address)
-        if matches is not None:
-            if protocol is None:
-                res = matches.group('protocol')
-            else:
-                res = protocol
-
-            res += '://'
-            if      matches.group('login') is not None and \
-                    matches.group('password') is not None:
-                res += matches.group('login') + ':'
-                res += matches.group('password') + '@'
-            res += matches.group('domain') + ':'
-            res += matches.group('port')
-            return res
-        return self.address
+    @property
+    def address(self):
+        return self.to_url()
 
 
-    def getProtocol(self):
-        matches = re.match(PROXY_VALIDATE_REGEX, self.address)
-        return matches.group('protocol')
+    @property
+    def protocol(self):
+        return self.PROTOCOLS[self._protocol]
 
 
-    def toRawProxy(self):
-        matches = re.match(PROXY_VALIDATE_REGEX, self.address)
-        res = ""
-        if matches.group('login') is not None and matches.group('password') is not None:
-            res += matches.group('login') + ':' + matches.group('password') + '@'
-        res += matches.group('domain') + ':' + matches.group('port')
-        return res
+    def to_url(self, protocol=None):
+        address = protocol if protocol is not None else self.PROTOCOLS[self._protocol]
+        address += "://"
+        if self.auth_data:
+            address += self.auth_data + "@"
+
+        address += "{}:{}".format(self.domain, self.port)
+
+        return address
 
 
-    def fromString(proxyStr):
-        proxy = Proxy()
-        proxy.address = proxyStr
-        return proxy
+    def get_protocol(self):
+        return self.PROTOCOLS[self._protocol]
 
 
     class Meta:
         indexes = [
-            models.Index(fields=['whiteIp']),
-            models.Index(fields=['badProxy']),
+            models.Index(fields=['_protocol']),
+            models.Index(fields=['auth_data']),
+            models.Index(fields=['port']),
+            models.Index(fields=['white_ip_v4']),
+            models.Index(fields=['white_ip_v6']),
+            models.Index(fields=['last_check_time']),
+            models.Index(fields=['number_of_bad_checks']),
+            models.Index(fields=['bad_proxy']),
+            models.Index(fields=['uptime']),
         ]
 
+        unique_together = (
+            ("_protocol", "auth_data", "domain", "port")
+        )
+
+
     def __str__(self):
-        return self.address
+        return self.to_url()
 
     __repr__ = __str__
-
-
-def getProxyOfProtocol(rawProxy, protocol):
-    proxy = Proxy()
-    proxy.address = "{}://{}".format(protocol, rawProxy)
-    return proxy

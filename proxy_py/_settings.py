@@ -56,9 +56,11 @@ PROXY_PROVIDER_SERVER_API_CONFIG = {
         'modelClass': ('core.models', 'Proxy'),
         'methods': {
             'get': {
-                'fields': ['address', 'whiteIp', 'lastCheckedTime', 'numberOfBadChecks', 'badProxy', 'uptime'],
-                'filterFields': ['whiteIp', 'lastCheckedTime', 'numberOfBadChecks', 'badProxy', 'uptime'],
-                'orderFields': ['lastCheckedTime', 'numberOfBadChecks', 'uptime'],
+                'fields': ['address', 'protocol', 'auth_data', 'domain', 'port', 'white_ip_v4', 'white_ip_v6',
+                           'last_check_time', 'number_of_bad_checks', 'bad_proxy', 'uptime'],
+                'filterFields': ['white_ip_v4', 'white_ip_v6', 'last_check_time', 'protocol', 'number_of_bad_checks',
+                                 'bad_proxy', 'uptime'],
+                'orderFields': ['last_check_time', 'number_of_bad_checks', 'uptime'],
             }
         }
     }

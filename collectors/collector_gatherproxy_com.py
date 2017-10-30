@@ -10,11 +10,11 @@ class Collector(PagesCollector):
     def __init__(self):
         self.pagesCount = 57
 
-    async def processPage(self, pageIndex):
+    async def processPage(self, page_index):
         result = []
         formData = {
             'Type': 'elite',
-            'PageIdx': pageIndex + 1,
+            'PageIdx': page_index + 1,
             'Uptime': 0
         }
         html = requests.post('http://www.gatherproxy.com/proxylist/anonymity/?t=Elite', data=formData).text

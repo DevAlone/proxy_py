@@ -19,7 +19,7 @@ killer = ProgrammKiller()
 if __name__ == "__main__":
     proxy_processor = Processor()
     for CollectorType in collectors_list.collectorTypes:
-        proxy_processor.addCollectorOfType(CollectorType)
+        proxy_processor.add_collector_of_type(CollectorType)
 
     proxy_provider_server = ProxyProviderServer.get_proxy_provider_server(
         settings.PROXY_PROVIDER_SERVER_ADDRESS['HOST'],
@@ -32,5 +32,6 @@ if __name__ == "__main__":
 
     try:
         loop.run_until_complete(proxy_processor.exec(killer, loop))
+        # proxy_processor.exec(killer, loop)
     except Exception as ex:
         print("Some shit happened: {}".format(ex))
