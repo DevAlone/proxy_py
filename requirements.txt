@@ -1,8 +1,5 @@
 lxml
-requests
-requests[socks]
 pysocks
 django
-psycopg2
 aiohttp
 aiosocks
