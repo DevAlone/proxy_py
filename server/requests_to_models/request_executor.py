@@ -30,7 +30,7 @@ class RequestExecutor:
 
         return {
             'data': result,
-            'count': Class.objects.count(),
+            'count': queryset.count(),
             'last_page': True,
         }
 
