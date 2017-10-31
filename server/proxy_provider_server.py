@@ -1,13 +1,9 @@
-from core.models import Proxy
 from server.api_request_handler import ApiRequestHandler
 
-import asyncio
 import aiohttp
 import aiohttp.web
-
-import threading
 import logging
-import re
+
 
 _proxy_provider_server = None
 _logger = logging.getLogger('proxy_py/server')
@@ -82,41 +78,9 @@ html, body {
 </head>
 <body>
 
-<iframe width="100%" height="100%" src="https://www.youtube.com/embed/7OBx-YwPl8g?rel=0&autoplay=1" frameborder="0" allowfullscreen></iframe>
+<iframe width="100%" height="100%" src="https://www.youtube.com/embed/7OBx-YwPl8g?rel=0&autoplay=1" frameborder="0" 
+allowfullscreen></iframe>
 </body>
 
 </html>
 """)
-
-
-
-# class RequestHandler(asyncore.dispatcher_with_send):
-#     MAX_REQUEST_SIZE = 1024  # 1 KB
-#     TCP_REQUEST_THRESHOLD = 10
-#
-#     def handle_read(self):
-#         try:
-#             client_address = self.socket.getpeername()
-#
-#             data = self.recv(self.MAX_REQUEST_SIZE)
-#             if data:
-#                 if len(data) < self.TCP_REQUEST_THRESHOLD:
-#                     for urlData in self.getUrls():
-#                         self.send(urlData)
-#                 else:
-#                     method, url, headers, post_data = parse_http(data.decode('utf-8'))
-#                     if method is not None:
-#                         self.send(_api_request_handler.handle(client_address, method, headers, post_data))
-#                     else:
-#                         self.send(b"It's not a request\n")
-#         except:
-#             _logger.exception("Error in RequestHandler")
-#         finally:
-#             self.close()
-#
-#     def getUrls(self):
-#         try:
-#             for proxy in Proxy.objects.all().filter(badProxy=False).order_by('uptime'):
-#                 yield "{}\n".format(proxy.toUrl()).encode('utf-8')
-#         except:
-#             _logger.exception("Error in RequestHandler.getUrls(self)")

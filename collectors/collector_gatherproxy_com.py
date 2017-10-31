@@ -1,33 +1,36 @@
 from collectors.pages_collector import PagesCollector
 
 import async_requests
-import lxml.html
-import lxml.etree
 import re
-import base64
+
+from lxml import etree
+from lxml import html
+
 
 class Collector(PagesCollector):
     def __init__(self):
         self.pages_count = 57
 
-    async def processPage(self, page_index):
+    async def process_page(self, page_index):
         result = []
-        formData = {
+        form_data = {
             'Type': 'elite',
             'PageIdx': page_index + 1,
             'Uptime': 0
         }
-        res = await async_requests.post('http://www.gatherproxy.com/proxylist/anonymity/?t=Elite', data=formData)
-        html = res.text
-        tree = lxml.html.fromstring(html)
-        tableElement = \
+        res = await async_requests.post('http://www.gatherproxy.com/proxylist/anonymity/?t=Elite', data=form_data)
+        html_res = res.text
+        tree = html.fromstring(html_res)
+        table_element = \
             tree.xpath(".//table[@id='tblproxy']")[0]
-        tableText = lxml.etree.tostring(tableElement).decode()
-        matches = re.findall(r"document\.write\('([0-9\.]+)'\).+?document\.write\(gp\.dep\('(.+?)'\)\)", tableText, re.DOTALL)
+        table_text = etree.tostring(table_element).decode()
+        matches = re.findall(r"document\.write\('([0-9.]+)'\).+?document\.write\(gp\.dep\('(.+?)'\)\)",
+                             table_text, re.DOTALL)
+
         for m in matches:
             ip = m[0]
-            cryptedPort = m[1]
-            port = int(cryptedPort, 16)
+            crypted_port = m[1]
+            port = int(crypted_port, 16)
             proxy = "{0}:{1}".format(ip, port)
             result.append(proxy)
 

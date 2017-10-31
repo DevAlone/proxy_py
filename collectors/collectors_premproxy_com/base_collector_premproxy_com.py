@@ -4,12 +4,13 @@ import requests
 import lxml.html
 import lxml.etree
 
-class BaseCollectorPremProxyCom(PagesCollector):
-    def __init__(self, url, pagesCount):
-        self.url = url
-        self.pages_count = pagesCount
 
-    async def processPage(self, page_index):
+class BaseCollectorPremProxyCom(PagesCollector):
+    def __init__(self, url, pages_count):
+        self.url = url
+        self.pages_count = pages_count
+
+    async def process_page(self, page_index):
         result = []
         if page_index > 0:
             self.url += '{0}.htm'.format(page_index + 1)

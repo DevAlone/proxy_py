@@ -4,6 +4,7 @@ import async_requests
 import json
 import datetime
 
+
 class Collector(AbstractCollector):
     def __init__(self):
         self.processing_period = 3600 * 12

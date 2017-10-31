@@ -11,10 +11,16 @@ import logging
 
 
 # TODO: add ipv6 addresses
-PROXY_VALIDATE_REGEX = r"^((?P<protocol>(http|socks4|socks5))://)?((?P<auth_data>[a-zA-Z0-9_\.]+:[a-zA-Z0-9_\.]+)@)?(?P<domain>([0-9]{1,3}\.){3}[0-9]{1,3}|([a-zA-Z0-9_]+\.)+[a-zA-Z]+):(?P<port>[0-9]{1,5})/?$"
-# main class which collects proxies from collectors
-# checks them and saves in database
-class Processor():
+PROXY_VALIDATE_REGEX = r"^((?P<protocol>(http|socks4|socks5))://)?" \
+                       r"((?P<auth_data>[a-zA-Z0-9_\.]+:[a-zA-Z0-9_\.]+)@)?" \
+                       r"(?P<domain>([0-9]{1,3}\.){3}[0-9]{1,3}|([a-zA-Z0-9_]+\.)+[a-zA-Z]+):(?P<port>[0-9]{1,5})/?$"
+
+
+class Processor:
+    """
+    main class which collects proxies from collectors, checks them and saves in database
+    """
+
     def __init__(self):
         self.collectors = {}
         self.logger = logging.getLogger('proxy_py/processor')
@@ -35,7 +41,7 @@ class Processor():
 
         self.logger.debug('processor initialization...')
 
-    async def exec(self, killer, loop : asyncio.BaseEventLoop):
+    async def exec(self, killer):
         while not killer.kill:
             try:
                 tasks = []
@@ -52,19 +58,15 @@ class Processor():
                         tasks.append(asyncio.ensure_future(self._process_proxy(proxy)))
                         if len(tasks) > 500:
                             await asyncio.wait(tasks)
-                            # loop.run_until_complete(asyncio.wait(tasks))
                             tasks.clear()
 
                 if len(tasks) > 0:
                     await asyncio.wait(tasks)
-                    # loop.run_until_complete(asyncio.wait(tasks))
                     tasks.clear()
             except KeyboardInterrupt as ex:
                 raise ex
             except Exception as ex:
                 self.logger.exception(ex)
-            except:
-                self.logger.error("some shit happened")
 
     async def _process_collector(self, collector):
         try:
@@ -78,10 +80,8 @@ class Processor():
         except Exception as ex:
             self.logger.error("Error in collector")
             self.logger.exception(ex)
-        except:
-            self.logger.error("some shit happened")
 
-    async def _process_proxy(self, proxy : Proxy):
+    async def _process_proxy(self, proxy: Proxy):
         try:
             self.logger.debug('start processing proxy {0}'.format(proxy.to_url()))
             check_result = await proxy_utils.check_proxy(proxy)
@@ -107,14 +107,12 @@ class Processor():
         except Exception as ex:
             self.logger.error("Error during processing proxy")
             self.logger.exception(ex)
-        except:
-            self.logger.error("some shit happened")
 
     def add_collector_of_type(self, CollectorType):
         if CollectorType not in self.collectors:
             self.collectors[CollectorType] = CollectorType()
 
-    def add_proxy(self, protocol : str, domain : str, port : int, auth_data : str = None):
+    def add_proxy(self, protocol: str, domain: str, port: int, auth_data: str = None):
         try:
             protocol = Proxy.PROTOCOLS.index(protocol)
         except ValueError:

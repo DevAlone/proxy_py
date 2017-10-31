@@ -4,16 +4,18 @@
 
 import asyncio
 
+# TODO: change it
 import init_django
 from proxy_py import settings
 from processor import Processor
 from server.proxy_provider_server import ProxyProviderServer
-from program_killer import ProgrammKiller
+from program_killer import ProgramKiller
 import collectors_list
 
 proxies = []
 
-killer = ProgrammKiller()
+killer = ProgramKiller()
+
 
 # TODO: fix closing of program when it's waiting for finish coroutines
 if __name__ == "__main__":
@@ -31,7 +33,7 @@ if __name__ == "__main__":
     loop.run_until_complete(proxy_provider_server.start(loop))
 
     try:
-        loop.run_until_complete(proxy_processor.exec(killer, loop))
+        loop.run_until_complete(proxy_processor.exec(killer))
         # proxy_processor.exec(killer, loop)
     except Exception as ex:
         print("Some shit happened: {}".format(ex))

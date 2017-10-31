@@ -1,15 +1,16 @@
 import signal
 
-class ProgrammKiller:
+
+class ProgramKiller:
     kill = False
     killingAttempts = 0
-    def __init__(self):
-        signal.signal(signal.SIGINT, self.setKillFlag)
-        signal.signal(signal.SIGTERM, self.setKillFlag)
 
-    def setKillFlag(self, signum, frame):
+    def __init__(self):
+        signal.signal(signal.SIGINT, self.set_kill_flag)
+        signal.signal(signal.SIGTERM, self.set_kill_flag)
+
+    def set_kill_flag(self, signum, frame):
         self.kill = True
-        exit(1)
-        # self.killingAttempts += 1
-        # if self.killingAttempts >= 3:
-        #     exit(1)
+        self.killingAttempts += 1
+        if self.killingAttempts >= 2:
+            exit(1)

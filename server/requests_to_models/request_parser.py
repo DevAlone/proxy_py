@@ -1,10 +1,7 @@
-# TODO: limit user's input
-# TODO: limit items to process
-
 import string
 import copy
-
 import re
+
 
 class RequestParser:
     ALLOWED_CHARS = string.ascii_letters + string.digits + "/: !=><,-*"
@@ -17,14 +14,14 @@ class RequestParser:
         self.config = config
         self._validate_config()
 
-    def parse(self, request : dict):
+    def parse(self, request: dict):
         for key in request.keys():
             request[key] = str(request[key])
             if key in self.COMMA_SEPARATED_KEYS:
                 request[key] = self._comma_separated_field_to_list(request[key])
             self._validate_key_value(key, request[key])
 
-        return self._parseDict(request)
+        return self._parse_dict(request)
 
     def _validate_key_value(self, key, value):
         self._validate_key(key)
@@ -67,21 +64,21 @@ class RequestParser:
         if key not in self.ALLOWED_KEYS:
             raise ValidationError("Key '{}' isn't allowed".format(key))
 
-    def _comma_separated_field_to_list(self, stringField):
+    def _comma_separated_field_to_list(self, string_field):
         result = []
-        for val in stringField.split(','):
+        for val in string_field.split(','):
             val = val.strip()
             if val:
                 result.append(val)
         return result
 
-    def _parseDict(self, req_dict):
+    def _parse_dict(self, req_dict):
         self.result_request = {}
         if 'model' not in req_dict:
             raise ParseError("You should specify 'model'")
 
         if req_dict['model'] not in self.config:
-            raise  ParseError("Model doesn't exist or isn't allowed")
+            raise ParseError("Model doesn't exist or isn't allowed")
 
         config = self.config[req_dict['model']]
 

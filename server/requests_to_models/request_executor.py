@@ -1,5 +1,6 @@
 import importlib
 
+
 class RequestExecutor:
     def execute(self, request):
         try:
@@ -12,8 +13,8 @@ class RequestExecutor:
             raise ExecutionError()
 
     def _get(self, request):
-        Package = importlib.import_module(request['ClassName'][0])
-        Class = getattr(Package, request['ClassName'][1])
+        package = importlib.import_module(request['ClassName'][0])
+        Class = getattr(package, request['ClassName'][1])
 
         # TODO: remove bad_proxy
         queryset = Class.objects.filter(bad_proxy=False)

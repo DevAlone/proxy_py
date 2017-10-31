@@ -1,8 +1,5 @@
 from django.db import models
-import re
 
-PROXY_VALIDATE_REGEX = \
-r'^(?P<protocol>[a-z0-9]+)://((?P<login>[a-zA-Z0-9_\.]+):(?P<password>[a-zA-Z0-9_\.]+)@)?(?P<domain>([a-z0-9_]+\.)+[a-z0-9_]+):(?P<port>[0-9]{1,5})/?$'
 
 class Proxy(models.Model):
     PROTOCOLS = (
@@ -25,19 +22,16 @@ class Proxy(models.Model):
     bad_proxy = models.BooleanField(default=False)
     uptime = models.BigIntegerField(default=0)
 
-
     @property
     def address(self):
         return self.to_url()
 
-
     @property
     def protocol(self):
-        return self.PROTOCOLS[self._protocol]
-
+        return self.PROTOCOLS[int(self._protocol)]
 
     def to_url(self, protocol=None):
-        address = protocol if protocol is not None else self.PROTOCOLS[self._protocol]
+        address = protocol if protocol is not None else self.PROTOCOLS[int(self._protocol)]
         address += "://"
         if self.auth_data:
             address += self.auth_data + "@"
@@ -46,10 +40,8 @@ class Proxy(models.Model):
 
         return address
 
-
     def get_protocol(self):
-        return self.PROTOCOLS[self._protocol]
-
+        return self.PROTOCOLS[int(self._protocol)]
 
     class Meta:
         indexes = [
@@ -67,7 +59,6 @@ class Proxy(models.Model):
         unique_together = (
             ("_protocol", "auth_data", "domain", "port")
         )
-
 
     def __str__(self):
         return self.to_url()
