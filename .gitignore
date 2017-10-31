@@ -1,12 +1,8 @@
-api.py
 .ropeproject
 __init__.py
 __pycache__
 .idea/
 db.sqlite3*
-processor.log*
-pages_collector_debug_log
 *.swp
-settings.py
+proxy_py/settings.py
 migrations
-logs
