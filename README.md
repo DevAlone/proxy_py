@@ -2,16 +2,6 @@
 
 proxy_py is a program which collects proxies, saves them in database and makes periodically checks. It has server for getting proxies with nice API(see below). 
 
-## What is it depend on?
-
-```
-lxml
-pysocks
-django
-aiohttp
-aiosocks
-```
-
 ## How to build?
 
 1 Clone this repository
@@ -62,9 +52,7 @@ It will return json response like this:
 	'status': 'ok',
 	'count': 1,
 	'last_page': True,
-	'data': [
-		{
-			# proxy data
+	'data': [{
 			"address": "http://127.0.0.1:8080",
 			"auth_data": null,
 			"bad_proxy": false,
@@ -177,14 +165,14 @@ DATABASES = {
 5 Copy supervisor config example and change it for your case
 
 ```
-root@server:~$ cp config_examples/proxy_py.supervisor.conf /etc/supervisor/conf.d/proxy_py.conf
+root@server:~$ cp /home/proxy_py/proxy_py/config_examples/proxy_py.supervisor.conf /etc/supervisor/conf.d/proxy_py.conf
 root@server:~$ vim /etc/supervisor/conf.d/proxy_py.conf
 ```
 
 6 Copy nginx config example, enable it and change if you need
 
 ```
-root@server:~$ cp config_examples/proxy_py.nginx.conf /etc/nginx/sites-available/proxy_py
+root@server:~$ cp /home/proxy_py/proxy_py/config_examples/proxy_py.nginx.conf /etc/nginx/sites-available/proxy_py
 root@server:~$ ln -s /etc/nginx/sites-available/proxy_py /etc/nginx/sites-enabled/
 root@server:~$ vim /etc/nginx/sites-available/proxy_py
 ```
@@ -199,3 +187,13 @@ root@server:~$ /etc/init.d/nginx restart
 ```
 
 8 Enjoy using it on your server!
+
+## What is it depend on?
+
+```
+lxml
+pysocks
+django
+aiohttp
+aiosocks
+```
