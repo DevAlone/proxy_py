@@ -31,13 +31,15 @@ class Processor:
         warning_file_handler.setLevel(logging.WARNING)
         info_file_handler = logging.FileHandler('processor.log')
         info_file_handler.setLevel(logging.INFO)
-        debug_file_handler = logging.FileHandler('logs/processor.debug.log')
-        debug_file_handler.setLevel(logging.DEBUG)
+        if settings.DEBUG:
+            debug_file_handler = logging.FileHandler('logs/processor.debug.log')
+            debug_file_handler.setLevel(logging.DEBUG)
 
         self.logger.addHandler(error_file_handler)
         self.logger.addHandler(warning_file_handler)
         self.logger.addHandler(info_file_handler)
-        self.logger.addHandler(debug_file_handler)
+        if settings.DEBUG:
+            self.logger.addHandler(debug_file_handler)
 
         self.logger.debug('processor initialization...')
 
