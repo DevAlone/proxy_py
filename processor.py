@@ -145,7 +145,7 @@ class Processor:
         if CollectorType not in self.collectors:
             self.collectors[CollectorType] = CollectorType()
 
-    def add_proxy(self, protocol: str, domain: str, port: int, auth_data: str = ""):
+    def add_proxy(self, protocol: str, domain: str, port: int, auth_data: str = "", response_time=None):
         if auth_data is None:
             auth_data = ""
 
@@ -161,6 +161,7 @@ class Processor:
             proxy.domain = domain
             proxy.port = port
             proxy.auth_data = auth_data
+            proxy.response_time = response_time
 
             proxy.uptime = int(time.time())
             proxy.last_check_time = int(time.time())
@@ -208,11 +209,14 @@ class Processor:
 
         raw_proxy += "{}:{}".format(domain, port)
 
+        start_checking_time = time.time()
         protocols = await proxy_utils.detect_raw_proxy_protocols(raw_proxy)
+        end_checking_time = time.time()
+        response_time = int(round((end_checking_time - start_checking_time) * 1000000))
 
         if len(protocols) > 0:
             for p in protocols:
-                self.add_proxy(p, domain, port, auth_data)
+                self.add_proxy(p, domain, port, auth_data, response_time)
         else:
             self.logger.debug('unable to determine protocol of raw proxy {0}'.format(raw_proxy))
 
