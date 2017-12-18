@@ -99,10 +99,9 @@ class ProxyProviderServer:
 
             current_timestamp = int(time.time())
             proxies = session.query(Proxy)\
-                .filter(Proxy.response_time != None)\
                 .filter(Proxy.number_of_bad_checks == 0)\
                 .order_by(Proxy.response_time)
-            
+
             i = 0
             for proxy in proxies:
                 html += "<tr>"
