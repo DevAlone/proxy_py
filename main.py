@@ -5,7 +5,6 @@
 import asyncio
 
 # TODO: change it
-import init_django
 from proxy_py import settings
 from processor import Processor
 from server.proxy_provider_server import ProxyProviderServer
@@ -36,4 +35,5 @@ if __name__ == "__main__":
         loop.run_until_complete(proxy_processor.exec(killer))
         # proxy_processor.exec(killer, loop)
     except Exception as ex:
+        raise ex; exit(1)
         print("Some shit happened: {}".format(ex))

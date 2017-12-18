@@ -17,7 +17,7 @@ class RequestExecutor:
         Class = getattr(package, request['ClassName'][1])
 
         # TODO: remove bad_proxy
-        queryset = Class.objects.filter(bad_proxy=False)
+        queryset = Class.objects.all()  # .filter(bad_proxy=False)
         result = []
 
         for item in queryset:

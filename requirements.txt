@@ -1,5 +1,6 @@
 lxml
 pysocks
-django
 aiohttp
 aiosocks
+sqlalchemy
+alembic
