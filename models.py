@@ -33,7 +33,7 @@ class Proxy(Base):
     number_of_bad_checks = Column(SmallInteger, default=0)
     uptime = Column(Integer, nullable=True, default=None)
     # in microseconds
-    response_time = Column(SmallInteger, nullable=True, default=None)
+    response_time = Column(Integer, nullable=True, default=None)
 
     @property
     def address(self):
