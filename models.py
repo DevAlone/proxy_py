@@ -6,7 +6,7 @@ from sqlalchemy import Column, Integer, String, SmallInteger, BigInteger, Unique
 from sqlalchemy.orm import sessionmaker
 
 
-engine = create_engine(settings.DATABASE_CONNECTION, connect_args={'timeout': 10000})
+engine = create_engine(*settings.DATABASE_CONNECTION_ARGS, **settings.DATABASE_CONNECTION_KWARGS)
 Base = declarative_base()
 Session = sessionmaker(bind=engine)
 

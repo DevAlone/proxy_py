@@ -1,6 +1,10 @@
 import os
 
-DATABASE_CONNECTION = 'sqlite:///db.sqlite3'
+DATABASE_CONNECTION_ARGS = (
+    'sqlite:///db.sqlite3',
+)
+
+DATABASE_CONNECTION_KWARGS = {}
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
