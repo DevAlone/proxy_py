@@ -1,3 +1,4 @@
+from models import session
 import importlib
 
 
@@ -17,7 +18,8 @@ class RequestExecutor:
         Class = getattr(package, request['ClassName'][1])
 
         # TODO: remove bad_proxy
-        queryset = Class.objects.all()  # .filter(bad_proxy=False)
+
+        queryset = session.query(Class).filter(Class.number_of_bad_checks == 0)
         result = []
 
         for item in queryset:

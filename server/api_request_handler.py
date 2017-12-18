@@ -36,6 +36,7 @@ class ApiRequestHandler:
                     post_data,
                     ex)
             )
+            raise ex
 
             response = {
                 'status': 'error',

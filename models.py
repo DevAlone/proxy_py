@@ -24,10 +24,10 @@ class Proxy(Base):
     )
 
     id = Column(Integer, primary_key=True)
-    _protocol = Column(SmallInteger)
-    domain = Column(String(128))
-    port = Column(Integer)
-    auth_data = Column(String(64), default="")
+    _protocol = Column(SmallInteger, nullable=False)
+    domain = Column(String(128), nullable=False)
+    port = Column(Integer, nullable=False)
+    auth_data = Column(String(64), default="", nullable=False)
 
     last_check_time = Column(Integer, default=0)
     number_of_bad_checks = Column(SmallInteger, default=0)

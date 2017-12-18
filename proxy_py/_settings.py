@@ -60,13 +60,13 @@ PROXY_PROVIDER_SERVER_ADDRESS = {
 
 PROXY_PROVIDER_SERVER_API_CONFIG = {
     'proxy': {
-        'modelClass': ('core.models', 'Proxy'),
+        'modelClass': ('models', 'Proxy'),
         'methods': {
             'get': {
-                'fields': ['address', 'protocol', 'auth_data', 'domain', 'port', 'white_ip_v4', 'white_ip_v6',
-                           'last_check_time', 'number_of_bad_checks', 'bad_proxy', 'uptime'],
-                'filterFields': ['white_ip_v4', 'white_ip_v6', 'last_check_time', 'protocol', 'number_of_bad_checks',
-                                 'bad_proxy', 'uptime'],
+                'fields': ['address', 'protocol', 'auth_data', 'domain', 'port', 'last_check_time',
+                           'number_of_bad_checks', 'bad_proxy', 'uptime', 'response_time'],
+                'filterFields': ['last_check_time', 'protocol', 'number_of_bad_checks', 'bad_proxy', 'uptime',
+                                 'response_time'],
                 'orderFields': ['last_check_time', 'number_of_bad_checks', 'uptime'],
             }
         }

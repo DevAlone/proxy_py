@@ -58,6 +58,7 @@ class ProxyProviderServer:
             data = await request.json()
             response = _api_request_handler.handle(client_address, data)
         except:
+            raise
             response = {
                 'status': "error",
                 'error': "Your request doesn't look like request",
