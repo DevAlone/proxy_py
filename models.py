@@ -30,7 +30,7 @@ class Proxy(Base):
     auth_data = Column(String(64), default="", nullable=False)
 
     last_check_time = Column(Integer, default=0)
-    number_of_bad_checks = Column(SmallInteger, default=0)
+    number_of_bad_checks = Column(Integer, default=0)
     uptime = Column(Integer, nullable=True, default=None)
     # in microseconds
     response_time = Column(Integer, nullable=True, default=None)
