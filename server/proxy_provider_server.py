@@ -98,8 +98,13 @@ class ProxyProviderServer:
             html += "<tbody>"
 
             current_timestamp = int(time.time())
+            proxies = session.query(Proxy)\
+                .filter(Proxy.response_time != None)\
+                .filter(Proxy.number_of_bad_checks == 0)\
+                .order_by(Proxy.response_time)
+            
             i = 0
-            for proxy in session.query(Proxy).filter(Proxy.response_time != None).order_by(Proxy.response_time):
+            for proxy in proxies:
                 html += "<tr>"
                 html += "<td>{}</td>".format(proxy.address)
                 html += "<td>{}ms</td>".format(proxy.response_time / 1000 if proxy.response_time is not None else None)
