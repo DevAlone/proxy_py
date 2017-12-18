@@ -98,11 +98,18 @@ class Processor:
                 proxy.number_of_bad_checks += 1
                 proxy.uptime = time.time()
 
-            if proxy.number_of_bad_checks > 3:
-                proxy.bad_proxy = True
-                self.logger.debug('removing proxy {0}...'.format(proxy.to_url()))
-
             proxy.last_check_time = int(time.time())
+
+            # TODO: move to settings
+            if proxy.number_of_bad_checks > 3:
+                self.logger.debug('removing proxy {0}...'.format(proxy.to_url()))
+                proxy.bad_proxy = True
+                if proxy.number_of_bad_checks > 500:
+                    self.logger.debug('removing proxy {0} permanently...'.format(proxy.to_url()))
+                    proxy.delete()
+                    return
+
+
             proxy.save()
         except KeyboardInterrupt as ex:
             raise ex
