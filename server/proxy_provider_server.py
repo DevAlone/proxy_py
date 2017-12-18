@@ -68,7 +68,9 @@ class ProxyProviderServer:
 
     async def get_proxies_html(self, request):
         try:
-            html="""<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Go away!</title>"""
+            html="""<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="robots" content="noindex">
+            <title>Go away!</title>"""
+            
             html += """
             <style>
             #proxy_table {
