@@ -1,5 +1,4 @@
 import sqlalchemy
-from websocket._http import proxy_info
 
 from proxy_py import settings
 from models import Proxy
