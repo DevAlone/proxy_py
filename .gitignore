@@ -9,3 +9,4 @@ migrations
 logs/*
 alembic.ini
 alembic
+env/
