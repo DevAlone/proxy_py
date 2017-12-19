@@ -1,6 +1,6 @@
 from collectors.pages_collector import PagesCollector
+import async_requests
 
-import requests
 import lxml.html
 import lxml.etree
 
@@ -15,7 +15,7 @@ class BaseCollectorPremProxyCom(PagesCollector):
         if page_index > 0:
             self.url += '{0}.htm'.format(page_index + 1)
 
-        html = requests.get(url=self.url).text
+        html = await async_requests.get(url=self.url).text
         tree = lxml.html.fromstring(html)
         elements = \
             tree.xpath(".//td[starts-with(@data-label, 'IP:port')]")
