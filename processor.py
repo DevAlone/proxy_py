@@ -133,7 +133,7 @@ class Processor:
             except:
                 raise
             finally:
-                proxy.last_check_time = time.time()
+                proxy.last_check_time = int(time.time())
                 session.commit()
 
             if check_result:
@@ -251,6 +251,7 @@ class Processor:
                 proxy = _proxy[0]
                 start_checking_time = _proxy[1]
                 end_checking_time = _proxy[2]
+                proxy.last_check_time = int(time.time())
 
                 self.create_or_update_proxy(
                     proxy._protocol,
