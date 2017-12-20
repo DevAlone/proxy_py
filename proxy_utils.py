@@ -18,13 +18,15 @@ async def check_proxy(proxy):
         )
         if res.status == 200 and res.text == "OK":
             return True
+
     except (asyncio.TimeoutError,
-                    aiohttp.client_exceptions.ServerDisconnectedError,
-                    aiohttp.client_exceptions.ClientOSError,
-                    aiosocks.errors.SocksError,
-                    aiohttp.client_exceptions.ClientResponseError,
-                    ssl.SSLError,
-                    ConnectionRefusedError):
+            aiohttp.client_exceptions.ServerDisconnectedError,
+            aiohttp.client_exceptions.ClientOSError,
+            aiohttp.ClientProxyConnectionError,
+            aiosocks.errors.SocksError,
+            aiohttp.client_exceptions.ClientResponseError,
+            ssl.SSLError,
+            ConnectionRefusedError):
         return False
     return False
 
@@ -62,6 +64,7 @@ async def detect_raw_proxy_protocols(raw_proxy):
         except (asyncio.TimeoutError,
                         aiohttp.client_exceptions.ServerDisconnectedError,
                         aiohttp.client_exceptions.ClientOSError,
+                        aiohttp.ClientProxyConnectionError,
                         aiosocks.errors.SocksError,
                         aiohttp.client_exceptions.ClientResponseError,
                         ssl.SSLError,

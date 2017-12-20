@@ -1,4 +1,5 @@
 import sqlalchemy
+import sqlalchemy.exc
 
 from proxy_py import settings
 from models import Proxy
@@ -137,7 +138,7 @@ class Processor:
             if check_result:
                 self.logger.debug('proxy {0} works'.format(proxy.to_url()))
                 proxy.number_of_bad_checks = 0
-                if proxy.bad_proxy or proxy.uptime == 0:
+                if proxy.bad_proxy or proxy.uptime is None or proxy.uptime == 0:
                     proxy.uptime = int(time.time())
             else:
                 proxy.number_of_bad_checks += 1
@@ -187,6 +188,7 @@ class Processor:
             session.commit()
         except sqlalchemy.exc.IntegrityError:
             session.rollback()
+            # TODO: check proxy
             self.logger.debug('proxy {} {} {} {} already exists'.format(protocol, domain, port, auth_data))
         except BaseException as ex:
             self.logger.exception(ex)
@@ -212,7 +214,7 @@ class Processor:
         proxies = session.query(Proxy).filter_by(domain=domain, port=port, auth_data=auth_data).count()
 
         if proxies > 0:
-            # TODO: remove?
+            # TODO: check for working
             self.logger.debug('proxy with domain {}, port {} and auth_data {} already exists'.format(
                 domain, port, auth_data
             ))

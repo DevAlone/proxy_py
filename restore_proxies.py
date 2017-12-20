@@ -26,7 +26,7 @@ if  __name__ == "__main__":
                 proxy.domain = json_proxy['domain']
                 proxy.port = json_proxy['port']
                 proxy.last_check_time = last_check_time
-                proxy.last_check_time += 1
+                last_check_time += 1
                 proxy.number_of_bad_checks = settings.REMOVE_ON_N_BAD_CHECKS - 5
                 session.add(proxy)
                 session.commit()
