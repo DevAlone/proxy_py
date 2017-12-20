@@ -59,12 +59,14 @@ class Processor:
     async def exec(self, killer):
         while not killer.kill:
             await asyncio.sleep(0.1)
+            print("main loop")
             try:
                 tasks = []
-                for collector in list(self.collectors.values()):
-                    if time.time() >= collector.last_processing_time + collector.processing_period:
-                        collector.last_processing_time = int(time.time())
-                        tasks.append(asyncio.ensure_future(self._process_collector(collector)))
+                # TODO: save collectors' state in database
+                # for collector in list(self.collectors.values()):
+                #     if time.time() >= collector.last_processing_time + collector.processing_period:
+                #         collector.last_processing_time = int(time.time())
+                #         tasks.append(asyncio.ensure_future(self._process_collector(collector)))
 
                 if len(tasks) > 0:
                     await asyncio.wait(tasks)
@@ -72,14 +74,29 @@ class Processor:
 
                 # check proxies
 
-                for proxy in session.query(Proxy).all():
-                    if time.time() >= proxy.last_check_time + \
-                            (settings.BAD_PROXY_CHECKING_PERIOD if proxy.bad_proxy else settings.PROXY_CHECKING_PERIOD):
-                        proxy.last_check_time = time.time()
-                        tasks.append(asyncio.ensure_future(self._process_proxy(proxy)))
-                        if len(tasks) > 500:
-                            await asyncio.wait(tasks)
-                            tasks.clear()
+                # check good proxies
+                for proxy in session.query(Proxy)\
+                                .filter(Proxy.number_of_bad_checks == 0)\
+                                .filter(Proxy.last_check_time < time.time() - settings.PROXY_CHECKING_PERIOD):
+                    print("good proxies")
+                    proxy.last_check_time = time.time()
+                    session.commit()
+                    tasks.append(asyncio.ensure_future(self._process_proxy(proxy)))
+                    if len(tasks) > 500:
+                        await asyncio.wait(tasks)
+                        tasks.clear()
+
+                # check bad proxies
+                for proxy in session.query(Proxy)\
+                                .filter(Proxy.number_of_bad_checks != 0)\
+                                .filter(Proxy.last_check_time < time.time() - settings.BAD_PROXY_CHECKING_PERIOD):
+                    print("bad proxies")
+                    proxy.last_check_time = time.time()
+                    session.commit()
+                    tasks.append(asyncio.ensure_future(self._process_proxy(proxy)))
+                    if len(tasks) > 500:
+                        await asyncio.wait(tasks)
+                        tasks.clear()
 
                 if len(tasks) > 0:
                     await asyncio.wait(tasks)
@@ -89,7 +106,7 @@ class Processor:
                 raise ex;
             except Exception as ex:
                 self.logger.exception(ex)
-                exit(1)
+                await asyncio.sleep(1)
 
     async def _process_collector(self, collector):
         try:
@@ -173,8 +190,6 @@ class Processor:
             self.logger.debug('proxy {} {} {} {} already exists'.format(protocol, domain, port, auth_data))
         except Exception as ex:
             self.logger.exception(ex)
-            print('aaaaaaaaaa')
-            exit(2)
 
     # TODO: add proxy with domains
     # TODO: add proxy with authorization
