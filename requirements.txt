@@ -4,3 +4,4 @@ alembic==0.9.6
 lxml==3.8.0
 PySocks==1.6.7
 SQLAlchemy==1.1.15
+fake-useragent

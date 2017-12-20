@@ -1,6 +1,7 @@
 import aiohttp
 import json
 from aiosocks.connector import ProxyConnector, ProxyClientRequest
+from fake_useragent import UserAgent
 
 
 async def get(url, **kwargs):
@@ -29,6 +30,12 @@ async def request(method, url, **kwargs):
     if 'timeout' not in kwargs:
         kwargs['timeout'] = 10
 
+    # headers={'User-Agent': get_random_user_agent()}
+    if 'headers' not in kwargs:
+        kwargs['headers'] = {'User-Agent': get_random_user_agent()}
+    elif 'User-Agent' not in kwargs['headers']:
+            kwargs['headers']['User-Agent'] = get_random_user_agent()
+
     async with aiohttp.ClientSession(**session_kwargs) as session:
         async with session.request(method, url, **kwargs) as response:
             status = response.status
@@ -48,3 +55,7 @@ class Response:
         })
 
     __repr__ = __str__
+
+
+def get_random_user_agent():
+    return UserAgent().random

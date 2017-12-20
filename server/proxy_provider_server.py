@@ -111,15 +111,15 @@ class ProxyProviderServer:
                 html += "<td>{}ms</td>".format(proxy.response_time / 1000 if proxy.response_time is not None else None)
                 html += """<td id="proxy_{}_uptime">{}</td>""".format(i,
                                                     datetime.timedelta(seconds=int(current_timestamp - proxy.uptime)))
-                html += "<td>{}</td>".format(proxy.last_check_time)
+                html += """<td id="proxy_{}_last_check_time">{}</td>""".format(i, proxy.last_check_time)
                 html += "<td>{}</td>".format(proxy.number_of_bad_checks)
                 html += "<td>{}</td>".format(proxy.bad_proxy)
                 html += "</tr>"
-                # html += """
-                # <script>
-                # proxy_{}_uptime.textContent = new Date({});
-                # </script>
-                # """.format(i, proxy.uptime * 1000)
+                html += """
+                <script>
+                proxy_{}_last_check_time.textContent = new Date({});
+                </script>
+                """.format(i, proxy.last_check_time * 1000)
                 i += 1
 
             html += "<tbody>"

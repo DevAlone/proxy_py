@@ -42,7 +42,7 @@ async def detect_raw_proxy_protocols(raw_proxy):
             res = await async_requests.get(
                 'https://pikagraphs.d3d.info/OK/',
                 proxy="{}://{}".format(protocol, raw_proxy),
-                timeout=TIMEOUT,
+                timeout=settings.PROXY_CHECKING_TIMEOUT,
                 headers={'User-Agent': get_random_user_agent()},
             )
 
@@ -53,8 +53,3 @@ async def detect_raw_proxy_protocols(raw_proxy):
             pass
 
     return result
-
-
-def get_random_user_agent():
-    # TODO: do it
-    return 'Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:55.0) Gecko/20100101 Firefox/55.0'
