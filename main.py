@@ -13,7 +13,7 @@ import collectors_list
 
 proxies = []
 
-killer = ProgramKiller()
+# killer = ProgramKiller()
 
 
 # TODO: fix closing of program when it's waiting for finish coroutines
@@ -30,10 +30,4 @@ if __name__ == "__main__":
 
     loop = asyncio.get_event_loop()
     loop.run_until_complete(proxy_provider_server.start(loop))
-
-    try:
-        loop.run_until_complete(proxy_processor.exec(killer))
-        # proxy_processor.exec(killer, loop)
-    except Exception as ex:
-        raise ex; exit(1)
-        print("Some shit happened: {}".format(ex))
+    loop.run_until_complete(proxy_processor.exec())

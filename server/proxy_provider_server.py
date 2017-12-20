@@ -98,6 +98,7 @@ class ProxyProviderServer:
             html += "<td>response_time</td>"
             html += "<td>uptime</td>"
             html += "<td>last_check_time</td>"
+            html += "<td>checking_period</td>"
             html += "<td>number_of_bad_checks</td>"
             html += "<td>bad_proxy</td>"
 
@@ -119,6 +120,7 @@ class ProxyProviderServer:
                 html += """<td id="proxy_{}_uptime">{}</td>""".format(i,
                                                     datetime.timedelta(seconds=int(current_timestamp - proxy.uptime)))
                 html += """<td id="proxy_{}_last_check_time">{}</td>""".format(i, proxy.last_check_time)
+                html += "<td>{}</td>".format(proxy.checking_period)
                 html += "<td>{}</td>".format(proxy.number_of_bad_checks)
                 html += "<td>{}</td>".format(proxy.bad_proxy)
                 html += "</tr>"

@@ -3,7 +3,9 @@ import ssl
 
 import aiohttp
 import aiosocks
+import time
 
+from models import Proxy
 from proxy_py import settings
 import async_requests
 
@@ -26,49 +28,21 @@ async def check_proxy(proxy):
             aiosocks.errors.SocksError,
             aiohttp.client_exceptions.ClientResponseError,
             ssl.SSLError,
-            ConnectionRefusedError):
+            ConnectionError):
         return False
-    return False
+    except:
+        raise
 
 
-async def detect_raw_proxy_protocols(raw_proxy):
-    """
-    method gets proxy in any of the supported formats
-    and return proxy protocols
-    supported raw proxy formats:
-    ip:port
-    domain:port
-    user:pass@ip:port
-    user:pass@domain:port
+async def get_working_proxies(domain, port, auth_data=""):
+    proxies = []
 
-    :param raw_proxy:
-    :return:
-    """
+    for protocol in Proxy.PROTOCOLS:
+        proxy = Proxy(protocol=protocol, domain=domain, port=port, auth_data=auth_data)
 
-    result = []
+        start_checking_time = time.time()
+        if await check_proxy(proxy):
+            end_checking_time = time.time()
+            proxies.append((proxy, start_checking_time, end_checking_time))
 
-    protocols = ['http', 'socks5', 'socks4']
-
-    for protocol in protocols:
-        # TODO: add other test sites
-        try:
-            res = await async_requests.get(
-                'https://pikagraphs.d3d.info/OK/',
-                proxy="{}://{}".format(protocol, raw_proxy),
-                timeout=settings.PROXY_CHECKING_TIMEOUT
-            )
-
-            if res.status == 200 and res.text == "OK":
-                result.append(protocol)
-
-        except (asyncio.TimeoutError,
-                        aiohttp.client_exceptions.ServerDisconnectedError,
-                        aiohttp.client_exceptions.ClientOSError,
-                        aiohttp.ClientProxyConnectionError,
-                        aiosocks.errors.SocksError,
-                        aiohttp.client_exceptions.ClientResponseError,
-                        ssl.SSLError,
-                        ConnectionRefusedError):
-                pass
-
-    return result
+    return proxies

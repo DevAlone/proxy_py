@@ -1,5 +1,5 @@
-aiohttp==2.3.1
-aiosocks==0.2.4
+aiohttp==2.3.2
+aiosocks==0.2.5
 alembic==0.9.6
 lxml==3.8.0
 PySocks==1.6.7

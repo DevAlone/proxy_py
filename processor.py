@@ -1,6 +1,7 @@
 import sqlalchemy
 import sqlalchemy.exc
 
+from async_pool import AsyncPool
 from proxy_py import settings
 from models import Proxy
 from models import session
@@ -57,51 +58,46 @@ class Processor:
 
         self.logger.debug('processor initialization...')
 
-    async def exec(self, killer):
-        while not killer.kill:
+    async def exec(self):
+        pool = AsyncPool(settings.CONCURRENT_TASKS_COUNT)
+
+        while True:
             await asyncio.sleep(0.1)
             print("main loop")
             try:
-                tasks = []
                 # TODO: save collectors' state in database
                 for collector in list(self.collectors.values()):
                     if time.time() >= collector.last_processing_time + collector.processing_period:
                         collector.last_processing_time = int(time.time())
-                        tasks.append(asyncio.ensure_future(self._process_collector(collector)))
+                        await pool.add_task(self._process_collector(collector))
 
-                if len(tasks) > 0:
-                    await asyncio.wait(tasks)
-                    tasks.clear()
+                await pool.wait()
 
                 # check proxies
 
                 # check good proxies
                 for proxy in session.query(Proxy)\
                                 .filter(Proxy.number_of_bad_checks == 0)\
-                                .filter(Proxy.last_check_time < time.time() - settings.PROXY_CHECKING_PERIOD):
+                                .filter(Proxy.last_check_time < time.time() - Proxy.checking_period):
                     print("good proxies")
-                    proxy.last_check_time = time.time()
-                    session.commit()
-                    tasks.append(asyncio.ensure_future(self._process_proxy(proxy)))
-                    if len(tasks) > 100:
-                        await asyncio.wait(tasks)
-                        tasks.clear()
+                    await pool.add_task(self._process_proxy(proxy))
 
                 # check bad proxies
                 for proxy in session.query(Proxy)\
-                                .filter(Proxy.number_of_bad_checks != 0)\
+                                .filter(Proxy.number_of_bad_checks > 0)\
+                                .filter(Proxy.number_of_bad_checks <= settings.DEAD_PROXY_THRESHOLD)\
                                 .filter(Proxy.last_check_time < time.time() - settings.BAD_PROXY_CHECKING_PERIOD):
                     print("bad proxies")
-                    proxy.last_check_time = time.time()
-                    session.commit()
-                    tasks.append(asyncio.ensure_future(self._process_proxy(proxy)))
-                    if len(tasks) > 100:
-                        await asyncio.wait(tasks)
-                        tasks.clear()
+                    await pool.add_task(self._process_proxy(proxy))
 
-                if len(tasks) > 0:
-                    await asyncio.wait(tasks)
-                    tasks.clear()
+                # check dead proxies
+                for proxy in session.query(Proxy) \
+                        .filter(Proxy.number_of_bad_checks > settings.DEAD_PROXY_THRESHOLD) \
+                        .filter(Proxy.last_check_time < time.time() - settings.DEAD_PROXY_CHECKING_PERIOD):
+                    print("dead proxies")
+                    await pool.add_task(self._process_proxy(proxy))
+
+                await pool.wait()
 
             except KeyboardInterrupt as ex:
                 raise ex;
@@ -129,26 +125,35 @@ class Processor:
     async def _process_proxy(self, proxy: Proxy):
         try:
             self.logger.debug('start processing proxy {0}'.format(proxy.to_url()))
-            start_checking_time = time.time()
-            check_result = await proxy_utils.check_proxy(proxy)
-            end_checking_time = time.time()
 
-            proxy.response_time = int(round((end_checking_time - start_checking_time) * 1000000))
+            try:
+                start_checking_time = time.time()
+                check_result = await proxy_utils.check_proxy(proxy)
+                end_checking_time = time.time()
+            except:
+                raise
+            finally:
+                proxy.last_check_time = time.time()
+                session.commit()
 
             if check_result:
                 self.logger.debug('proxy {0} works'.format(proxy.to_url()))
-                proxy.number_of_bad_checks = 0
-                if proxy.bad_proxy or proxy.uptime is None or proxy.uptime == 0:
-                    proxy.uptime = int(time.time())
+                self.create_or_update_proxy(
+                    proxy._protocol,
+                    proxy.domain,
+                    proxy.port,
+                    proxy.auth_data,
+                    start_checking_time,
+                    end_checking_time
+                )
             else:
+                self.logger.debug("proxy {0} doesn't work".format(proxy.to_url()))
                 proxy.number_of_bad_checks += 1
                 proxy.uptime = int(time.time())
 
-            proxy.last_check_time = int(time.time())
-
-            if proxy.number_of_bad_checks > settings.REMOVE_ON_N_BAD_CHECKS:
-                self.logger.debug('removing proxy {0} permanently...'.format(proxy.to_url()))
-                session.delete(proxy)
+                if proxy.number_of_bad_checks > settings.REMOVE_ON_N_BAD_CHECKS:
+                    self.logger.debug('removing proxy {0} permanently...'.format(proxy.to_url()))
+                    session.delete(proxy)
 
             session.commit()
         except KeyboardInterrupt as ex:
@@ -163,35 +168,48 @@ class Processor:
         if CollectorType not in self.collectors:
             self.collectors[CollectorType] = CollectorType()
 
-    def add_proxy(self, protocol: str, domain: str, port: int, auth_data: str = "", response_time=None):
-        if auth_data is None:
-            auth_data = ""
+    def create_or_update_proxy(self, _protocol : Proxy.PROTOCOLS, domain, port, auth_data,
+                               start_checking_time, end_checking_time):
+        if _protocol is None or domain is None or port is None or auth_data is None or start_checking_time is None\
+                or end_checking_time is None:
+            raise Exception()
 
-        try:
-            protocol = Proxy.PROTOCOLS.index(protocol)
-        except ValueError:
-            self.logger.error("protocol {} of proxy {} {} {} isn't allowed".format(protocol, domain, port, auth_data))
-            return
+        if _protocol < 0 or _protocol >= len(Proxy.PROTOCOLS):
+            raise Exception()
 
-        try:
-            proxy = Proxy()
-            proxy._protocol = protocol
-            proxy.domain = domain
-            proxy.port = port
-            proxy.auth_data = auth_data
-            proxy.response_time = response_time
+        response_time = int(round((end_checking_time - start_checking_time) * 1000000))
 
-            proxy.uptime = int(time.time())
-            proxy.last_check_time = int(time.time())
-            self.logger.debug('adding proxy {0}...'.format(proxy.to_url()))
+        proxy = session.query(Proxy).filter(sqlalchemy.and_(
+            Proxy._protocol == _protocol,
+            Proxy.auth_data == auth_data,
+            Proxy.domain == domain,
+            Proxy.port == port
+        )).first()
+
+        if proxy:
+            # exists, so update
+            pass
+        else:
+            # doesn't exist, so create
+            proxy = Proxy(_protocol=_protocol, auth_data=auth_data, domain=domain, port=port)
             session.add(proxy)
-            session.commit()
-        except sqlalchemy.exc.IntegrityError:
-            session.rollback()
-            # TODO: check proxy
-            self.logger.debug('proxy {} {} {} {} already exists'.format(protocol, domain, port, auth_data))
-        except BaseException as ex:
-            self.logger.exception(ex)
+
+        proxy.response_time = response_time
+        proxy.number_of_bad_checks = 0
+
+        if proxy.bad_proxy or proxy.uptime is None or proxy.uptime == 0:
+            proxy.uptime = int(time.time())
+
+        checking_time = int(end_checking_time - start_checking_time)
+        if checking_time > settings.PROXY_CHECKING_TIMEOUT:
+            checking_time = settings.PROXY_CHECKING_TIMEOUT
+
+        proxy.checking_period = \
+            settings.MIN_PROXY_CHECKING_PERIOD \
+            + (checking_time / settings.PROXY_CHECKING_TIMEOUT) \
+            * (settings.MAX_PROXY_CHECKING_PERIOD - settings.MIN_PROXY_CHECKING_PERIOD)
+
+        session.commit()
 
     # TODO: add proxy with domains
     # TODO: add proxy with authorization
@@ -211,30 +229,38 @@ class Processor:
             await asyncio.wait(tasks)
 
     async def process_raw_proxy(self, domain, port, auth_data="", **kwargs):
-        proxies = session.query(Proxy).filter_by(domain=domain, port=port, auth_data=auth_data).count()
+        if domain is None or port is None:
+            raise Exception()
 
-        if proxies > 0:
-            # TODO: check for working
-            self.logger.debug('proxy with domain {}, port {} and auth_data {} already exists'.format(
-                domain, port, auth_data
-            ))
-            return
+        if auth_data is None:
+            auth_data = ""
 
-        raw_proxy = ""
-        if auth_data is not None:
-            raw_proxy += auth_data + "@"
+        # proxies = session.query(Proxy).filter_by(domain=domain, port=port, auth_data=auth_data).count()
+        #
+        # if proxies > 0:
+        #     # TODO: remove? or maybe check other protocols
+        #     self.logger.debug('proxy with domain {}, port {} and auth_data {} already exists'.format(
+        #         domain, port, auth_data
+        #     ))
+        #     return
 
-        raw_proxy += "{}:{}".format(domain, port)
+        proxies = await proxy_utils.get_working_proxies(domain, port, auth_data)
 
-        start_checking_time = time.time()
-        protocols = await proxy_utils.detect_raw_proxy_protocols(raw_proxy)
-        end_checking_time = time.time()
-        response_time = int(round((end_checking_time - start_checking_time) * 1000000))
+        if len(proxies) > 0:
+            for _proxy in proxies:
+                proxy = _proxy[0]
+                start_checking_time = _proxy[1]
+                end_checking_time = _proxy[2]
 
-        if len(protocols) > 0:
-            for p in protocols:
-                self.add_proxy(p, domain, port, auth_data, response_time)
+                self.create_or_update_proxy(
+                    proxy._protocol,
+                    proxy.domain,
+                    proxy.port,
+                    proxy.auth_data,
+                    start_checking_time,
+                    end_checking_time
+                )
         else:
-            self.logger.debug('unable to determine protocol of raw proxy {0}'.format(raw_proxy))
+            self.logger.debug('unable to determine protocol of raw proxy {} {} {}'.format(domain, port, auth_data))
 
 
