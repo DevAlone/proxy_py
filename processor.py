@@ -63,10 +63,10 @@ class Processor:
             try:
                 tasks = []
                 # TODO: save collectors' state in database
-                # for collector in list(self.collectors.values()):
-                #     if time.time() >= collector.last_processing_time + collector.processing_period:
-                #         collector.last_processing_time = int(time.time())
-                #         tasks.append(asyncio.ensure_future(self._process_collector(collector)))
+                for collector in list(self.collectors.values()):
+                    if time.time() >= collector.last_processing_time + collector.processing_period:
+                        collector.last_processing_time = int(time.time())
+                        tasks.append(asyncio.ensure_future(self._process_collector(collector)))
 
                 if len(tasks) > 0:
                     await asyncio.wait(tasks)

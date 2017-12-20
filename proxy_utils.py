@@ -1,7 +1,5 @@
+from proxy_py import settings
 import async_requests
-
-
-TIMEOUT = 10
 
 
 # TODO: add multiple checks with several sites
@@ -10,7 +8,7 @@ async def check_proxy(proxy):
         res = await async_requests.get(
             'https://pikagraphs.d3d.info/OK/',
             proxy=proxy.to_url(),
-            timeout=TIMEOUT,
+            timeout=settings.PROXY_CHECKING_TIMEOUT,
             headers={'User-Agent': get_random_user_agent()},
         )
         if res.status == 200 and res.text == "OK":

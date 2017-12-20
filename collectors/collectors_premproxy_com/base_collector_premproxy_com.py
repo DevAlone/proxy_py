@@ -15,7 +15,8 @@ class BaseCollectorPremProxyCom(PagesCollector):
         if page_index > 0:
             self.url += '{0}.htm'.format(page_index + 1)
 
-        html = await async_requests.get(url=self.url).text
+        resp = await async_requests.get(url=self.url)
+        html = resp.text
         tree = lxml.html.fromstring(html)
         elements = \
             tree.xpath(".//td[starts-with(@data-label, 'IP:port')]")
