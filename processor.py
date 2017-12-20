@@ -104,7 +104,7 @@ class Processor:
 
             except KeyboardInterrupt as ex:
                 raise ex;
-            except Exception as ex:
+            except BaseException as ex:
                 self.logger.exception(ex)
                 await asyncio.sleep(1)
 
@@ -119,7 +119,7 @@ class Processor:
                 await self.process_raw_proxies(proxies)
         except KeyboardInterrupt as ex:
             raise ex;
-        except Exception as ex:
+        except BaseException as ex:
             self.collector_logger.error("Error in collector of type {}".format(type(collector)))
             self.collector_logger.exception(ex)
         finally:
@@ -153,7 +153,7 @@ class Processor:
         except KeyboardInterrupt as ex:
             session.rollback()
             raise ex;
-        except Exception as ex:
+        except BaseException as ex:
             session.rollback()
             self.logger.error("Error during processing proxy")
             self.logger.exception(ex)
@@ -188,7 +188,7 @@ class Processor:
         except sqlalchemy.exc.IntegrityError:
             session.rollback()
             self.logger.debug('proxy {} {} {} {} already exists'.format(protocol, domain, port, auth_data))
-        except Exception as ex:
+        except BaseException as ex:
             self.logger.exception(ex)
 
     # TODO: add proxy with domains
