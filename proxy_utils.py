@@ -1,3 +1,9 @@
+import asyncio
+import ssl
+
+import aiohttp
+import aiosocks
+
 from proxy_py import settings
 import async_requests
 
@@ -9,11 +15,16 @@ async def check_proxy(proxy):
             'https://pikagraphs.d3d.info/OK/',
             proxy=proxy.to_url(),
             timeout=settings.PROXY_CHECKING_TIMEOUT,
-            headers={'User-Agent': get_random_user_agent()},
         )
         if res.status == 200 and res.text == "OK":
             return True
-    except:
+    except (asyncio.TimeoutError,
+                    aiohttp.client_exceptions.ServerDisconnectedError,
+                    # aiohttp.client_exceptions.ClientOSError,
+                    aiosocks.errors.SocksError,
+                    aiohttp.client_exceptions.ClientResponseError,
+                    ssl.SSLError,
+                    ConnectionRefusedError):
         return False
     return False
 
@@ -42,14 +53,18 @@ async def detect_raw_proxy_protocols(raw_proxy):
             res = await async_requests.get(
                 'https://pikagraphs.d3d.info/OK/',
                 proxy="{}://{}".format(protocol, raw_proxy),
-                timeout=settings.PROXY_CHECKING_TIMEOUT,
-                headers={'User-Agent': get_random_user_agent()},
+                timeout=settings.PROXY_CHECKING_TIMEOUT
             )
 
             if res.status == 200 and res.text == "OK":
                 result.append(protocol)
-
-        except:
-            pass
+        except (asyncio.TimeoutError,
+                    aiohttp.client_exceptions.ServerDisconnectedError,
+                    # aiohttp.client_exceptions.ClientOSError,
+                    aiosocks.errors.SocksError,
+                    aiohttp.client_exceptions.ClientResponseError,
+                    ssl.SSLError,
+                    ConnectionRefusedError):
+                pass
 
     return result

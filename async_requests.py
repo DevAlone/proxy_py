@@ -1,7 +1,7 @@
 import aiohttp
 import json
 from aiosocks.connector import ProxyConnector, ProxyClientRequest
-from fake_useragent import UserAgent
+# from fake_useragent import UserAgent
 
 
 async def get(url, **kwargs):
@@ -58,4 +58,5 @@ class Response:
 
 
 def get_random_user_agent():
-    return UserAgent().random
+    return 'Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:55.0) Gecko/20100101 Firefox/55.0'
+    # return UserAgent().random

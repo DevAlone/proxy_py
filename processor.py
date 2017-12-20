@@ -82,7 +82,7 @@ class Processor:
                     proxy.last_check_time = time.time()
                     session.commit()
                     tasks.append(asyncio.ensure_future(self._process_proxy(proxy)))
-                    if len(tasks) > 500:
+                    if len(tasks) > 100:
                         await asyncio.wait(tasks)
                         tasks.clear()
 
@@ -94,7 +94,7 @@ class Processor:
                     proxy.last_check_time = time.time()
                     session.commit()
                     tasks.append(asyncio.ensure_future(self._process_proxy(proxy)))
-                    if len(tasks) > 500:
+                    if len(tasks) > 100:
                         await asyncio.wait(tasks)
                         tasks.clear()
 
@@ -201,7 +201,7 @@ class Processor:
             if matches:
                 # await self.process_raw_proxy(**matches.groupdict())
                 tasks.append(asyncio.ensure_future(self.process_raw_proxy(**matches.groupdict())))
-                if len(tasks) > 500:
+                if len(tasks) > 100:
                     await asyncio.wait(tasks)
                     tasks.clear()
 

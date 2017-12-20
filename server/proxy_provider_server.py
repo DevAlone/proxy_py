@@ -82,6 +82,13 @@ class ProxyProviderServer:
             </style>
             """
             html += "</head><body>"
+            html += """
+            <p>All: {}</p>
+            <p>Alive: {}</p>
+            """.format(
+                session.query(Proxy).count(),
+                session.query(Proxy).filter(Proxy.number_of_bad_checks == 0).count()
+            )
 
             html += """<table id="proxy_table">"""
             html += "<thead>"
