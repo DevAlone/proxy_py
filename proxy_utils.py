@@ -61,7 +61,8 @@ async def detect_raw_proxy_protocols(raw_proxy):
 
             if res.status == 200 and res.text == "OK":
                 result.append(protocol)
-                except (asyncio.TimeoutError,
+
+        except (asyncio.TimeoutError,
                         aiohttp.client_exceptions.ServerDisconnectedError,
                         aiohttp.client_exceptions.ClientOSError,
                         aiohttp.errors.ClientDisconnectedError,
