@@ -196,6 +196,7 @@ class Processor:
 
         proxy.response_time = response_time
         proxy.number_of_bad_checks = 0
+        proxy.last_check_time = int(time.time())
 
         if proxy.bad_proxy or proxy.uptime is None or proxy.uptime == 0:
             proxy.uptime = int(time.time())
@@ -251,7 +252,6 @@ class Processor:
                 proxy = _proxy[0]
                 start_checking_time = _proxy[1]
                 end_checking_time = _proxy[2]
-                proxy.last_check_time = int(time.time())
 
                 self.create_or_update_proxy(
                     proxy._protocol,
