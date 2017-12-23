@@ -12,7 +12,7 @@ class Collector(AbstractCollector):
         self.processing_period = 3600 * 12
 
     async def collect(self):
-        url = "https://checkerproxy.net/api/archive/{}".format(str(datetime.date.today()))
+        url = "https://checkerproxy.net/api/archive/{}".format(str(datetime.date.today() - datetime.timedelta(1)))
 
         res = await async_requests.get(url)
         text = res.text
