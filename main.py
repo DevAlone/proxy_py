@@ -37,7 +37,7 @@ async def proxy_counter():
 
 if __name__ == "__main__":
     proxy_processor = Processor()
-    for CollectorType in collectors_list.collectorTypes:
+    for CollectorType in collectors_list.collector_types:
         proxy_processor.add_collector_of_type(CollectorType)
 
     proxy_provider_server = ProxyProviderServer.get_proxy_provider_server(

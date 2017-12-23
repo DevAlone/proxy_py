@@ -8,6 +8,8 @@ from lxml import html
 
 
 class Collector(PagesCollector):
+    __collector__ = True
+
     def __init__(self):
         self.pages_count = 57
 

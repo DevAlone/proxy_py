@@ -6,6 +6,8 @@ import datetime
 
 
 class Collector(AbstractCollector):
+    __collector__ = True
+
     def __init__(self):
         self.processing_period = 3600 * 12
 

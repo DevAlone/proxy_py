@@ -108,7 +108,10 @@ class Processor:
     async def _process_collector(self, collector):
         try:
             self.logger.debug('start processing collector of type "' + str(type(collector)) + '"')
-            proxies = await collector.collect()
+            proxies = set()
+            for proxy in (await collector.collect()):
+                proxies.add(proxy)
+
             if len(proxies) == 0:
                 self.collector_logger.warning('got 0 proxies from collector of type {}'.format(type(collector)))
             else:

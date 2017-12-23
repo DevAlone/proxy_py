@@ -76,6 +76,15 @@ class ProxyCountItem(Base):
     dead_proxies_count = Column(Integer, nullable=False)
 
 
+# class Collector(Base):
+#     __tablename__ = "collectors"
+#     id = Column(Integer, primary_key=True)
+#     processing_period = Column(Integer, nullable=False)
+#     last_process_time = Column(Integer, nullable=False)
+#     last_process_proxies_count = Column(Integer, nullable=False, default=0)
+#     last_process_new_proxies_count = Column(Integer, nullable=False, default=0)
+
+
 Base.metadata.create_all(engine)
 
 session = Session()

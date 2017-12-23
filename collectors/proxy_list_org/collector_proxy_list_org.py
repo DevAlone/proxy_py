@@ -8,6 +8,8 @@ import base64
 
 
 class Collector(PagesCollector):
+    __collector__ = True
+
     def __init__(self):
         self.pages_count = 10
 
