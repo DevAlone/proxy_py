@@ -1,22 +1,40 @@
 #!/usr/bin/env python3
 
-# TODO: fix socks proxies
-
-import asyncio
-
-# TODO: change it
 from proxy_py import settings
 from processor import Processor
 from server.proxy_provider_server import ProxyProviderServer
-from program_killer import ProgramKiller
 import collectors_list
+from models import Proxy, ProxyCountItem, session
 
-proxies = []
+import asyncio
+import time
 
-# killer = ProgramKiller()
+
+async def create_proxy_count_item():
+    session.add(ProxyCountItem(
+        timestamp=int(time.time()),
+        good_proxies_count=session.query(Proxy).filter(Proxy.number_of_bad_checks == 0).count(),
+        bad_proxies_count =session.query(Proxy)
+            .filter(Proxy.number_of_bad_checks > 0)
+            .filter(Proxy.number_of_bad_checks < settings.DEAD_PROXY_THRESHOLD).count(),
+        dead_proxies_count=session.query(Proxy)
+            .filter(Proxy.number_of_bad_checks >= settings.DEAD_PROXY_THRESHOLD).count()
+    ))
+    session.commit()
 
 
-# TODO: fix closing of program when it's waiting for finish coroutines
+async def proxy_counter():
+    while True:
+        if session.query(ProxyCountItem).count() == 0:
+            await create_proxy_count_item()
+        else:
+            last_item = session.query(ProxyCountItem).order_by(ProxyCountItem.timestamp.desc()).first()
+            if int(last_item.timestamp // 60) * 60 + 60 < time.time():
+                await create_proxy_count_item()
+
+        await asyncio.sleep(1)
+
+
 if __name__ == "__main__":
     proxy_processor = Processor()
     for CollectorType in collectors_list.collectorTypes:
@@ -30,4 +48,7 @@ if __name__ == "__main__":
 
     loop = asyncio.get_event_loop()
     loop.run_until_complete(proxy_provider_server.start(loop))
-    loop.run_until_complete(proxy_processor.exec())
+    loop.run_until_complete(asyncio.wait([
+        proxy_processor.exec(),
+        proxy_counter(),
+    ]))

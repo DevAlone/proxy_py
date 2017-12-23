@@ -68,6 +68,14 @@ class Proxy(Base):
     __repr__ = __str__
 
 
+class ProxyCountItem(Base):
+    __tablename__ = "proxy_count_items"
+    timestamp = Column(Integer, primary_key=True)
+    good_proxies_count = Column(Integer, nullable=False)
+    bad_proxies_count = Column(Integer, nullable=False)
+    dead_proxies_count = Column(Integer, nullable=False)
+
+
 Base.metadata.create_all(engine)
 
 session = Session()

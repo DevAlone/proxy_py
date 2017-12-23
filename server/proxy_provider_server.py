@@ -3,7 +3,7 @@ import time
 import datetime
 
 from server.api_request_handler import ApiRequestHandler
-from models import session, Proxy
+from models import session, Proxy, ProxyCountItem
 
 import aiohttp
 import aiohttp.web
@@ -47,6 +47,7 @@ class ProxyProviderServer:
         app.router.add_post('/', self.post)
         app.router.add_get('/', self.get)
         app.router.add_get('/get/proxy/', self.get_proxies_html)
+        app.router.add_get('/get/proxy_count_items/', self.get_proxy_count_items_html)
 
         server = await loop.create_server(app.make_handler(), self.host, self.port)
         return server
@@ -58,7 +59,6 @@ class ProxyProviderServer:
             data = await request.json()
             response = _api_request_handler.handle(client_address, data)
         except:
-            raise
             response = {
                 'status': "error",
                 'error': "Your request doesn't look like request",
@@ -135,6 +135,190 @@ class ProxyProviderServer:
 
             html += "</table>"
 
+            html += "</body></html>"
+        except Exception as ex:
+            _logger.exception(ex)
+
+        return aiohttp.web.Response(headers={'Content-Type': 'text/html'}, body=html)
+
+    async def get_proxy_count_items_html(self, request):
+        try:
+            html="""<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="robots" content="noindex">
+            <title>Go away!</title>"""
+
+            html += """
+            <script src="https://pikagraphs.d3d.info/static/core/amcharts/amcharts.js"></script>
+            <script src="https://pikagraphs.d3d.info/static/core/amcharts/serial.js"></script>
+            <script src="https://pikagraphs.d3d.info/static/core/amcharts/export.min.js"></script>
+            <script src="https://pikagraphs.d3d.info/static/core/amcharts/light.js"></script>
+            <link rel="stylesheet" href="https://pikagraphs.d3d.info/static/core/amcharts/export.css" type="text/css" media="all" />
+            <style>
+            #proxy_table {
+                width: 100%;
+            }
+            #proxy_table td {
+                padding: 10px;
+            }
+            </style>
+            </head><body>
+            """
+
+            html += """
+            <!-- Chart code -->
+<script>
+var data = [
+"""
+            for proxy_count_item in session.query(ProxyCountItem).order_by(ProxyCountItem.timestamp):
+                html += "{"
+                html += """
+                    "date": new Date({}),
+                    "good_proxies_count": {},
+                    "bad_proxies_count": {},
+                    "dead_proxies_count": {}""".format(
+                                proxy_count_item.timestamp * 1000, proxy_count_item.good_proxies_count,
+                                proxy_count_item.bad_proxies_count, proxy_count_item.dead_proxies_count)
+                html += "},\n"
+
+            html += """
+];
+
+var chart = AmCharts.makeChart("chartdiv", {
+            "type": "serial",
+            "theme": "light",
+            "legend": {
+                "useGraphSettings": true
+            },
+            "marginRight": 80,
+            "autoMarginOffset": 20,
+            "marginTop": 7,
+            "dataProvider": data,
+            "valueAxes": [{
+                "id":"v1",
+                "axisColor": "#FF6600",
+                "axisThickness": 2,
+                "axisAlpha": 1,
+                "position": "left"
+            }, {
+                "id":"v2",
+                "axisColor": "#FCD202",
+                "axisThickness": 2,
+                "axisAlpha": 1,
+                "position": "right"
+            }, {
+                "id":"v3",
+                "axisColor": "#FF0000",
+                "axisThickness": 2,
+                "axisAlpha": 1,
+                "position": "right"
+            }
+            ],
+            "mouseWheelZoomEnabled": false,
+            "graphs": [{
+                "id": "v1",
+                "balloonText": "[[value]]",
+                "bullet": "round",
+                "bulletBorderAlpha": 1,
+                "bulletColor": "#0f0",
+                "hideBulletsCount": 50,
+                "title": "good",
+                "valueField": "good_proxies_count",
+                "useLineColorForBulletBorder": true,
+                "balloon":{
+                    "drop":true
+                }
+            },{
+                "id": "v2",
+                "balloonText": "[[value]]",
+                "bullet": "round",
+                "bulletBorderAlpha": 1,
+                "bulletColor": "#ff0",
+                "hideBulletsCount": 50,
+                "title": "bad",
+                "valueField": "bad_proxies_count",
+                "useLineColorForBulletBorder": true,
+                "balloon":{
+                    "drop":true
+                }
+            },{
+                "id": "v3",
+                "balloonText": "[[value]]",
+                "bullet": "round",
+                "bulletBorderAlpha": 1,
+                "bulletColor": "#FF0000",
+                "hideBulletsCount": 50,
+                "title": "dead",
+                "valueField": "dead_proxies_count",
+                "useLineColorForBulletBorder": true,
+                "balloon":{
+                    "drop":true
+                }
+            }
+            ],
+            "chartScrollbar": {
+                "autoGridCount": true,
+                "graph": "v1",
+                "scrollbarHeight": 40
+            },
+            "chartCursor": {
+               "limitToGraph":"v1"
+            },
+            "categoryField": "date",
+            "categoryAxis": {
+                "minPeriod": "mm",
+                "parseDates": true,
+                "axisColor": "#DADADA",
+                "dashLength": 1,
+                "minorGridEnabled": true
+            },
+            "export": {
+                "enabled": true
+            }
+        });
+
+chart.addListener("dataUpdated", zoomChart);
+zoomChart();
+
+
+function zoomChart(){
+    chart.zoomToIndexes(chart.dataProvider.length - 20, chart.dataProvider.length - 1);
+}
+
+</script>
+<!-- HTML -->
+<div id="chartdiv" style="height: 500px; width: 100%;"></div>	
+            """
+
+            html += """<table id="proxy_table">"""
+            html += "<thead>"
+            html += "<tr>"
+
+            html += "<td>timestamp</td>"
+            html += "<td>good_proxies_count</td>"
+            html += "<td>bad_proxies_count</td>"
+            html += "<td>dead_proxies_count</td>"
+
+            html += "</tr>"
+            html += "</thead>"
+
+            html += "<tbody>"
+
+            i = 0
+            for proxy_count_item in session.query(ProxyCountItem).order_by(ProxyCountItem.timestamp):
+                html += "<tr>"
+                html += """<td id="proxy_count_item_{}_timestamp">{}</td>""".format(i, proxy_count_item.timestamp)
+                html += "<td>{}</td>".format(proxy_count_item.good_proxies_count)
+                html += "<td>{}</td>".format(proxy_count_item.bad_proxies_count)
+                html += "<td>{}</td>".format(proxy_count_item.dead_proxies_count)
+                html += "</tr>"
+                html += """
+                <script>
+                proxy_count_item_{}_timestamp.textContent = new Date({});
+                </script>
+                """.format(i, proxy_count_item.timestamp * 1000)
+                i += 1
+
+            html += "<tbody>"
+            html += "</table>"
             html += "</body></html>"
         except Exception as ex:
             _logger.exception(ex)

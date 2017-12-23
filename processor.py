@@ -66,10 +66,10 @@ class Processor:
             print("main loop")
             try:
                 # TODO: save collectors' state in database
-                for collector in list(self.collectors.values()):
-                    if time.time() >= collector.last_processing_time + collector.processing_period:
-                        collector.last_processing_time = int(time.time())
-                        await pool.add_task(self._process_collector(collector))
+                # for collector in list(self.collectors.values()):
+                #     if time.time() >= collector.last_processing_time + collector.processing_period:
+                #         collector.last_processing_time = int(time.time())
+                #         await pool.add_task(self._process_collector(collector))
 
                 await pool.wait()
 
@@ -85,14 +85,14 @@ class Processor:
                 # check bad proxies
                 for proxy in session.query(Proxy)\
                                 .filter(Proxy.number_of_bad_checks > 0)\
-                                .filter(Proxy.number_of_bad_checks <= settings.DEAD_PROXY_THRESHOLD)\
+                                .filter(Proxy.number_of_bad_checks < settings.DEAD_PROXY_THRESHOLD)\
                                 .filter(Proxy.last_check_time < time.time() - settings.BAD_PROXY_CHECKING_PERIOD):
                     print("bad proxies")
                     await pool.add_task(self._process_proxy(proxy))
 
                 # check dead proxies
                 for proxy in session.query(Proxy) \
-                        .filter(Proxy.number_of_bad_checks > settings.DEAD_PROXY_THRESHOLD) \
+                        .filter(Proxy.number_of_bad_checks >= settings.DEAD_PROXY_THRESHOLD) \
                         .filter(Proxy.last_check_time < time.time() - settings.DEAD_PROXY_CHECKING_PERIOD):
                     print("dead proxies")
                     await pool.add_task(self._process_proxy(proxy))
