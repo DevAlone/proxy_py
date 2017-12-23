@@ -66,10 +66,10 @@ class Processor:
             print("main loop")
             try:
                 # TODO: save collectors' state in database
-                # for collector in list(self.collectors.values()):
-                #     if time.time() >= collector.last_processing_time + collector.processing_period:
-                #         collector.last_processing_time = int(time.time())
-                #         await pool.add_task(self._process_collector(collector))
+                for collector in list(self.collectors.values()):
+                    if time.time() >= collector.last_processing_time + collector.processing_period:
+                        collector.last_processing_time = int(time.time())
+                        await pool.add_task(self._process_collector(collector))
 
                 await pool.wait()
 
