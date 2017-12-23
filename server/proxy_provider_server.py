@@ -47,7 +47,7 @@ class ProxyProviderServer:
         app.router.add_post('/', self.post)
         app.router.add_get('/', self.get)
         app.router.add_get('/get/proxy/', self.get_proxies_html)
-        app.router.add_get('/get/proxy_count_items/', self.get_proxy_count_items_html)
+        app.router.add_get('/get/proxy_count_item/', self.get_proxy_count_items_html)
 
         server = await loop.create_server(app.make_handler(), self.host, self.port)
         return server
