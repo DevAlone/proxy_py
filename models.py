@@ -76,13 +76,17 @@ class ProxyCountItem(Base):
     dead_proxies_count = Column(Integer, nullable=False)
 
 
-# class Collector(Base):
-#     __tablename__ = "collectors"
-#     id = Column(Integer, primary_key=True)
-#     processing_period = Column(Integer, nullable=False)
-#     last_process_time = Column(Integer, nullable=False)
-#     last_process_proxies_count = Column(Integer, nullable=False, default=0)
-#     last_process_new_proxies_count = Column(Integer, nullable=False, default=0)
+class CollectorState(Base):
+    __tablename__ = "collector_states"
+    id = Column(Integer, primary_key=True)
+    # python module name
+    identifier = Column(String, unique=True)
+    processing_period = Column(Integer, nullable=False)
+    last_processing_time = Column(Integer, nullable=False)
+    last_processing_proxies_count = Column(Integer, nullable=False, default=0)
+    last_processing_new_proxies_count = Column(Integer, nullable=False, default=0)
+    data = Column(String, nullable=True, default=None)
+
 
 
 Base.metadata.create_all(engine)

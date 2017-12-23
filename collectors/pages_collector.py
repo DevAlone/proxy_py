@@ -1,6 +1,7 @@
 from collectors.collector import AbstractCollector
 
 
+# TODO: save pages to collector state
 class PagesCollector(AbstractCollector):
     async def collect(self):
         proxies = await self.process_page(self.current_page)

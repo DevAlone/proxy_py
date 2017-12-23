@@ -3,7 +3,7 @@ import time
 import datetime
 
 from server.api_request_handler import ApiRequestHandler
-from models import session, Proxy, ProxyCountItem
+from models import session, Proxy, ProxyCountItem, CollectorState
 
 import aiohttp
 import aiohttp.web
@@ -48,6 +48,7 @@ class ProxyProviderServer:
         app.router.add_get('/', self.get)
         app.router.add_get('/get/proxy/', self.get_proxies_html)
         app.router.add_get('/get/proxy_count_item/', self.get_proxy_count_items_html)
+        app.router.add_get('/get/collector_state/', self.get_collector_state_html)
 
         server = await loop.create_server(app.make_handler(), self.host, self.port)
         return server
@@ -319,6 +320,65 @@ function zoomChart(){
 
             html += "<tbody>"
             html += "</table>"
+            html += "</body></html>"
+        except Exception as ex:
+            _logger.exception(ex)
+
+        return aiohttp.web.Response(headers={'Content-Type': 'text/html'}, body=html)
+
+    async def get_collector_state_html(self, request):
+        try:
+            html = """<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="robots" content="noindex">
+                    <title>Go away!</title>"""
+            html += """
+                        <style>
+                        #collector_states {
+                            width: 100%;
+                        }
+                        #collector_states td {
+                            padding: 10px;
+                        }
+                        </style>
+                        """
+            html += "</head><body>"
+
+            html += """<table id="collector_states">"""
+            html += "<thead>"
+            html += "<tr>"
+            html += "<td>processing_period</td>"
+            html += "<td>last_processing_time</td>"
+            html += "<td>last_processing_proxies_count</td>"
+            html += "<td>last_processing_new_proxies_count</td>"
+            html += "<td>data</td>"
+            html += "</tr>"
+            html += "</thead>"
+
+            html += "<tbody>"
+
+            i = 0
+            for collector_state in session.query(CollectorState).all():
+                html += "<tr>"
+                html += "<td colspan=5><b>{}</b></td>".format(collector_state.identifier)
+                html += "</tr>"
+
+                html += "<tr>"
+                html += "<td>{}</td>".format(collector_state.processing_period)
+                html += """<td id="collector_state_{}_last_processing_time">{}</td>""".format(
+                    i, collector_state.last_processing_time)
+                html += "<td>{}</td>".format(collector_state.last_processing_proxies_count)
+                html += "<td>{}</td>".format("Not implemented")
+                html += "<td>{}</td>".format(collector_state.data)
+                html += "</tr>"
+                html += """
+                <script>
+                collector_state_{}_last_processing_time.textContent = new Date({});
+                </script>
+                """.format(i, collector_state.last_processing_time * 1000)
+                i += 1
+
+            html += "<tbody>"
+            html += "</table>"
+
             html += "</body></html>"
         except Exception as ex:
             _logger.exception(ex)
