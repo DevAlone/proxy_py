@@ -75,6 +75,7 @@ class Processor:
             while not self.queue.empty() and i <= settings.CONCURRENT_TASKS_COUNT:
                 proxy_data = self.queue.get_nowait()
                 tasks.append(self.process_proxy(*proxy_data))
+                self.queue.task_done()
 
             if tasks:
                 await asyncio.wait(tasks)

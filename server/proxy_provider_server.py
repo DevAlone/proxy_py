@@ -1,3 +1,4 @@
+import json
 import time
 
 import datetime
@@ -55,9 +56,21 @@ class ProxyProviderServer:
 
     async def post(self, request):
         client_address = request.transport.get_extra_info('peername')
+        host, port = (None, None)
+
+        if client_address is not None:
+            host, port = client_address
+        else:
+            client_address = (host, port)
+
+        data = await request.read()
+
+        with open("logs/server_connections", 'a') as f:
+            f.write("client - {}:{}, data - {}\n".format(host, port, data))
 
         try:
-            data = await request.json()
+            data = json.loads(data.decode())
+
             response = _api_request_handler.handle(client_address, data)
         except:
             response = {
