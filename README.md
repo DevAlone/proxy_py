@@ -21,12 +21,7 @@ pip3 install -r requirements.txt
 
 4 (Optional) Change database in settings.py file
 
-5 Create database tables
-
-```
-python3 manage.py makemigrations core
-python3 manage.py migrate
-```
+5 (Optional) Configure alembic
 
 6 Run your application
 
@@ -148,18 +143,9 @@ proxy_py@server:~/proxy_py$ vim proxy_py/settings.py
 ```
 
 ```
-from ._settings import *
-
-DATABASES = {                                                                    
-        'default': {                                                                 
-                'ENGINE': 'django.db.backends.postgresql_psycopg2',                     
-                'NAME': 'DB_NAME',                                                     
-                'USER': 'USERNAME',                                                     
-                'PASSWORD': 'PASSWORD',                                                 
-                'HOST': '127.0.0.1',                                                    
-                'PORT': '5432',                                                         
-        },                                                                           
-}
+DATABASE_CONNECTION_ARGS = (
+    'postgresql://USERNAME:PASSWORD@localhost/DB_NAME',
+)
 ```
 
 5 Copy supervisor config example and change it for your case
@@ -190,10 +176,4 @@ root@server:~$ /etc/init.d/nginx restart
 
 ## What is it depend on?
 
-```
-lxml
-pysocks
-django
-aiohttp
-aiosocks
-```
+See requirements.txt
