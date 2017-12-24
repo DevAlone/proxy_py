@@ -1,8 +1,7 @@
 from proxy_py import settings
-import sqlalchemy
 from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy import Column, Integer, String, SmallInteger, BigInteger, UniqueConstraint
+from sqlalchemy import Column, Integer, String, SmallInteger, UniqueConstraint
 from sqlalchemy.orm import sessionmaker
 
 
@@ -14,7 +13,7 @@ Session = sessionmaker(bind=engine)
 class Proxy(Base):
     __tablename__ = "proxies"
     __table_args__ = (
-        UniqueConstraint("_protocol", "auth_data", "domain", "port"),
+        UniqueConstraint("raw_protocol", "auth_data", "domain", "port"),
     )
 
     PROTOCOLS = (
@@ -24,7 +23,7 @@ class Proxy(Base):
     )
 
     id = Column(Integer, primary_key=True)
-    _protocol = Column(SmallInteger, nullable=False)
+    raw_protocol = Column(SmallInteger, nullable=False)
     domain = Column(String(128), nullable=False)
     port = Column(Integer, nullable=False)
     auth_data = Column(String(64), default="", nullable=False)
@@ -36,24 +35,27 @@ class Proxy(Base):
     # in microseconds
     response_time = Column(Integer, nullable=True, default=None)
 
+    def get_raw_protocol(self):
+        return self.raw_protocol
+
     @property
     def address(self):
         return self.to_url()
 
     @property
     def protocol(self):
-        return self.PROTOCOLS[int(self._protocol)]
+        return self.PROTOCOLS[int(self.raw_protocol)]
 
     @protocol.setter
     def protocol(self, protocol):
-        self._protocol = self.PROTOCOLS.index(protocol)
+        self.raw_protocol = self.PROTOCOLS.index(protocol)
 
     @property
     def bad_proxy(self):
         return self.number_of_bad_checks > 0
 
     def to_url(self, protocol=None):
-        address = protocol if protocol is not None else self.PROTOCOLS[int(self._protocol)]
+        address = protocol if protocol is not None else self.PROTOCOLS[int(self.raw_protocol)]
         address += "://"
         if self.auth_data:
             address += self.auth_data + "@"
@@ -88,7 +90,16 @@ class CollectorState(Base):
     data = Column(String, nullable=True, default=None)
 
 
-
 Base.metadata.create_all(engine)
 
 session = Session()
+
+
+def get_or_create(session, model, **kwargs):
+    instance = session.query(model).filter_by(**kwargs).first()
+    if not instance:
+        instance = model(**kwargs)
+        session.add(instance)
+        session.commit()
+
+    return instance

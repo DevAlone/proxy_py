@@ -21,7 +21,7 @@ if  __name__ == "__main__":
                 json_proxy = json.loads(base64.b64decode(line.encode()).decode())
                 # print(json_proxy)
                 proxy = Proxy()
-                proxy._protocol = Proxy.PROTOCOLS.index(json_proxy['protocol'])
+                proxy.raw_protocol = Proxy.PROTOCOLS.index(json_proxy['protocol'])
                 proxy.auth_data = ""
                 proxy.domain = json_proxy['domain']
                 proxy.port = json_proxy['port']

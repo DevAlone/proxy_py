@@ -5,6 +5,7 @@ from proxy_py import settings
 from models import Proxy
 from models import CollectorState
 from models import session
+from models import get_or_create
 
 import sqlalchemy
 import sqlalchemy.exc
@@ -37,14 +38,13 @@ class Processor:
         warning_file_handler.setLevel(logging.WARNING)
         info_file_handler = logging.FileHandler('logs/processor.log')
         info_file_handler.setLevel(logging.INFO)
-        if settings.DEBUG:
-            debug_file_handler = logging.FileHandler('logs/processor.debug.log')
-            debug_file_handler.setLevel(logging.DEBUG)
 
         self.logger.addHandler(error_file_handler)
         self.logger.addHandler(warning_file_handler)
         self.logger.addHandler(info_file_handler)
         if settings.DEBUG:
+            debug_file_handler = logging.FileHandler('logs/processor.debug.log')
+            debug_file_handler.setLevel(logging.DEBUG)
             self.logger.addHandler(debug_file_handler)
 
         self.collector_logger = logging.getLogger('proxy_py/collectors')
@@ -59,66 +59,87 @@ class Processor:
 
         self.logger.debug('processor initialization...')
 
+        self.queue = asyncio.Queue(maxsize=settings.PROXY_QUEUE_SIZE)
+
     async def exec(self):
+        await asyncio.wait([
+            self.producer(),
+            self.consumer(),
+        ])
+
+    async def consumer(self):
+        tasks = []
+        while True:
+            await asyncio.sleep(0.1)
+            i = 0
+            while not self.queue.empty() and i <= settings.CONCURRENT_TASKS_COUNT:
+                proxy_data = self.queue.get_nowait()
+                tasks.append(self.process_proxy(*proxy_data))
+
+            if tasks:
+                await asyncio.wait(tasks)
+                tasks.clear()
+
+    async def producer(self):
         while True:
             await asyncio.sleep(0.1)
             print("main loop")
-            tasks = []
             try:
-                for collectorState in session.query(CollectorState)\
+                tasks = []
+                for collector_state in session.query(CollectorState) \
                         .filter(CollectorState.last_processing_time < time.time() - CollectorState.processing_period):
-                    tasks.append(self._process_collector_of_state(collectorState))
+                    tasks.append(self.process_collector_of_state(collector_state))
 
                 if tasks:
                     await asyncio.wait(tasks)
                     tasks.clear()
 
+                print("collectors queue size: {}".format(self.queue.qsize()))
+
                 # check proxies
 
                 # check good proxies
-                for proxy in session.query(Proxy)\
-                                .filter(Proxy.number_of_bad_checks == 0)\
-                                .filter(Proxy.last_check_time < time.time() - Proxy.checking_period):
-                    print("good proxies")
-                    tasks.append(self._process_proxy(proxy))
-                    if len(tasks) > settings.CONCURRENT_TASKS_COUNT:
-                        await asyncio.wait(tasks)
-                        tasks.clear()
+                for proxy in session.query(Proxy) \
+                        .filter(Proxy.number_of_bad_checks == 0) \
+                        .filter(Proxy.last_check_time < time.time() - Proxy.checking_period):
+                    await self.add_proxy_to_queue(proxy)
 
                 # check bad proxies
-                for proxy in session.query(Proxy)\
-                                .filter(Proxy.number_of_bad_checks > 0)\
-                                .filter(Proxy.number_of_bad_checks < settings.DEAD_PROXY_THRESHOLD)\
-                                .filter(Proxy.last_check_time < time.time() - settings.BAD_PROXY_CHECKING_PERIOD):
-                    print("bad proxies")
-                    tasks.append(self._process_proxy(proxy))
-                    if len(tasks) > settings.CONCURRENT_TASKS_COUNT:
-                        await asyncio.wait(tasks)
-                        tasks.clear()
+                for proxy in session.query(Proxy) \
+                        .filter(Proxy.number_of_bad_checks > 0) \
+                        .filter(Proxy.number_of_bad_checks < settings.DEAD_PROXY_THRESHOLD) \
+                        .filter(Proxy.last_check_time < time.time() - settings.BAD_PROXY_CHECKING_PERIOD):
+                    await self.add_proxy_to_queue(proxy)
 
                 # check dead proxies
                 for proxy in session.query(Proxy) \
                         .filter(Proxy.number_of_bad_checks >= settings.DEAD_PROXY_THRESHOLD) \
                         .filter(Proxy.last_check_time < time.time() - settings.DEAD_PROXY_CHECKING_PERIOD):
-                    print("dead proxies")
-                    tasks.append(self._process_proxy(proxy))
-                    if len(tasks) > settings.CONCURRENT_TASKS_COUNT:
-                        await asyncio.wait(tasks)
-                        tasks.clear()
+                    await self.add_proxy_to_queue(proxy)
 
-                if tasks:
-                    await asyncio.wait(tasks)
-                    tasks.clear()
+                print("queue size: {}".format(self.queue.qsize()))
+
+                await self.queue.join()
             except KeyboardInterrupt as ex:
                 raise ex
             except BaseException as ex:
                 self.logger.exception(ex)
                 await asyncio.sleep(1)
 
-    async def _process_collector_of_state(self, collectorState):
+    async def add_proxy_to_queue(self, proxy: Proxy):
+        await self.queue.put((
+            proxy.get_raw_protocol(),
+            proxy.auth_data,
+            proxy.domain,
+            proxy.port,
+            None
+        ))
+
+    async def process_collector_of_state(self, collector_state):
         proxies = set()
+
+        collector = await collectors_list.load_collector(collector_state)
         try:
-            collector = await collectors_list.load_collector(collectorState)
             self.logger.debug('start processing collector of type "' + str(type(collector)) + '"')
             for proxy in (await collector.collect()):
                 proxies.add(proxy)
@@ -127,51 +148,91 @@ class Processor:
                 self.collector_logger.warning('got 0 proxies from collector of type {}'.format(type(collector)))
             else:
                 self.logger.debug('got {0} proxies from collector of type {1}'.format(len(proxies), type(collector)))
-                await self.process_raw_proxies(proxies)
+                await self.process_raw_proxies(proxies, collector_state.id)
         except KeyboardInterrupt as ex:
             raise ex
         except BaseException as ex:
-            self.collector_logger.error("Error in collector of type {}".format(type(collector)))
+            self.collector_logger.error("Error in collector of type {}".format(collector_state.identifier))
             self.collector_logger.exception(ex)
         finally:
             collector.last_processing_time = int(time.time())
-            await collector.save_state(collectorState)
-            collectorState.last_processing_proxies_count = len(proxies)
+            await collector.save_state(collector_state)
+            collector_state.last_processing_proxies_count = len(proxies)
             # TODO: save new proxies count
             session.commit()
 
-    async def _process_proxy(self, proxy: Proxy):
-        try:
-            self.logger.debug('start processing proxy {0}'.format(proxy.to_url()))
+    # TODO: add proxy with domains
+    # TODO: add proxy with authorization
+    async def process_raw_proxies(self, proxies, collector_id):
+        for proxy in proxies:
+            self.logger.debug('adding raw proxy {0} to queue'.format(proxy))
+            matches = re.match(PROXY_VALIDATE_REGEX, proxy)
+            if matches:
+                matches = matches.groupdict()
+                # protocol = matches['protocol']
+                auth_data = matches['auth_data']
+                domain = matches['domain']
+                port = matches['port']
 
-            try:
-                start_checking_time = time.time()
-                check_result = await proxy_utils.check_proxy(proxy)
-                end_checking_time = time.time()
-            except:
-                raise
-            finally:
-                proxy.last_check_time = int(time.time())
-                session.commit()
+                if auth_data is None:
+                    auth_data = ""
+
+                if domain is None or port is None:
+                    raise Exception("Bad raw proxy: {}".format(proxy))
+
+                for i in range(len(Proxy.PROTOCOLS)):
+                    await self.queue.put((
+                        i,
+                        auth_data,
+                        domain,
+                        port,
+                        collector_id,
+                    ))
+
+    async def process_proxy(self, raw_protocol: int, auth_data: str, domain: str, port: int, collector_id: int):
+        self.logger.debug("start processing proxy {}://{}@{}:{} with collector id {}".format(
+            raw_protocol, auth_data, domain, port, collector_id))
+
+        if auth_data is None:
+            auth_data = ""
+
+        proxy_url = "{}://".format(Proxy.PROTOCOLS[raw_protocol])
+        if auth_data:
+            proxy_url += auth_data + "@"
+
+        proxy_url += domain + ":" + str(port)
+
+        try:
+            start_checking_time = time.time()
+            check_result = await proxy_utils.check_proxy(proxy_url)
+            end_checking_time = time.time()
 
             if check_result:
-                self.logger.debug('proxy {0} works'.format(proxy.to_url()))
+                self.logger.debug('proxy {0} works'.format(proxy_url))
                 self.create_or_update_proxy(
-                    proxy._protocol,
-                    proxy.domain,
-                    proxy.port,
-                    proxy.auth_data,
+                    raw_protocol,
+                    auth_data,
+                    domain,
+                    port,
                     start_checking_time,
                     end_checking_time
                 )
             else:
-                self.logger.debug("proxy {0} doesn't work".format(proxy.to_url()))
-                proxy.number_of_bad_checks += 1
-                proxy.uptime = int(time.time())
+                self.logger.debug("proxy {0} doesn't work".format(proxy_url))
+                proxy = session.query(Proxy).filter(sqlalchemy.and_(
+                    Proxy.raw_protocol == raw_protocol,
+                    Proxy.auth_data == auth_data,
+                    Proxy.domain == domain,
+                    Proxy.port == port
+                )).first()
 
-                if proxy.number_of_bad_checks > settings.REMOVE_ON_N_BAD_CHECKS:
-                    self.logger.debug('removing proxy {0} permanently...'.format(proxy.to_url()))
-                    session.delete(proxy)
+                if proxy:
+                    proxy.number_of_bad_checks += 1
+                    proxy.uptime = int(time.time())
+
+                    if proxy.number_of_bad_checks > settings.REMOVE_ON_N_BAD_CHECKS:
+                        self.logger.debug('removing proxy {0} permanently...'.format(proxy.to_url()))
+                        session.delete(proxy)
 
             session.commit()
         except KeyboardInterrupt as ex:
@@ -182,23 +243,20 @@ class Processor:
             self.logger.error("Error during processing proxy")
             self.logger.exception(ex)
 
-    # def add_collector_of_type(self, CollectorType):
-    #     if CollectorType not in self.collectors:
-    #         self.collectors[CollectorType] = CollectorType()
-
-    def create_or_update_proxy(self, _protocol : Proxy.PROTOCOLS, domain, port, auth_data,
+    @staticmethod
+    def create_or_update_proxy(raw_protocol: Proxy.PROTOCOLS, auth_data, domain, port,
                                start_checking_time, end_checking_time):
-        if _protocol is None or domain is None or port is None or auth_data is None or start_checking_time is None\
+        if raw_protocol is None or domain is None or port is None or auth_data is None or start_checking_time is None\
                 or end_checking_time is None:
-            raise Exception()
+            raise Exception("Bad arguments")
 
-        if _protocol < 0 or _protocol >= len(Proxy.PROTOCOLS):
-            raise Exception()
+        if raw_protocol < 0 or raw_protocol >= len(Proxy.PROTOCOLS):
+            raise Exception("Bad protocol")
 
         response_time = int(round((end_checking_time - start_checking_time) * 1000000))
 
         proxy = session.query(Proxy).filter(sqlalchemy.and_(
-            Proxy._protocol == _protocol,
+            Proxy.raw_protocol == raw_protocol,
             Proxy.auth_data == auth_data,
             Proxy.domain == domain,
             Proxy.port == port
@@ -209,7 +267,7 @@ class Processor:
             pass
         else:
             # doesn't exist, so create
-            proxy = Proxy(_protocol=_protocol, auth_data=auth_data, domain=domain, port=port)
+            proxy = Proxy(raw_protocol=raw_protocol, auth_data=auth_data, domain=domain, port=port)
             session.add(proxy)
 
         proxy.response_time = response_time
@@ -229,56 +287,3 @@ class Processor:
             * (settings.MAX_PROXY_CHECKING_PERIOD - settings.MIN_PROXY_CHECKING_PERIOD)
 
         session.commit()
-
-    # TODO: add proxy with domains
-    # TODO: add proxy with authorization
-    async def process_raw_proxies(self, proxies):
-        tasks = []
-        for proxy in proxies:
-            self.logger.debug('start processing raw proxy {0}'.format(proxy))
-            matches = re.match(PROXY_VALIDATE_REGEX, proxy)
-            if matches:
-                tasks.append(self.process_raw_proxy(**matches.groupdict()))
-                if len(tasks) > settings.CONCURRENT_TASKS_COUNT:
-                    await asyncio.wait(tasks)
-                    tasks.clear()
-
-        if tasks:
-            await asyncio.wait(tasks)
-
-    async def process_raw_proxy(self, domain, port, auth_data="", **kwargs):
-        if domain is None or port is None:
-            raise Exception()
-
-        if auth_data is None:
-            auth_data = ""
-
-        # proxies = session.query(Proxy).filter_by(domain=domain, port=port, auth_data=auth_data).count()
-        #
-        # if proxies > 0:
-        #     # TODO: remove? or maybe check other protocols
-        #     self.logger.debug('proxy with domain {}, port {} and auth_data {} already exists'.format(
-        #         domain, port, auth_data
-        #     ))
-        #     return
-
-        proxies = await proxy_utils.get_working_proxies(domain, port, auth_data)
-
-        if len(proxies) > 0:
-            for _proxy in proxies:
-                proxy = _proxy[0]
-                start_checking_time = _proxy[1]
-                end_checking_time = _proxy[2]
-
-                self.create_or_update_proxy(
-                    proxy._protocol,
-                    proxy.domain,
-                    proxy.port,
-                    proxy.auth_data,
-                    start_checking_time,
-                    end_checking_time
-                )
-        else:
-            self.logger.debug('unable to determine protocol of raw proxy {} {} {}'.format(domain, port, auth_data))
-
-
