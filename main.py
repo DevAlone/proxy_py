@@ -11,15 +11,16 @@ import time
 
 
 async def create_proxy_count_item():
-    session.add(ProxyCountItem(
-        timestamp=int(time.time()),
-        good_proxies_count=session.query(Proxy).filter(Proxy.number_of_bad_checks == 0).count(),
-        bad_proxies_count =session.query(Proxy)
-            .filter(Proxy.number_of_bad_checks > 0)
+    session.add(
+        ProxyCountItem(
+            timestamp=int(time.time()),
+            good_proxies_count=session.query(Proxy).filter(Proxy.number_of_bad_checks == 0).count(),
+            bad_proxies_count=session.query(Proxy).filter(Proxy.number_of_bad_checks > 0)
             .filter(Proxy.number_of_bad_checks < settings.DEAD_PROXY_THRESHOLD).count(),
-        dead_proxies_count=session.query(Proxy)
+            dead_proxies_count=session.query(Proxy)
             .filter(Proxy.number_of_bad_checks >= settings.DEAD_PROXY_THRESHOLD).count()
-    ))
+        )
+    )
     session.commit()
 
 

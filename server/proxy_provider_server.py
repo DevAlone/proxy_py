@@ -4,7 +4,7 @@ import time
 import datetime
 
 import functools
-
+from proxy_py import settings
 from server.api_request_handler import ApiRequestHandler
 from models import session, Proxy, ProxyCountItem, CollectorState
 
@@ -39,14 +39,13 @@ def get_response_wrapper(template_name):
         @functools.wraps(func)
         @aiohttp_jinja2.template(template_name)
         async def wrap(self, *args, **kwargs):
-            bad_proxies_count = 0
-            good_proxies_count = 0
-            dead_proxies_count = 0
-            item = session.query(ProxyCountItem).order_by(ProxyCountItem.timestamp.desc()).first()
-            if item:
-                bad_proxies_count = item.bad_proxies_count
-                good_proxies_count = item.good_proxies_count
-                dead_proxies_count = item.dead_proxies_count
+            good_proxies_count = session.query(Proxy).filter(Proxy.number_of_bad_checks == 0).count()
+
+            bad_proxies_count = session.query(Proxy).filter(Proxy.number_of_bad_checks > 0)\
+                .filter(Proxy.number_of_bad_checks < settings.DEAD_PROXY_THRESHOLD).count()
+
+            dead_proxies_count = session.query(Proxy)\
+                .filter(Proxy.number_of_bad_checks >= settings.DEAD_PROXY_THRESHOLD).count()
 
             response = {
                 "bad_proxies_count": bad_proxies_count,
