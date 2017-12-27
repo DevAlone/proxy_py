@@ -31,7 +31,9 @@ async def request(method, url, **kwargs):
 
     # headers={'User-Agent': get_random_user_agent()}
     if 'headers' not in kwargs:
-        kwargs['headers'] = {'User-Agent': get_random_user_agent()}
+        kwargs['headers'] = {
+            'User-Agent': get_random_user_agent()
+        }
     elif 'User-Agent' not in kwargs['headers']:
             kwargs['headers']['User-Agent'] = get_random_user_agent()
 

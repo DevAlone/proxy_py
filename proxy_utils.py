@@ -11,13 +11,18 @@ import os
 
 
 # TODO: add multiple checks with several sites
-async def check_proxy(proxy_url: str):
+async def check_proxy(proxy_url: str, session):
     try:
-        res = await async_requests.get(
+        res = await _request(
+            'get',
             'https://pikagraphs.d3d.info/OK/',
-            proxy=proxy_url,
-            timeout=settings.PROXY_CHECKING_TIMEOUT,
+            proxy_url,
+            settings.PROXY_CHECKING_TIMEOUT,
+            session
         )
+        res2 = await _request('GET', 'https://wtfismyip.com/text', proxy_url, settings.PROXY_CHECKING_TIMEOUT, session)
+        res = async_requests.Response(200, "OK")
+        print(res2)
         if res.status == 200 and res.text == "OK":
             return True
     except (aiohttp.client_exceptions.ServerDisconnectedError,
@@ -29,18 +34,19 @@ async def check_proxy(proxy_url: str):
             asyncio.TimeoutError,
             aiohttp.client_exceptions.ClientOSError,
             ) as ex:
+        message = str(ex)
+        if "file" in message:
+            print(message)
         # TODO: check to "Too many open files"
         return False
-#
-# async def get_working_proxies(domain, port, auth_data=""):
-#     proxies = []
-#
-#     for protocol in Proxy.PROTOCOLS:
-#         proxy = Proxy(protocol=protocol, domain=domain, port=port, auth_data=auth_data)
-#
-#         start_checking_time = time.time()
-#         if await check_proxy(proxy):
-#             end_checking_time = time.time()
-#             proxies.append((proxy, start_checking_time, end_checking_time))
-#
-#     return proxies
+
+
+async def _request(method, url, proxy_url, timeout, session : aiohttp.ClientSession):
+    headers = {
+        'User-Agent': async_requests.get_random_user_agent()
+    }
+
+    async with session.request(method, url, timeout=timeout, headers=headers, proxy=proxy_url) as response:
+        status = response.status
+        text = await response.text()
+        return async_requests.Response(status, text)

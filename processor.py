@@ -1,3 +1,5 @@
+import aiohttp
+
 import collectors_list
 import proxy_utils
 
@@ -7,12 +9,15 @@ from models import CollectorState
 from models import session
 from models import get_or_create
 
+
 import sqlalchemy
 import sqlalchemy.exc
 import asyncio
 import time
 import re
 import logging
+
+from aiosocks.connector import ProxyConnector, ProxyClientRequest
 
 
 # TODO: add ipv6 addresses
@@ -72,14 +77,18 @@ class Processor:
         while True:
             await asyncio.sleep(0.1)
             i = 0
-            while not self.queue.empty() and i <= settings.CONCURRENT_TASKS_COUNT:
-                proxy_data = self.queue.get_nowait()
-                tasks.append(self.process_proxy(*proxy_data))
-                self.queue.task_done()
+            async with aiohttp.ClientSession(
+                    connector=ProxyConnector(remote_resolve=False),
+                    request_class=ProxyClientRequest
+            ) as aiohttp_proxy_check_session:
+                while not self.queue.empty() and i <= settings.CONCURRENT_TASKS_COUNT:
+                    proxy_data = self.queue.get_nowait()
+                    tasks.append(self.process_proxy(*proxy_data, aiohttp_proxy_check_session))
+                    self.queue.task_done()
 
-            if tasks:
-                await asyncio.wait(tasks)
-                tasks.clear()
+                if tasks:
+                    await asyncio.wait(tasks)
+                    tasks.clear()
 
     async def producer(self):
         while True:
@@ -190,7 +199,8 @@ class Processor:
                         collector_id,
                     ))
 
-    async def process_proxy(self, raw_protocol: int, auth_data: str, domain: str, port: int, collector_id: int):
+    async def process_proxy(self, raw_protocol: int, auth_data: str, domain: str, port: int, collector_id: int,
+                            aiohttp_proxy_check_session):
         self.logger.debug("start processing proxy {}://{}@{}:{} with collector id {}".format(
             raw_protocol, auth_data, domain, port, collector_id))
 
@@ -205,7 +215,7 @@ class Processor:
 
         try:
             start_checking_time = time.time()
-            check_result = await proxy_utils.check_proxy(proxy_url)
+            check_result = await proxy_utils.check_proxy(proxy_url, aiohttp_proxy_check_session)
             end_checking_time = time.time()
 
             if check_result:
