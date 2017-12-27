@@ -20,9 +20,7 @@ async def check_proxy(proxy_url: str, session):
             settings.PROXY_CHECKING_TIMEOUT,
             session
         )
-        res2 = await _request('GET', 'https://wtfismyip.com/text', proxy_url, settings.PROXY_CHECKING_TIMEOUT, session)
-        res = async_requests.Response(200, "OK")
-        print(res2)
+        
         if res.status == 200 and res.text == "OK":
             return True
     except (aiohttp.client_exceptions.ServerDisconnectedError,
