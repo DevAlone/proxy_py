@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block body %}
+<table id=proxies>
+    <thead>
+        <tr>
+            <td>address</td>
+            <td>response_time</td>
+            <td>uptime</td>
+            <td>last_check_time</td>
+            <td>checking_period</td>
+            <td>number_of_bad_checks</td>
+            <td>bad_proxy</td>
+        </tr>
+    </thead>
+    <tbody>
+
+    {% for proxy in proxies %}
+        <tr>
+            <td>{{ proxy.address }}</td>
+            <td>{{ proxy.response_time }} ms</td>
+            <td>{{ proxy.uptime }}</td>
+            <td id="proxy_{{ loop.index }}_last_check_time">{{ proxy.last_check_time }}</td>
+            <td>{{ proxy.checking_period }}</td>
+            <td>{{ proxy.number_of_bad_checks }}</td>
+            <td>{{ proxy.bad_proxy }}</td>
+        </tr>
+        <script>
+            proxy_{{ loop.index }}_last_check_time.textContent = new Date({{ proxy.last_check_time }} * 1000);
+        </script>
+    {% endfor %}
+    </tbody>
+</table>
+{% endblock %}

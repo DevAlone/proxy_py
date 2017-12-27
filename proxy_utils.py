@@ -36,6 +36,7 @@ async def check_proxy(proxy_url: str, session=None):
             aiosocks.SocksError,
             asyncio.TimeoutError,
             aiohttp.client_exceptions.ClientOSError,
+            ssl.CertificateError,
             ) as ex:
         message = str(ex)
         if "file" in message:

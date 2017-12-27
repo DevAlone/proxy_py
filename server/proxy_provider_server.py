@@ -3,12 +3,16 @@ import time
 
 import datetime
 
+import functools
+
 from server.api_request_handler import ApiRequestHandler
 from models import session, Proxy, ProxyCountItem, CollectorState
 
 import aiohttp
 import aiohttp.web
 import logging
+import aiohttp_jinja2
+import jinja2
 
 
 _proxy_provider_server = None
@@ -30,6 +34,32 @@ _logger.addHandler(info_file_handler)
 _api_request_handler = ApiRequestHandler(_logger)
 
 
+def get_response_wrapper(template_name):
+    def decorator_wrapper(func):
+        @functools.wraps(func)
+        @aiohttp_jinja2.template(template_name)
+        async def wrap(self, *args, **kwargs):
+            bad_proxies_count = 0
+            good_proxies_count = 0
+            dead_proxies_count = 0
+            item = session.query(ProxyCountItem).order_by(ProxyCountItem.timestamp.desc()).first()
+            if item:
+                bad_proxies_count = item.bad_proxies_count
+                good_proxies_count = item.good_proxies_count
+                dead_proxies_count = item.dead_proxies_count
+
+            response = {
+                "bad_proxies_count": bad_proxies_count,
+                "good_proxies_count": good_proxies_count,
+                "dead_proxies_count": dead_proxies_count,
+            }
+            response.update(await func(self, *args, **kwargs))
+            return response
+        return wrap
+
+    return decorator_wrapper
+
+
 class ProxyProviderServer:
     @staticmethod
     def get_proxy_provider_server(host, port, processor):
@@ -45,8 +75,9 @@ class ProxyProviderServer:
 
     async def start(self, loop):
         app = aiohttp.web.Application()
+        aiohttp_jinja2.setup(app, loader=jinja2.FileSystemLoader("server/templates"))
         app.router.add_post('/', self.post)
-        app.router.add_get('/', self.get)
+        app.router.add_get('/', self.index)
         app.router.add_get('/get/proxy/', self.get_proxies_html)
         app.router.add_get('/get/proxy_count_item/', self.get_proxy_count_items_html)
         app.router.add_get('/get/collector_state/', self.get_collector_state_html)
@@ -72,7 +103,7 @@ class ProxyProviderServer:
             data = json.loads(data.decode())
 
             response = _api_request_handler.handle(client_address, data)
-        except:
+        except ValueError:
             response = {
                 'status': "error",
                 'error': "Your request doesn't look like request",
@@ -80,346 +111,38 @@ class ProxyProviderServer:
 
         return aiohttp.web.json_response(response)
 
-    async def get_proxies_html(self, request):
-        try:
-            html="""<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="robots" content="noindex">
-            <title>Go away!</title>"""
-
-            html += """
-            <style>
-            #proxy_table {
-                width: 100%;
-            }
-            #proxy_table td {
-                padding: 10px;
-            }
-            </style>
-            """
-            html += "</head><body>"
-            html += """
-            <p>All: {}</p>
-            <p>Alive: {}</p>
-            """.format(
-                session.query(Proxy).count(),
-                session.query(Proxy).filter(Proxy.number_of_bad_checks == 0).count()
-            )
-
-            html += """<table id="proxy_table">"""
-            html += "<thead>"
-            html += "<tr>"
-
-            html += "<td>address</td>"
-            html += "<td>response_time</td>"
-            html += "<td>uptime</td>"
-            html += "<td>last_check_time</td>"
-            html += "<td>checking_period</td>"
-            html += "<td>number_of_bad_checks</td>"
-            html += "<td>bad_proxy</td>"
-
-            html += "</tr>"
-            html += "</thead>"
-
-            html += "<tbody>"
-
-            current_timestamp = int(time.time())
-            proxies = session.query(Proxy)\
-                .filter(Proxy.number_of_bad_checks == 0)\
-                .order_by(Proxy.response_time)
-
-            i = 0
-            for proxy in proxies:
-                html += "<tr>"
-                html += "<td>{}</td>".format(proxy.address)
-                html += "<td>{}ms</td>".format(proxy.response_time / 1000 if proxy.response_time is not None else None)
-                html += """<td id="proxy_{}_uptime">{}</td>""".format(i,
-                                                    datetime.timedelta(seconds=int(current_timestamp - proxy.uptime)))
-                html += """<td id="proxy_{}_last_check_time">{}</td>""".format(i, proxy.last_check_time)
-                html += "<td>{}</td>".format(proxy.checking_period)
-                html += "<td>{}</td>".format(proxy.number_of_bad_checks)
-                html += "<td>{}</td>".format(proxy.bad_proxy)
-                html += "</tr>"
-                html += """
-                <script>
-                proxy_{}_last_check_time.textContent = new Date({});
-                </script>
-                """.format(i, proxy.last_check_time * 1000)
-                i += 1
-
-            html += "<tbody>"
-
-            html += "</table>"
-
-            html += "</body></html>"
-        except Exception as ex:
-            _logger.exception(ex)
-
-        return aiohttp.web.Response(headers={'Content-Type': 'text/html'}, body=html)
-
-    async def get_proxy_count_items_html(self, request):
-        try:
-            html="""<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="robots" content="noindex">
-            <title>Go away!</title>"""
-
-            html += """
-            <script src="https://pikagraphs.d3d.info/static/core/amcharts/amcharts.js"></script>
-            <script src="https://pikagraphs.d3d.info/static/core/amcharts/serial.js"></script>
-            <script src="https://pikagraphs.d3d.info/static/core/amcharts/export.min.js"></script>
-            <script src="https://pikagraphs.d3d.info/static/core/amcharts/light.js"></script>
-            <link rel="stylesheet" href="https://pikagraphs.d3d.info/static/core/amcharts/export.css" type="text/css" media="all" />
-            <style>
-            #proxy_table {
-                width: 100%;
-            }
-            #proxy_table td {
-                padding: 10px;
-            }
-            </style>
-            </head><body>
-            """
-
-            html += """
-            <!-- Chart code -->
-<script>
-var data = [
-"""
-            for proxy_count_item in session.query(ProxyCountItem).order_by(ProxyCountItem.timestamp):
-                html += "{"
-                html += """
-                    "date": new Date({}),
-                    "good_proxies_count": {},
-                    "bad_proxies_count": {},
-                    "dead_proxies_count": {}""".format(
-                                proxy_count_item.timestamp * 1000, proxy_count_item.good_proxies_count,
-                                proxy_count_item.bad_proxies_count, proxy_count_item.dead_proxies_count)
-                html += "},\n"
-
-            html += """
-];
-
-var chart = AmCharts.makeChart("chartdiv", {
-            "type": "serial",
-            "theme": "light",
-            "legend": {
-                "useGraphSettings": true
-            },
-            "marginRight": 80,
-            "autoMarginOffset": 20,
-            "marginTop": 7,
-            "dataProvider": data,
-            "valueAxes": [{
-                "id":"v1",
-                "axisColor": "#FF6600",
-                "axisThickness": 2,
-                "axisAlpha": 1,
-                "position": "left"
-            }, {
-                "id":"v2",
-                "axisColor": "#FCD202",
-                "axisThickness": 2,
-                "axisAlpha": 1,
-                "position": "right"
-            }, {
-                "id":"v3",
-                "axisColor": "#FF0000",
-                "axisThickness": 2,
-                "axisAlpha": 1,
-                "position": "right"
-            }
-            ],
-            "mouseWheelZoomEnabled": false,
-            "graphs": [{
-                "id": "v1",
-                "balloonText": "[[value]]",
-                "bullet": "round",
-                "bulletBorderAlpha": 1,
-                "bulletColor": "#0f0",
-                "hideBulletsCount": 50,
-                "title": "good",
-                "valueField": "good_proxies_count",
-                "useLineColorForBulletBorder": true,
-                "balloon":{
-                    "drop":true
-                }
-            },{
-                "id": "v2",
-                "balloonText": "[[value]]",
-                "bullet": "round",
-                "bulletBorderAlpha": 1,
-                "bulletColor": "#ff0",
-                "hideBulletsCount": 50,
-                "title": "bad",
-                "valueField": "bad_proxies_count",
-                "useLineColorForBulletBorder": true,
-                "balloon":{
-                    "drop":true
-                }
-            },{
-                "id": "v3",
-                "balloonText": "[[value]]",
-                "bullet": "round",
-                "bulletBorderAlpha": 1,
-                "bulletColor": "#FF0000",
-                "hideBulletsCount": 50,
-                "title": "dead",
-                "valueField": "dead_proxies_count",
-                "useLineColorForBulletBorder": true,
-                "balloon":{
-                    "drop":true
-                }
-            }
-            ],
-            "chartScrollbar": {
-                "autoGridCount": true,
-                "graph": "v1",
-                "scrollbarHeight": 40
-            },
-            "chartCursor": {
-               "limitToGraph":"v1"
-            },
-            "categoryField": "date",
-            "categoryAxis": {
-                "minPeriod": "mm",
-                "parseDates": true,
-                "axisColor": "#DADADA",
-                "dashLength": 1,
-                "minorGridEnabled": true
-            },
-            "export": {
-                "enabled": true
-            }
-        });
-
-chart.addListener("dataUpdated", zoomChart);
-zoomChart();
-
-
-function zoomChart(){
-    chart.zoomToIndexes(chart.dataProvider.length - 20, chart.dataProvider.length - 1);
-}
-
-</script>
-<!-- HTML -->
-<div id="chartdiv" style="height: 500px; width: 100%;"></div>	
-            """
-
-            html += """<table id="proxy_table">"""
-            html += "<thead>"
-            html += "<tr>"
-
-            html += "<td>timestamp</td>"
-            html += "<td>good_proxies_count</td>"
-            html += "<td>bad_proxies_count</td>"
-            html += "<td>dead_proxies_count</td>"
-
-            html += "</tr>"
-            html += "</thead>"
-
-            html += "<tbody>"
-
-            i = 0
-            for proxy_count_item in session.query(ProxyCountItem).order_by(ProxyCountItem.timestamp):
-                html += "<tr>"
-                html += """<td id="proxy_count_item_{}_timestamp">{}</td>""".format(i, proxy_count_item.timestamp)
-                html += "<td>{}</td>".format(proxy_count_item.good_proxies_count)
-                html += "<td>{}</td>".format(proxy_count_item.bad_proxies_count)
-                html += "<td>{}</td>".format(proxy_count_item.dead_proxies_count)
-                html += "</tr>"
-                html += """
-                <script>
-                proxy_count_item_{}_timestamp.textContent = new Date({});
-                </script>
-                """.format(i, proxy_count_item.timestamp * 1000)
-                i += 1
-
-            html += "<tbody>"
-            html += "</table>"
-            html += "</body></html>"
-        except Exception as ex:
-            _logger.exception(ex)
-
-        return aiohttp.web.Response(headers={'Content-Type': 'text/html'}, body=html)
-
+    @get_response_wrapper("collector_state.html")
     async def get_collector_state_html(self, request):
-        try:
-            html = """<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="robots" content="noindex">
-                    <title>Go away!</title>"""
-            html += """
-                        <style>
-                        #collector_states {
-                            width: 100%;
-                        }
-                        #collector_states td {
-                            padding: 10px;
-                        }
-                        </style>
-                        """
-            html += "</head><body>"
+        return {
+            "collector_states": list(session.query(CollectorState).all())
+        }
 
-            html += """<table id="collector_states">"""
-            html += "<thead>"
-            html += "<tr>"
-            html += "<td>processing_period</td>"
-            html += "<td>last_processing_time</td>"
-            html += "<td>last_processing_proxies_count</td>"
-            html += "<td>last_processing_new_proxies_count</td>"
-            html += "<td>data</td>"
-            html += "</tr>"
-            html += "</thead>"
+    @get_response_wrapper("proxies.html")
+    async def get_proxies_html(self, request):
+        proxies = list(session.query(Proxy)
+                       .filter(Proxy.number_of_bad_checks == 0)
+                       .order_by(Proxy.response_time))
 
-            html += "<tbody>"
+        current_timestamp = time.time()
 
-            i = 0
-            for collector_state in session.query(CollectorState).all():
-                html += "<tr>"
-                html += "<td colspan=5><b>{}</b></td>".format(collector_state.identifier)
-                html += "</tr>"
+        return {
+            "proxies": [{
+                "address": proxy.address,
+                "response_time": proxy.response_time / 1000 if proxy.response_time is not None else None,
+                "uptime": datetime.timedelta(seconds=int(current_timestamp - proxy.uptime)),
+                "last_check_time": proxy.last_check_time,
+                "checking_period": proxy.checking_period,
+                "number_of_bad_checks": proxy.number_of_bad_checks,
+                "bad_proxy": proxy.bad_proxy,
+            } for proxy in proxies]
+        }
 
-                html += "<tr>"
-                html += "<td>{}</td>".format(collector_state.processing_period)
-                html += """<td id="collector_state_{}_last_processing_time">{}</td>""".format(
-                    i, collector_state.last_processing_time)
-                html += "<td>{}</td>".format(collector_state.last_processing_proxies_count)
-                html += "<td>{}</td>".format("Not implemented")
-                html += "<td>{}</td>".format(collector_state.data)
-                html += "</tr>"
-                html += """
-                <script>
-                collector_state_{}_last_processing_time.textContent = new Date({});
-                </script>
-                """.format(i, collector_state.last_processing_time * 1000)
-                i += 1
+    @get_response_wrapper("proxy_count_items.html")
+    async def get_proxy_count_items_html(self, request):
+        return {
+            "proxy_count_items": list(session.query(ProxyCountItem).order_by(ProxyCountItem.timestamp))
+        }
 
-            html += "<tbody>"
-            html += "</table>"
-
-            html += "</body></html>"
-        except Exception as ex:
-            _logger.exception(ex)
-
-        return aiohttp.web.Response(headers={'Content-Type': 'text/html'}, body=html)
-
-    async def get(self, request):
-        return aiohttp.web.Response(headers={'Content-Type': 'text/html'}, body="""<!DOCTYPE html>
-<html>
-<head>
-<meta charset="UTF-8">
-<title>Go away!</title>
-<style>
-html, body {
-    width: 100%;
-    height: 100%;
-    background: #eee;
-    padding: 0;
-    margin: 0;
-    line-height: 0;
-}
-</style>
-</head>
-<body>
-
-<iframe width="100%" height="100%" src="https://www.youtube.com/embed/7OBx-YwPl8g?rel=0&autoplay=1" frameborder="0" 
-allowfullscreen></iframe>
-</body>
-
-</html>
-""")
+    @aiohttp_jinja2.template("index.html")
+    async def index(self, request):
+        return {}

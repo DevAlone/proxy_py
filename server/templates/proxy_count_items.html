@@ -1,0 +1,210 @@
+{% extends "base.html" %}
+
+{% block head %}
+<script src="https://pikagraphs.d3d.info/static/core/amcharts/amcharts.js"></script>
+<script src="https://pikagraphs.d3d.info/static/core/amcharts/serial.js"></script>
+<script src="https://pikagraphs.d3d.info/static/core/amcharts/export.min.js"></script>
+<script src="https://pikagraphs.d3d.info/static/core/amcharts/light.js"></script>
+<link rel="stylesheet" href="https://pikagraphs.d3d.info/static/core/amcharts/export.css" type="text/css" media="all" />
+{% endblock %}
+
+{% block body %}
+<!-- Chart code -->
+<script>
+var good_proxies_chart_data = [
+            {% for proxy_count_item in proxy_count_items %}
+            {
+                "date": new Date({{ proxy_count_item.timestamp }} * 1000),
+                "value": {{ proxy_count_item.good_proxies_count }},
+            },
+            {% endfor %}
+];
+
+var good_proxies_chart = AmCharts.makeChart("good_proxies_chart", {
+            "type": "serial",
+            "theme": "light",
+            "legend": {
+                "useGraphSettings": true
+            },
+            "marginRight": 80,
+            "autoMarginOffset": 20,
+            "marginTop": 7,
+            "dataProvider": good_proxies_chart_data,
+            "valueAxes": [{
+                "id":"v1",
+                "axisColor": "#FF6600",
+                "axisThickness": 2,
+                "axisAlpha": 1,
+                "position": "left"
+            }],
+            "mouseWheelZoomEnabled": false,
+            "graphs": [{
+                "id": "v1",
+                "lineColor": "#0f0",
+                "balloonText": "[[value]]",
+                "bullet": "round",
+                "bulletBorderAlpha": 1,
+                "bulletColor": "#0f0",
+                "hideBulletsCount": 50,
+                "title": "good",
+                "valueField": "value",
+                "useLineColorForBulletBorder": true,
+                "balloon":{
+                    "drop":true
+                }
+            }
+            ],
+            "chartScrollbar": {
+                "autoGridCount": true,
+                "graph": "v1",
+                "scrollbarHeight": 40
+            },
+            "chartCursor": {
+               "limitToGraph":"v1"
+            },
+            "categoryField": "date",
+            "categoryAxis": {
+                "minPeriod": "mm",
+                "parseDates": true,
+                "axisColor": "#DADADA",
+                "dashLength": 1,
+                "minorGridEnabled": true
+            },
+            "export": {
+                "enabled": true
+            }
+        });
+
+var bad_proxies_chart_data = [
+            {% for proxy_count_item in proxy_count_items %}
+            {
+                "date": new Date({{ proxy_count_item.timestamp }} * 1000),
+                "value": {{ proxy_count_item.bad_proxies_count }},
+            },
+            {% endfor %}
+];
+
+var bad_proxies_chart = AmCharts.makeChart("bad_proxies_chart", {
+            "type": "serial",
+            "theme": "light",
+            "legend": {
+                "useGraphSettings": true
+            },
+            "marginRight": 80,
+            "autoMarginOffset": 20,
+            "marginTop": 7,
+            "dataProvider": bad_proxies_chart_data,
+            "valueAxes": [{
+                "id":"v1",
+                "axisColor": "#FF6600",
+                "axisThickness": 2,
+                "axisAlpha": 1,
+                "position": "left"
+            }],
+            "mouseWheelZoomEnabled": false,
+            "graphs": [{
+                "id": "v1",
+                "lineColor": "#f90",
+                "balloonText": "[[value]]",
+                "bullet": "round",
+                "bulletBorderAlpha": 1,
+                "bulletColor": "#0f0",
+                "hideBulletsCount": 50,
+                "title": "bad",
+                "valueField": "value",
+                "useLineColorForBulletBorder": true,
+                "balloon":{
+                    "drop":true
+                }
+            }
+            ],
+            "chartScrollbar": {
+                "autoGridCount": true,
+                "graph": "v1",
+                "scrollbarHeight": 40
+            },
+            "chartCursor": {
+               "limitToGraph":"v1"
+            },
+            "categoryField": "date",
+            "categoryAxis": {
+                "minPeriod": "mm",
+                "parseDates": true,
+                "axisColor": "#DADADA",
+                "dashLength": 1,
+                "minorGridEnabled": true
+            },
+            "export": {
+                "enabled": true
+            }
+        });
+
+var dead_proxies_chart = [
+            {% for proxy_count_item in proxy_count_items %}
+            {
+                "date": new Date({{ proxy_count_item.timestamp }} * 1000),
+                "value": {{ proxy_count_item.dead_proxies_count }},
+            },
+            {% endfor %}
+];
+
+var dead_proxies_chart = AmCharts.makeChart("dead_proxies_chart", {
+            "type": "serial",
+            "theme": "light",
+            "legend": {
+                "useGraphSettings": true
+            },
+            "marginRight": 80,
+            "autoMarginOffset": 20,
+            "marginTop": 7,
+            "dataProvider": dead_proxies_chart,
+            "valueAxes": [{
+                "id":"v1",
+                "axisColor": "#f00",
+                "axisThickness": 2,
+                "axisAlpha": 1,
+                "position": "left"
+            }],
+            "mouseWheelZoomEnabled": false,
+            "graphs": [{
+                "id": "v1",
+                "lineColor": "#f00",
+                "balloonText": "[[value]]",
+                "bullet": "round",
+                "bulletBorderAlpha": 1,
+                "bulletColor": "#f00",
+                "hideBulletsCount": 50,
+                "title": "dead",
+                "valueField": "value",
+                "useLineColorForBulletBorder": true,
+                "balloon":{
+                    "drop":true
+                }
+            }
+            ],
+            "chartScrollbar": {
+                "autoGridCount": true,
+                "graph": "v1",
+                "scrollbarHeight": 40
+            },
+            "chartCursor": {
+               "limitToGraph":"v1"
+            },
+            "categoryField": "date",
+            "categoryAxis": {
+                "minPeriod": "mm",
+                "parseDates": true,
+                "axisColor": "#DADADA",
+                "dashLength": 1,
+                "minorGridEnabled": true
+            },
+            "export": {
+                "enabled": true
+            }
+        });
+</script>
+<!-- HTML -->
+<div id="good_proxies_chart" style="height: 500px; width: 100%;"></div>
+<div id="bad_proxies_chart" style="height: 500px; width: 100%;"></div>
+<div id="dead_proxies_chart" style="height: 500px; width: 100%;"></div>
+{% endblock %}

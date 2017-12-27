@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="robots" content="noindex">
+    <title>Go away!</title>
+    <style>
+    table {
+        width: 100%;
+    }
+    table td {
+        padding: 10px;
+    }
+    </style>
+    {% block head %}
+
+    {% endblock %}
+</head>
+<body>
+<p>Good: {{ good_proxies_count }}</p>
+<p>Bad: {{ bad_proxies_count }}</p>
+<p>Dead: {{ dead_proxies_count }}</p>
+{% block body %}
+
+{% endblock %}
+</body>

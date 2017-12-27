@@ -5,3 +5,5 @@ lxml==3.8.0
 PySocks==1.6.7
 SQLAlchemy==1.1.15
 fake-useragent
+aiohttp_jinja2
+jinja2

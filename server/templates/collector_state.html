@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block body %}
+<table id="collector_states">
+    <thead>
+        <tr>
+            <td>processing_period</td>
+            <td>last_processing_time</td>
+            <td>last_processing_proxies_count</td>
+            <td>last_processing_new_proxies_count</td>
+            <td>data</td>
+        </tr>
+    </thead>
+    <tbody>
+
+    {% for collector_state in collector_states %}
+        <tr>
+            <td colspan=5><b>{{ collector_state.identifier }}</b></td>
+        </tr>
+        <tr>
+            <td>{{ collector_state.processing_period }}</td>
+            <td id="collector_state_{{ collector_state.id }}_last_processing_time">
+                {{ collector_state.last_processing_time }}
+            </td>
+            <td>{{ collector_state.last_processing_proxies_count }}</td>
+            <td>Not implemented</td>
+            <td>{{ collector_state.data }}</td>
+        </tr>
+        <script>
+        collector_state_{{ collector_state.id }}_last_processing_time.textContent
+            = new Date({{ collector_state.last_processing_time }} * 1000);
+        </script>
+    {% endfor %}
+    </tbody>
+</table>
+{% endblock %}
