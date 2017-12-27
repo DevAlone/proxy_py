@@ -77,18 +77,18 @@ class Processor:
         while True:
             await asyncio.sleep(0.1)
             i = 0
-            async with aiohttp.ClientSession(
-                    connector=ProxyConnector(remote_resolve=False),
-                    request_class=ProxyClientRequest
-            ) as aiohttp_proxy_check_session:
-                while not self.queue.empty() and i <= settings.CONCURRENT_TASKS_COUNT:
-                    proxy_data = self.queue.get_nowait()
-                    tasks.append(self.process_proxy(*proxy_data, aiohttp_proxy_check_session))
-                    self.queue.task_done()
+            # async with aiohttp.ClientSession(
+            #         connector=ProxyConnector(remote_resolve=False),
+            #         request_class=ProxyClientRequest
+            # ) as aiohttp_proxy_check_session:
+            while not self.queue.empty() and i <= settings.CONCURRENT_TASKS_COUNT:
+                proxy_data = self.queue.get_nowait()
+                tasks.append(self.process_proxy(*proxy_data))
+                self.queue.task_done()
 
-                if tasks:
-                    await asyncio.wait(tasks)
-                    tasks.clear()
+            if tasks:
+                await asyncio.wait(tasks)
+                tasks.clear()
 
     async def producer(self):
         while True:
@@ -200,7 +200,7 @@ class Processor:
                     ))
 
     async def process_proxy(self, raw_protocol: int, auth_data: str, domain: str, port: int, collector_id: int,
-                            aiohttp_proxy_check_session):
+                            aiohttp_proxy_check_session=None):
         self.logger.debug("start processing proxy {}://{}@{}:{} with collector id {}".format(
             raw_protocol, auth_data, domain, port, collector_id))
 
@@ -253,6 +253,8 @@ class Processor:
             session.rollback()
             self.logger.error("Error during processing proxy")
             self.logger.exception(ex)
+            print("Exception proxy_url = {}".format(proxy_url))
+            exit(1)
 
     @staticmethod
     def create_or_update_proxy(raw_protocol: Proxy.PROTOCOLS, auth_data, domain, port,
