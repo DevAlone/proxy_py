@@ -80,9 +80,17 @@ class ProxyProviderServer:
         app.router.add_get('/get/proxy/', self.get_proxies_html)
         app.router.add_get('/get/proxy_count_item/', self.get_proxy_count_items_html)
         app.router.add_get('/get/collector_state/', self.get_collector_state_html)
+        app.router.add_get('/get/best/http/proxy/', self.get_best_http_proxy)
 
         server = await loop.create_server(app.make_handler(), self.host, self.port)
         return server
+
+    async def get_best_http_proxy(self, request):
+        proxy_address = session.query(Proxy).filter(Proxy.number_of_bad_checks == 0)\
+            .filter(Proxy.raw_protocol == Proxy.PROTOCOLS.index("http"))\
+            .order_by("response_time").first().address
+
+        return aiohttp.web.Response(text=proxy_address)
 
     async def post(self, request):
         client_address = request.transport.get_extra_info('peername')
