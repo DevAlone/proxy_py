@@ -240,6 +240,8 @@ class Processor:
                 if proxy:
                     proxy.number_of_bad_checks += 1
                     proxy.uptime = int(time.time())
+                    if proxy.number_of_bad_checks > settings.DEAD_PROXY_THRESHOLD:
+                        proxy.bad_uptime = int(time.time())
 
                     if proxy.number_of_bad_checks > settings.REMOVE_ON_N_BAD_CHECKS:
                         self.logger.debug('removing proxy {0} permanently...'.format(proxy.to_url()))
@@ -283,12 +285,16 @@ class Processor:
             proxy = Proxy(raw_protocol=raw_protocol, auth_data=auth_data, domain=domain, port=port)
             session.add(proxy)
 
+        if proxy.bad_proxy or proxy.uptime is None or proxy.uptime == 0:
+            proxy.uptime = int(time.time())
+
+        if proxy.bad_uptime is None or proxy.bad_uptime == 0 or \
+                proxy.number_of_bad_checks > settings.DEAD_PROXY_THRESHOLD:
+            proxy.bad_uptime = int(time.time())
+
         proxy.response_time = response_time
         proxy.number_of_bad_checks = 0
         proxy.last_check_time = int(time.time())
-
-        if proxy.bad_proxy or proxy.uptime is None or proxy.uptime == 0:
-            proxy.uptime = int(time.time())
 
         checking_time = int(end_checking_time - start_checking_time)
         if checking_time > settings.PROXY_CHECKING_TIMEOUT:

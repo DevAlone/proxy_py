@@ -6,6 +6,7 @@
             <td>address</td>
             <td>response_time</td>
             <td>uptime</td>
+            <td>bad_uptime</td>
             <td>last_check_time</td>
             <td>checking_period</td>
             <td>number_of_bad_checks</td>
@@ -19,6 +20,7 @@
             <td>{{ proxy.address }}</td>
             <td>{{ proxy.response_time }} ms</td>
             <td>{{ proxy.uptime }}</td>
+            <td>{{ proxy.bad_uptime }}</td>
             <td id="proxy_{{ loop.index }}_last_check_time">{{ proxy.last_check_time }}</td>
             <td>{{ proxy.checking_period }}</td>
             <td>{{ proxy.number_of_bad_checks }}</td>

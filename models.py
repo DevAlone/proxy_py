@@ -32,6 +32,7 @@ class Proxy(Base):
     checking_period = Column(Integer, default=settings.MIN_PROXY_CHECKING_PERIOD, nullable=False)
     number_of_bad_checks = Column(Integer, default=0)
     uptime = Column(Integer, nullable=True, default=None)
+    bad_uptime = Column(Integer, nullable=True, default=None)
     # in microseconds
     response_time = Column(Integer, nullable=True, default=None)
 

@@ -137,6 +137,7 @@ class ProxyProviderServer:
                 "address": proxy.address,
                 "response_time": proxy.response_time / 1000 if proxy.response_time is not None else None,
                 "uptime": datetime.timedelta(seconds=int(current_timestamp - proxy.uptime)),
+                "bad_uptime": datetime.timedelta(seconds=int(current_timestamp - proxy.bad_uptime)),
                 "last_check_time": proxy.last_check_time,
                 "checking_period": proxy.checking_period,
                 "number_of_bad_checks": proxy.number_of_bad_checks,
