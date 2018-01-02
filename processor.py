@@ -282,7 +282,8 @@ class Processor:
             pass
         else:
             # doesn't exist, so create
-            proxy = Proxy(raw_protocol=raw_protocol, auth_data=auth_data, domain=domain, port=port)
+            proxy = Proxy(number_of_bad_checks=0, raw_protocol=raw_protocol, auth_data=auth_data, domain=domain,
+                          port=port)
             session.add(proxy)
 
         if proxy.bad_proxy or proxy.uptime is None or proxy.uptime == 0:
