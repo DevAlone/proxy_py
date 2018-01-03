@@ -1,3 +1,5 @@
+# TODO: add wrapper for doing requests and saving its cookies and UserAgent
+
 class AbstractCollector:
     # this method should return proxies in any of the following formats:
     # ip:port

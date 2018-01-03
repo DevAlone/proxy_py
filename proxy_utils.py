@@ -15,14 +15,14 @@ from aiosocks.connector import ProxyConnector, ProxyClientRequest
 
 
 # TODO: add multiple checks with several sites
-async def check_proxy(proxy_url: str, session=None):
+async def check_proxy(proxy_url: str, session=None, timeout=None):
     try:
         res = await _request(
             'get',
             'https://pikagraphs.d3d.info/OK/',
             # 'https://wtfismyip.com/text',
             proxy_url,
-            settings.PROXY_CHECKING_TIMEOUT,
+            settings.PROXY_CHECKING_TIMEOUT if timeout is None else timeout,
             session
         )
 
