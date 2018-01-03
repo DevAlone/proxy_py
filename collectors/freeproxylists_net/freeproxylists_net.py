@@ -11,7 +11,7 @@ BASE_URL = "http://freeproxylists.net/?page={}"
 
 
 class Collector(PagesCollector):
-    __collector__
+    __collector__ = True
     # pages from 1
 
     def __init__(self):
