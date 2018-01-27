@@ -128,9 +128,9 @@ async def get_proxies():
     return result
 ```
 
-## API
+## How to interact with API?
 
-More about API read [here](https://github.com/DevAlone/proxy_py/tree/master/docs/API.md)
+Read more about API  [here](https://github.com/DevAlone/proxy_py/tree/master/docs/API.md)
 
 ## How to deploy on production using supervisor, nginx and postgresql in 8 steps?
 
