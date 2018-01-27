@@ -1,31 +1,30 @@
 from models import session
+from server.requests_to_models.request import Request, GetRequest
 import importlib
 
 
 class RequestExecutor:
-    def execute(self, request):
+    def execute(self, request: Request):
         try:
             return {
-                'get': self._get,
-            }[request['method']](request)
-        except Exception as ex:
+                GetRequest: self._get,
+            }[type(request)](request)
+        except BaseException as ex:
             raise ExecutionError(repr(ex))
-        except:
-            raise ExecutionError()
 
-    def _get(self, request):
-        package = importlib.import_module(request['ClassName'][0])
-        Class = getattr(package, request['ClassName'][1])
+    def _get(self, request: GetRequest):
+        package = importlib.import_module(request.class_name[0])
+        class_name = getattr(package, request.class_name[1])
 
         # TODO: remove bad_proxy
 
-        queryset = session.query(Class).filter(Class.number_of_bad_checks == 0)
+        queryset = session.query(class_name).filter(class_name.number_of_bad_checks == 0)
         result = []
 
         for item in queryset:
             obj = {}
 
-            for field_name in request['fields']:
+            for field_name in request.fields:
                 obj[field_name] = getattr(item, field_name)
 
             result.append(obj)
@@ -33,7 +32,7 @@ class RequestExecutor:
         return {
             'data': result,
             'count': queryset.count(),
-            'last_page': True,
+            'has_more': False,
         }
 
 

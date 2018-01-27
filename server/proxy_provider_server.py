@@ -113,7 +113,7 @@ class ProxyProviderServer:
         except ValueError:
             response = {
                 'status': "error",
-                'error': "Your request doesn't look like request",
+                'error_message': "Your request doesn't look like request",
             }
 
         return aiohttp.web.json_response(response)

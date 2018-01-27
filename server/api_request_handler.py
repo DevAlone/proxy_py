@@ -22,12 +22,13 @@ class ApiRequestHandler:
                 "Error during parsing request. \nClient: {} \nRequest: {} \nException: {}".format(
                     client_address,
                     post_data,
-                    ex)
+                    ex
+                )
             )
 
             response = {
                 'status': 'error',
-                'error': str(ex)
+                'error_message': str(ex)
             }
         except ExecutionError as ex:
             self._logger.warning(
@@ -36,11 +37,10 @@ class ApiRequestHandler:
                     post_data,
                     ex)
             )
-            raise ex
 
             response = {
                 'status': 'error',
-                'error': 'error during execution request'
+                'error_message': 'error during execution request'
             }
 
         return response

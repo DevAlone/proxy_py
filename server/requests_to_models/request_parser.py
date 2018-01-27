@@ -1,3 +1,5 @@
+from server.requests_to_models.request import Request, GetRequest
+
 import string
 import copy
 import re
@@ -17,18 +19,19 @@ class RequestParser:
     def parse(self, request: dict):
         for key in request.keys():
             request[key] = str(request[key])
+            self.validate_key(key)
+
             if key in self.COMMA_SEPARATED_KEYS:
-                request[key] = self._comma_separated_field_to_list(request[key])
-            self._validate_key_value(key, request[key])
+                request[key] = self.comma_separated_field_to_list(request[key])
 
-        return self._parse_dict(request)
+            self.validate_value(key, request[key])
 
-    def _validate_key_value(self, key, value):
-        self._validate_key(key)
+        return self.parse_dict(request)
 
-        if len(key) > self.MAXIMUM_KEY_LENGTH:
-            raise ValidationError(
-                'Some key is too big. Maximum allowed length is {}'.format(self.MAXIMUM_KEY_LENGTH))
+    def validate_value(self, key: str, value):
+        if type(value) not in [str, int, list]:
+            raise ValidationError('Value type should be string, integer or list')
+
         if len(value) > self.MAXIMUM_VALUE_LENGTH:
             raise ValidationError(
                 'Some value is too big. Maximum allowed length is {}'.format(self.MAXIMUM_VALUE_LENGTH))
@@ -36,18 +39,19 @@ class RequestParser:
         # validate list types
         if type(value) is list:
             for value_item in value:
-                self._validate_key_value(key, value_item)
+                self.validate_value(key, value_item)
             return
 
         if key in {'model', 'method', 'fields', 'order_by'}:
+            self._validate_value_type(key, value, str)
             self._validate_value_regex(key, value, r'^[a-zA-Z][a-zA-Z0-9_]+$')
         elif key in {'filter'}:
+            self._validate_value_type(key, value, str)
             self._validate_value_regex(key, value, r'^[a-zA-Z0-9_]+$')
-            pass
         elif key in {'limit', 'offset'}:
-            if type(value) is not int:
-                raise ValidationError("Value of key '{}' should be int".format(key))
-            pass
+            self._validate_value_type(key, value, int)
+            if value < 0:
+                raise ValidationError('Value of key "{}" should be positive'.format(key))
         else:
             # It means I forget to add validation of field
             raise ValidationError('Server Error')
@@ -56,15 +60,22 @@ class RequestParser:
         if not re.match(pattern, value):
             raise ValidationError("Value of key '{}' doesn't match to pattern {}".format(key, pattern))
 
-    def _validate_key(self, key):
+    def _validate_value_type(self, key, value, type):
+        if type(value) is not type:
+            raise ValidationError('Value of key "{}" should be {}'.format(key, type))
+
+    def validate_key(self, key: str):
         if type(key) is not str:
             raise ValidationError("Key {} is not string".format(key))
+        if len(key) > self.MAXIMUM_KEY_LENGTH:
+            raise ValidationError(
+                'Some key is too big. Maximum allowed length is {}'.format(key, self.MAXIMUM_KEY_LENGTH))
         if not re.match(r'^[a-zA-Z][a-zA-Z0-9_]+$', key):
-            raise ValidationError("Key '{}' doesn't match to pattern ^[a-zA-Z][a-zA-Z0-9_]+$".format(key))
+            raise ValidationError('Key "{}" doesn\'t match to pattern ^[a-zA-Z][a-zA-Z0-9_]+$'.format(key))
         if key not in self.ALLOWED_KEYS:
-            raise ValidationError("Key '{}' isn't allowed".format(key))
+            raise ValidationError('Key "{}" isn\'t allowed'.format(key))
 
-    def _comma_separated_field_to_list(self, string_field):
+    def comma_separated_field_to_list(self, string_field):
         result = []
         for val in string_field.split(','):
             val = val.strip()
@@ -72,46 +83,50 @@ class RequestParser:
                 result.append(val)
         return result
 
-    def _parse_dict(self, req_dict):
-        self.result_request = {}
+    def parse_dict(self, req_dict):
         if 'model' not in req_dict:
-            raise ParseError("You should specify 'model'")
+            raise ParseError('You should specify "model"')
 
         if req_dict['model'] not in self.config:
             raise ParseError("Model doesn't exist or isn't allowed")
 
         config = self.config[req_dict['model']]
 
-        self.result_request['ClassName'] = config['modelClass']
+        result_request = Request(config['modelClass'])
 
         if 'method' not in req_dict:
-            raise ParseError("You should specify 'method'")
+            raise ParseError('You should specify "method"')
 
-        if req_dict['method'] not in config['methods']:
+        method = req_dict['method']
+
+        if method not in config['methods']:
             raise ParseError("Method doesn't exist or isn't allowed")
 
-        self.result_request['method'] = req_dict['method']
+        config = config['methods'][method]
 
-        config = config['methods'][req_dict['method']]
         return {
             'get': self._get,
-        }[req_dict['method']](req_dict, config)
+        }[method](req_dict, config, result_request)
 
-    def _get(self, req_dict, config):
+    def _get(self, req_dict, config, result_request):
+        fields = []
+
         if 'fields' not in req_dict:
-            req_dict['fields'] = ["*"]
-            self.result_request['fields'] = copy.copy(config['fields'])
+            fields = copy.copy(config['fields'])
         else:
-            self.result_request['fields'] = []
-
             for field in req_dict['fields']:
                 if field not in config['fields']:
-                    raise ParseError("Field '{}' doesn't exist or isn't allowed".format(field))
-                self.result_request['fields'].append(field)
+                    raise ParseError("Field \"{}\" doesn't exist or isn't allowed".format(field))
 
-        return self.result_request
+                fields.append(field)
+
+        result_request = GetRequest.from_request(result_request)
+        result_request.fields = fields
+
+        return result_request
 
     def _validate_config(self):
+        # TODO: check fields for existence and so on
         if False:
             raise ConfigFormatError()
 
