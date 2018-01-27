@@ -50,7 +50,7 @@ It will return json response like this:
 {
 	"status": "ok",
 	"count": 1,
-	"has_more": True,
+	"has_more": true,
 	"data": [{
 			"address": "http://127.0.0.1:8080",
 			"auth_data": null,
