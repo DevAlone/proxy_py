@@ -28,17 +28,21 @@ PROXY_PROVIDER_SERVER_ADDRESS = {
     'PORT': 55555,
 }
 
+_PROXY_PROVIDER_SERVER_API_CONFIG_FETCH_CONFIG = {
+    'fields': ['address', 'protocol', 'auth_data', 'domain', 'port', 'last_check_time',
+               'number_of_bad_checks', 'bad_proxy', 'uptime', 'response_time'],
+    'filter_fields': ['last_check_time', 'protocol', 'number_of_bad_checks', 'bad_proxy', 'uptime',
+                      'response_time'],
+    'order_by_fields': ['last_check_time', 'number_of_bad_checks', 'uptime', 'response_time'],
+    'default_order_by_fields': ['response_time', ],
+}
+
 PROXY_PROVIDER_SERVER_API_CONFIG = {
     'proxy': {
-        'modelClass': ('models', 'Proxy'),
+        'model_class': ('models', 'Proxy'),
         'methods': {
-            'get': {
-                'fields': ['address', 'protocol', 'auth_data', 'domain', 'port', 'last_check_time',
-                           'number_of_bad_checks', 'bad_proxy', 'uptime', 'response_time'],
-                'filterFields': ['last_check_time', 'protocol', 'number_of_bad_checks', 'bad_proxy', 'uptime',
-                                 'response_time'],
-                'orderFields': ['last_check_time', 'number_of_bad_checks', 'uptime'],
-            }
+            'get': _PROXY_PROVIDER_SERVER_API_CONFIG_FETCH_CONFIG,
+            'count': _PROXY_PROVIDER_SERVER_API_CONFIG_FETCH_CONFIG,
         }
     }
 }

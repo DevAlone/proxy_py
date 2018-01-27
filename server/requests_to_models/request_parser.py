@@ -1,4 +1,4 @@
-from server.requests_to_models.request import Request, GetRequest
+from server.requests_to_models.request import Request, GetRequest, CountRequest
 
 import string
 import copy
@@ -23,6 +23,11 @@ class RequestParser:
 
             if key in self.COMMA_SEPARATED_KEYS:
                 request[key] = self.comma_separated_field_to_list(request[key])
+            if key in {'limit', 'offset'}:
+                try:
+                    request[key] = int(request[key])
+                except ValueError:
+                    raise ValidationError('Value of key "{}" should be integer'.format(key))
 
             self.validate_value(key, request[key])
 
@@ -32,7 +37,7 @@ class RequestParser:
         if type(value) not in [str, int, list]:
             raise ValidationError('Value type should be string, integer or list')
 
-        if len(value) > self.MAXIMUM_VALUE_LENGTH:
+        if type(value) in [str, list] and len(value) > self.MAXIMUM_VALUE_LENGTH:
             raise ValidationError(
                 'Some value is too big. Maximum allowed length is {}'.format(self.MAXIMUM_VALUE_LENGTH))
 
@@ -92,7 +97,7 @@ class RequestParser:
 
         config = self.config[req_dict['model']]
 
-        result_request = Request(config['modelClass'])
+        result_request = Request(config['model_class'])
 
         if 'method' not in req_dict:
             raise ParseError('You should specify "method"')
@@ -105,25 +110,51 @@ class RequestParser:
         config = config['methods'][method]
 
         return {
-            'get': self._get,
+            'get': self.method_get,
+            'count': self.method_count,
         }[method](req_dict, config, result_request)
 
-    def _get(self, req_dict, config, result_request):
-        fields = []
-
-        if 'fields' not in req_dict:
-            fields = copy.copy(config['fields'])
-        else:
-            for field in req_dict['fields']:
-                if field not in config['fields']:
-                    raise ParseError("Field \"{}\" doesn't exist or isn't allowed".format(field))
-
-                fields.append(field)
-
+    def method_get(self, req_dict, config, result_request):
         result_request = GetRequest.from_request(result_request)
-        result_request.fields = fields
+        result_request.fields = self.parse_fields(req_dict, config)
+        result_request.order_by = self.parse_order_by_fields(req_dict, config)
+        if 'limit' in req_dict:
+            result_request.limit = req_dict['limit']
+        if 'offset' in req_dict:
+            result_request.offset = req_dict['offset']
 
         return result_request
+
+    def method_count(self, req_dict, config, result_request):
+        result_request = CountRequest.from_request(result_request)
+        result_request.fields = self.parse_fields(req_dict, config)
+        result_request.order_by = self.parse_order_by_fields(req_dict, config)
+        if 'limit' in req_dict:
+            result_request.limit = req_dict['limit']
+        if 'offset' in req_dict:
+            result_request.offset = req_dict['offset']
+
+        return result_request
+
+    def parse_fields(self, req_dict, config):
+        return self.parse_list(req_dict, config, "fields", "fields", config['fields'])
+
+    def parse_order_by_fields(self, req_dict, config):
+        return self.parse_list(req_dict, config, "order_by", "order_by_fields", config['default_order_by_fields'])
+
+    def parse_list(self, req_dict, config, request_key, config_key, default_value):
+        if request_key not in req_dict:
+            return copy.copy(default_value)
+
+        result = []
+
+        for field in req_dict[request_key]:
+            if field not in config[config_key]:
+                raise ParseError("Field \"{}\" doesn't exist or isn't allowed".format(field))
+
+            result.append(field)
+
+        return result
 
     def _validate_config(self):
         # TODO: check fields for existence and so on
