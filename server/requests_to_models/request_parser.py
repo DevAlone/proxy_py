@@ -96,7 +96,7 @@ class RequestParser:
             raise ParseError('You should specify "model"')
 
         if req_dict['model'] not in self.config:
-            raise ParseError("Model doesn't exist or isn't allowed")
+            raise ParseError("Model \"{}\" doesn't exist or isn't allowed".format(req_dict['model']))
 
         config = self.config[req_dict['model']]
 

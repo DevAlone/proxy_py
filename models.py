@@ -28,8 +28,8 @@ class Proxy(Base):
     port = Column(Integer, nullable=False)
     auth_data = Column(String(64), default="", nullable=False)
 
-    last_check_time = Column(Integer, default=0)
     checking_period = Column(Integer, default=settings.MIN_PROXY_CHECKING_PERIOD, nullable=False)
+    last_check_time = Column(Integer, default=0)
     number_of_bad_checks = Column(Integer, default=0)
     uptime = Column(Integer, nullable=True, default=None)
     bad_uptime = Column(Integer, nullable=True, default=None)

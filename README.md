@@ -37,8 +37,12 @@ proxy_py has server based on aiohttp which is listening 127.0.0.1:55555(you can 
 {
 	'model': 'proxy',
 	'method': 'get',
+	'order_by': 'response_time, uptime'
 }
 ```
+
+Note: order_by makes result sorting by one or more fields separated by comma.
+You can skip it. The required fields are model and method.
 
 It will return json response like this:
 
@@ -46,7 +50,7 @@ It will return json response like this:
 {
 	'status': 'ok',
 	'count': 1,
-	'last_page': True,
+	'has_more': True,
 	'data': [{
 			"address": "http://127.0.0.1:8080",
 			"auth_data": null,
@@ -57,19 +61,19 @@ It will return json response like this:
 			"port": 8080,
 			"protocol": "http",
 			"uptime": 1509460949,
-			"white_ip_v4": null,
-			"white_ip_v6": null,
 		}
 	]
 }
 ```
+
+Note: All fields except *protocol*, *domain*, *port*, *auth_data*, *checking_period* and *address* can be null  
 
 Or error if something went wrong:
 
 ```
 {
 	'status': 'error',
-	'error': 'You should specify model',
+	'error_message': 'You should specify model',
 }
 ```
 
@@ -123,6 +127,10 @@ async def get_proxies():
                 
     return result
 ```
+
+## API
+
+More about API read [here](https://github.com/DevAlone/proxy_py/tree/master/docs/API.md)
 
 ## How to deploy on production using supervisor, nginx and postgresql in 8 steps?
 
