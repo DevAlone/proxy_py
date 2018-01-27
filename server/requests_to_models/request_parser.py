@@ -47,7 +47,10 @@ class RequestParser:
                 self.validate_value(key, value_item)
             return
 
-        if key in {'model', 'method', 'fields', 'order_by'}:
+        if key == 'order_by':
+            self._validate_value_type(key, value, str)
+            self._validate_value_regex(key, value, r'^-?[a-zA-Z][a-zA-Z0-9_]+$')
+        elif key in {'model', 'method', 'fields'}:
             self._validate_value_type(key, value, str)
             self._validate_value_regex(key, value, r'^[a-zA-Z][a-zA-Z0-9_]+$')
         elif key in {'filter'}:
@@ -149,8 +152,12 @@ class RequestParser:
         result = []
 
         for field in req_dict[request_key]:
-            if field not in config[config_key]:
-                raise ParseError("Field \"{}\" doesn't exist or isn't allowed".format(field))
+            if config_key == 'order_by_fields':
+                if (field[1:] if field[0] == '-' else field) not in config[config_key]:
+                    raise ParseError("Field \"{}\" doesn't exist or isn't allowed1".format(field))
+            else:
+                if field not in config[config_key]:
+                    raise ParseError("Field \"{}\" doesn't exist or isn't allowed".format(field))
 
             result.append(field)
 

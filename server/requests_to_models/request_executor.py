@@ -1,3 +1,4 @@
+from proxy_py import settings
 from models import session
 from server.requests_to_models.request import Request, GetRequest, CountRequest, FetchRequest
 import importlib
@@ -20,9 +21,9 @@ class RequestExecutor:
         package = importlib.import_module(request.class_name[0])
         class_name = getattr(package, request.class_name[1])
 
-        # TODO: remove bad_proxy
+        # TODO: remove checking number_of_bad_checks
 
-        queryset = session.query(class_name).filter(class_name.number_of_bad_checks == 0)
+        queryset = session.query(class_name).filter(class_name.number_of_bad_checks < settings.DEAD_PROXY_THRESHOLD)
 
         result = {
             'count': queryset.count(),
@@ -56,7 +57,16 @@ class RequestExecutor:
     def order_by_list_to_sqlalchemy(self, order_by_fields: list, class_name):
         result = []
         for field in order_by_fields:
-            result.append(getattr(class_name, field))
+            reverse = False
+            if field[0] == '-':
+                reverse = True
+                field = field[1:]
+
+            attribute = getattr(class_name, field)
+            if reverse:
+                attribute = attribute.desc()
+
+            result.append(attribute)
 
         return result
 
