@@ -60,9 +60,9 @@ class RequestParser:
         if not re.match(pattern, value):
             raise ValidationError("Value of key '{}' doesn't match to pattern {}".format(key, pattern))
 
-    def _validate_value_type(self, key, value, type):
-        if type(value) is not type:
-            raise ValidationError('Value of key "{}" should be {}'.format(key, type))
+    def _validate_value_type(self, key, value, expected_type):
+        if type(value) is not expected_type:
+            raise ValidationError('Value of key "{}" should be {}'.format(key, expected_type))
 
     def validate_key(self, key: str):
         if type(key) is not str:
