@@ -134,7 +134,7 @@ Read more about API  [here](https://github.com/DevAlone/proxy_py/tree/master/doc
 
 ## How to test it?
 
-If made changes to code and want to check that you didn't broke anything, go [here](https://github.com/DevAlone/proxy_py/tree/master/docs/tests.md)
+If you made changes to code and want to check that you didn't broke anything, go [here](https://github.com/DevAlone/proxy_py/tree/master/docs/tests.md)
 
 ## How to deploy on production using supervisor, nginx and postgresql in 8 steps?
 
