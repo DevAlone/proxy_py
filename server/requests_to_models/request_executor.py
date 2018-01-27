@@ -50,7 +50,14 @@ class RequestExecutor:
                 data.append(obj)
 
             result['data'] = data
-            result['has_more'] = request.offset + request.limit < result['count']
+            
+            if not data:
+                result['has_more'] = False
+            else:
+                if request.limit > 0:
+                    result['has_more'] = request.offset + request.limit < result['count']
+                else:
+                    result['has_more'] = False
 
         return result
 
