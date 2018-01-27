@@ -10,7 +10,7 @@ proxy_py is a program which collects proxies, saves them in database and makes p
 
 2 Install requirements
 
-```
+```bash
 cd proxy_py
 pip3 install -r requirements.txt
 ```
@@ -33,7 +33,7 @@ pip3 install -r requirements.txt
 
 proxy_py has server based on aiohttp which is listening 127.0.0.1:55555(you can change it in settings file) and provides proxies. To get proxies you should send following json request:
 
-```
+```json
 {
 	'model': 'proxy',
 	'method': 'get',
@@ -46,7 +46,7 @@ You can skip it. The required fields are model and method.
 
 It will return json response like this:
 
-```
+```json
 {
 	'status': 'ok',
 	'count': 1,
@@ -70,7 +70,7 @@ Note: All fields except *protocol*, *domain*, *port*, *auth_data*, *checking_per
 
 Or error if something went wrong:
 
-```
+```json
 {
 	'status': 'error',
 	'error_message': 'You should specify model',
@@ -87,7 +87,7 @@ Example using httpie:
 
 Example using python requests library:
 
-```
+```python
 import requests
 import json
 
@@ -108,7 +108,7 @@ def get_proxies():
 ```
 Example using aiohttp library:
 
-```
+```python
 import aiohttp
 
 
@@ -150,11 +150,11 @@ If you made changes to code and want to check that you didn't break anything, go
 
 4 create unprivileged user in postgresql database and add database authentication data to settings.py
 
-```
+```bash
 proxy_py@server:~/proxy_py$ vim proxy_py/settings.py
 ```
 
-```
+```bash
 DATABASE_CONNECTION_ARGS = (
     'postgresql://USERNAME:PASSWORD@localhost/DB_NAME',
 )
@@ -162,14 +162,14 @@ DATABASE_CONNECTION_ARGS = (
 
 5 Copy supervisor config example and change it for your case
 
-```
+```bash
 root@server:~$ cp /home/proxy_py/proxy_py/config_examples/proxy_py.supervisor.conf /etc/supervisor/conf.d/proxy_py.conf
 root@server:~$ vim /etc/supervisor/conf.d/proxy_py.conf
 ```
 
 6 Copy nginx config example, enable it and change if you need
 
-```
+```bash
 root@server:~$ cp /home/proxy_py/proxy_py/config_examples/proxy_py.nginx.conf /etc/nginx/sites-available/proxy_py
 root@server:~$ ln -s /etc/nginx/sites-available/proxy_py /etc/nginx/sites-enabled/
 root@server:~$ vim /etc/nginx/sites-available/proxy_py
@@ -177,7 +177,7 @@ root@server:~$ vim /etc/nginx/sites-available/proxy_py
 
 7 Restart supervisor and nginx
 
-```
+```bash
 root@server:~$ supervisorctl reread
 root@server:~$ supervisorctl update
 root@server:~$ /etc/init.d/nginx configtest
