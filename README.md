@@ -35,9 +35,9 @@ proxy_py has server based on aiohttp which is listening 127.0.0.1:55555(you can 
 
 ```json
 {
-	'model': 'proxy',
-	'method': 'get',
-	'order_by': 'response_time, uptime'
+	"model": "proxy",
+	"method": "get",
+	"order_by": "response_time, uptime"
 }
 ```
 
@@ -48,10 +48,10 @@ It will return json response like this:
 
 ```json
 {
-	'status': 'ok',
-	'count': 1,
-	'has_more': True,
-	'data': [{
+	"status": "ok",
+	"count": 1,
+	"has_more": True,
+	"data": [{
 			"address": "http://127.0.0.1:8080",
 			"auth_data": null,
 			"bad_proxy": false,
@@ -72,8 +72,8 @@ Or error if something went wrong:
 
 ```json
 {
-	'status': 'error',
-	'error_message': 'You should specify model',
+	"status": "error",
+	"error_message": "You should specify model",
 }
 ```
 
@@ -95,8 +95,8 @@ import json
 def get_proxies():
     result = []
     json_data = {
-        'model': 'proxy',
-        'method': 'get',
+        "model": "proxy",
+        "method": "get",
     }
     
     response = json.loads(requests.post('http://example.com:55555', json=json_data).text)
@@ -115,8 +115,8 @@ import aiohttp
 async def get_proxies():
     result = []
     json_data = {
-        'model': 'proxy',
-        'method': 'get',
+        "model": "proxy",
+        "method": "get",
     }
     
     with aiohttp.ClientSession() as session:
