@@ -29,6 +29,10 @@ pip3 install -r requirements.txt
 
 7 Enjoy!
 
+## I'm too lazy. Can I just use it?
+
+Yes, you can download virtualbox image [here](https://drive.google.com/file/d/1zsuraZVFata5sVDvKa2pqDoB5e67pfYr/view?usp=sharing). After downloading check that port forwarding is still working, you need forwarding of 55555 host port to 55555 guest. 
+
 ## How to get proxies?
 
 proxy_py has server based on aiohttp which is listening 127.0.0.1:55555(you can change it in settings file) and provides proxies. To get proxies you should send following json request:
