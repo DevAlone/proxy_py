@@ -6,7 +6,6 @@ db.sqlite3*
 *.swp
 proxy_py/settings.py
 migrations
-logs/*
 alembic.ini
 alembic
 env/
