@@ -17,7 +17,7 @@ error happened or not.
 
 * 200 if there wasn't error
 * 400 if you sent bad request
-* 500 if there was error during execution your request or in some
+* 500 if there was an error during execution your request or in some
 other cases
 
 status_code is also duplicated in JSON body.
