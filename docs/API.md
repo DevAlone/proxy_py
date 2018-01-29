@@ -12,6 +12,16 @@ Example of correct request:
 }
 ```
 
+Response is also HTTP with JSON and status code depending on whether
+error happened or not.
+
+* 200 if there wasn't error
+* 400 if you sent bad request
+* 500 if there was error during execution your request or in some
+other cases
+
+status_code is also duplicated in JSON body.
+
 ## Possible keys
 
 * `model` - specifies what you will work with. 
@@ -85,7 +95,8 @@ Response
 
     ],
     "has_more": true,
-    "status": "ok"
+    "status": "ok",
+    "status_code": 200
 }
 ```
  
@@ -113,8 +124,9 @@ Response:
 
 ```json
 {
-    "error_message": ""Model \"user\" doesn't exist or isn't allowed",
-    "status": "error"
+    "error_message": "Model \"user\" doesn't exist or isn't allowed",
+    "status": "error",
+    "status_code": 400
 }
 ```
 
