@@ -35,7 +35,9 @@ Yes, you can download virtualbox image [here](https://drive.google.com/file/d/1z
 
 ## How to get proxies?
 
-proxy_py has server based on aiohttp which is listening 127.0.0.1:55555(you can change it in settings file) and provides proxies. To get proxies you should send following json request:
+proxy_py has server based on aiohttp which is listening 127.0.0.1:55555
+(you can change it in settings file) and provides proxies.
+To get proxies you should send following json request:
 
 ```json
 {
@@ -46,40 +48,46 @@ proxy_py has server based on aiohttp which is listening 127.0.0.1:55555(you can 
 ```
 
 Note: order_by makes result sorting by one or more fields separated by comma.
-You can skip it. The required fields are model and method.
+You can skip it. The required fields are `model` and `method`.
 
 It will return json response like this:
 
 ```json
 {
-	"status": "ok",
 	"count": 1,
-	"has_more": true,
 	"data": [{
 			"address": "http://127.0.0.1:8080",
-			"auth_data": null,
+			"auth_data": "",
 			"bad_proxy": false,
 			"domain": "127.0.0.1",
 			"last_check_time": 1509466165,
 			"number_of_bad_checks": 0,
 			"port": 8080,
 			"protocol": "http",
-			"uptime": 1509460949,
+			"response_time": 461691,
+			"uptime": 1509460949
 		}
-	]
+	],
+	"has_more": false,
+	"status": "ok",
+	"status_code": 200
 }
 ```
 
-Note: All fields except *protocol*, *domain*, *port*, *auth_data*, *checking_period* and *address* can be null  
+Note: All fields except *protocol*, *domain*, *port*, *auth_data*,
+*checking_period* and *address* can be null
 
 Or error if something went wrong:
 
 ```json
 {
-	"status": "error",
-	"error_message": "You should specify model",
+    "error_message": "You should specify \"model\"",
+    "status": "error",
+    "status_code": 400
 }
 ```
+
+Note: status_code is also duplicated in HTTP status code
 
 Example using curl:
 
@@ -102,11 +110,15 @@ def get_proxies():
         "model": "proxy",
         "method": "get",
     }
-    
-    response = json.loads(requests.post('http://example.com:55555', json=json_data).text)
-    if response['status'] == 'ok':
+
+    response = requests.post('http://example.com:55555', json=json_data)
+    if response.status_code == 200:
+        response = json.loads(response.text)
         for proxy in response['data']:
             result.append(proxy['address'])
+    else:
+        # check error here
+        pass
     
     return result
 ```
@@ -125,9 +137,13 @@ async def get_proxies():
     
     with aiohttp.ClientSession() as session:
         with session.post('http://example.com:55555', json=json_data) as response:
-            response = json.loads(await response.text())
-            for proxy in response['data']:
-                result.append(proxy['address'])
+            if response.status == 200:
+                response = json.loads(await response.text())
+                for proxy in response['data']:
+                    result.append(proxy['address'])
+            else:
+                # check error here
+                pass
                 
     return result
 ```
@@ -138,7 +154,8 @@ Read more about API  [here](https://github.com/DevAlone/proxy_py/tree/master/doc
 
 ## How to test it?
 
-If you made changes to code and want to check that you didn't break anything, go [here](https://github.com/DevAlone/proxy_py/tree/master/docs/tests.md)
+If you made changes to code and want to check that you didn't break
+anything, go [here](https://github.com/DevAlone/proxy_py/tree/master/docs/tests.md)
 
 ## How to deploy on production using supervisor, nginx and postgresql in 8 steps?
 
