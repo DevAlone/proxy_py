@@ -112,11 +112,22 @@ class ProxyProviderServer:
             response = _api_request_handler.handle(client_address, data)
         except ValueError:
             response = {
-                'status': "error",
+                'status': 'error',
+                'status_code': 400,
                 'error_message': "Your request doesn't look like request",
             }
 
-        return aiohttp.web.json_response(response)
+        if 'status_code' in response:
+            status_code = response['status_code']
+        else:
+            if response['status'] != 'ok':
+                status_code = 500
+            else:
+                status_code = 200
+
+            response['status_code'] = status_code
+
+        return aiohttp.web.json_response(response, status=status_code)
 
     @get_response_wrapper("collector_state.html")
     async def get_collector_state_html(self, request):

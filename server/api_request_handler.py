@@ -28,6 +28,7 @@ class ApiRequestHandler:
 
             response = {
                 'status': 'error',
+                'status_code': 400,
                 'error_message': str(ex)
             }
         except ExecutionError as ex:
@@ -40,6 +41,7 @@ class ApiRequestHandler:
 
             response = {
                 'status': 'error',
+                'status_code': 500,
                 'error_message': 'error during execution request'
             }
 
