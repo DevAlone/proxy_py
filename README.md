@@ -135,8 +135,8 @@ async def get_proxies():
         "method": "get",
     }
     
-    with aiohttp.ClientSession() as session:
-        with session.post('http://example.com:55555', json=json_data) as response:
+    async with aiohttp.ClientSession() as session:
+        async with session.post('http://example.com:55555', json=json_data) as response:
             if response.status == 200:
                 response = json.loads(await response.text())
                 for proxy in response['data']:
