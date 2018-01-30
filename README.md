@@ -173,7 +173,7 @@ anything, go [here](https://github.com/DevAlone/proxy_py/tree/master/docs/tests.
 
 ```bash
 proxy_py@server:~/proxy_py$ vim proxy_py/settings.py
-```
+```hon
 
 ```bash
 DATABASE_CONNECTION_ARGS = (
