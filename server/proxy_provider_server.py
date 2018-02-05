@@ -155,6 +155,10 @@ class ProxyProviderServer:
                 "checking_period": proxy.checking_period,
                 "number_of_bad_checks": proxy.number_of_bad_checks,
                 "bad_proxy": proxy.bad_proxy,
+                "white_ipv4": proxy.white_ipv4,
+                "city": proxy.city,
+                "region": proxy.region,
+                "country_code": proxy.country_code,
             } for proxy in proxies]
         }
 

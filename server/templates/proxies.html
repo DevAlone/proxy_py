@@ -11,6 +11,10 @@
             <td>checking_period</td>
             <td>number_of_bad_checks</td>
             <td>bad_proxy</td>
+            <td>ip</td>
+            <td>city</td>
+            <td>region</td>
+            <td>country</td>
         </tr>
     </thead>
     <tbody>
@@ -25,6 +29,10 @@
             <td>{{ proxy.checking_period }}</td>
             <td>{{ proxy.number_of_bad_checks }}</td>
             <td>{{ proxy.bad_proxy }}</td>
+            <td>{{ proxy.white_ipv4 }}</td>
+            <td>{{ proxy.city }}</td>
+            <td>{{ proxy.region }}</td>
+            <td>{{ proxy.country_code }}</td>
         </tr>
         <script>
             proxy_{{ loop.index }}_last_check_time.textContent = new Date({{ proxy.last_check_time }} * 1000);
