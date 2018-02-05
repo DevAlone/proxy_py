@@ -2,6 +2,7 @@ import aiohttp
 
 import collectors_list
 import proxy_utils
+from checkers.base_checker import CheckerResult
 
 from proxy_py import settings
 from models import Proxy
@@ -215,7 +216,9 @@ class Processor:
 
         try:
             start_checking_time = time.time()
-            check_result = await proxy_utils.check_proxy(proxy_url, aiohttp_proxy_check_session)
+            check_result, checker_additional_info = await proxy_utils.check_proxy(
+                proxy_url, aiohttp_proxy_check_session)
+
             end_checking_time = time.time()
 
             if check_result:
@@ -226,7 +229,8 @@ class Processor:
                     domain,
                     port,
                     start_checking_time,
-                    end_checking_time
+                    end_checking_time,
+                    checker_additional_info
                 )
             else:
                 self.logger.debug("proxy {0} doesn't work".format(proxy_url))
@@ -260,7 +264,7 @@ class Processor:
 
     @staticmethod
     def create_or_update_proxy(raw_protocol: Proxy.PROTOCOLS, auth_data, domain, port,
-                               start_checking_time, end_checking_time):
+                               start_checking_time, end_checking_time, additional_info: CheckerResult):
         if raw_protocol is None or domain is None or port is None or auth_data is None or start_checking_time is None\
                 or end_checking_time is None:
             raise Exception("Bad arguments")
@@ -296,6 +300,18 @@ class Processor:
         proxy.response_time = response_time
         proxy.number_of_bad_checks = 0
         proxy.last_check_time = int(time.time())
+
+        if additional_info.ipv4 is not None:
+            proxy.white_ipv4 = additional_info.ipv4
+
+        if additional_info.city is not None:
+            proxy.city = additional_info.city
+
+        if additional_info.region is not None:
+            proxy.region = additional_info.region
+
+        if additional_info.country_code is not None:
+            proxy.country_code = additional_info.country_code.strip().lower()
 
         checking_time = int(end_checking_time - start_checking_time)
         if checking_time > settings.PROXY_CHECKING_TIMEOUT:

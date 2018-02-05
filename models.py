@@ -35,6 +35,11 @@ class Proxy(Base):
     bad_uptime = Column(Integer, nullable=True, default=None)
     # in microseconds
     response_time = Column(Integer, nullable=True, default=None)
+    _white_ipv4 = Column(String(16), nullable=True)
+    _white_ipv6 = Column(String(16), nullable=True)
+    city = Column(String(), nullable=True)
+    region = Column(String(), nullable=True)
+    country_code = Column(String(3), nullable=True)
 
     def get_raw_protocol(self):
         return self.raw_protocol
@@ -54,6 +59,22 @@ class Proxy(Base):
     @property
     def bad_proxy(self):
         return self.number_of_bad_checks > 0
+
+    @property
+    def white_ipv4(self):
+        return self._white_ipv4
+
+    @white_ipv4.setter
+    def white_ipv4(self, value):
+        self._white_ipv4 = value
+
+    @property
+    def white_ipv6(self):
+        return self._white_ipv6
+
+    @white_ipv6.setter
+    def white_ipv6(self, value):
+        self._white_ipv6 = value
 
     def to_url(self, protocol=None):
         address = protocol if protocol is not None else self.PROTOCOLS[int(self.raw_protocol)]
