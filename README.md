@@ -31,7 +31,7 @@ pip3 install -r requirements.txt
 
 ## I'm too lazy. Can I just use it?
 
-Yes, you can download virtualbox image [here](https://drive.google.com/file/d/1zsuraZVFata5sVDvKa2pqDoB5e67pfYr/view?usp=sharing). After downloading check that port forwarding is still working, you need forwarding of 55555 host port to 55555 guest. 
+Yes, you can download virtualbox image [here](https://drive.google.com/file/d/1oPf6xwOADRH95oZW0vkPr1Uu_iLDe9jc/view?usp=sharing). After downloading check that port forwarding is still working, you need forwarding of 55555 host port to 55555 guest. 
 
 ## How to get proxies?
 
