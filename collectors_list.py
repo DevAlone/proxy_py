@@ -8,11 +8,15 @@ import importlib.util
 collectors = {}
 
 
+print("collectors dir: {}".format(settings.COLLECTORS_DIR))
 for root, dirs, files in os.walk(settings.COLLECTORS_DIR):
     for file in files:
         if file.endswith(".py"):
+            print("processing file: {}".format(file))
+
             file_path = os.path.join(root, file)
             module_name = os.path.splitext(file_path)[0].replace('/', '.')
+            print("module name: {}".format(module_name))
             spec = importlib.util.spec_from_file_location(module_name, file_path)
 
             collector_module = importlib.util.module_from_spec(spec)
