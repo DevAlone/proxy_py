@@ -1,13 +1,14 @@
+from models import session, CollectorState
+from proxy_py import settings
+
 import os
 import importlib.util
-
-from models import session, CollectorState
 
 
 collectors = {}
 
 
-for root, dirs, files in os.walk("collectors"):
+for root, dirs, files in os.walk(settings.COLLECTORS_DIR):
     for file in files:
         if file.endswith(".py"):
             file_path = os.path.join(root, file)
@@ -43,14 +44,14 @@ for module_name, CollectorType in collectors.items():
 #     return collectorState
 
 
-def get_collector_of_module_name(module_name : str):
+def get_collector_of_module_name(module_name: str):
     if module_name not in collectors:
         raise CollectorNotFoundException()
 
     return collectors[module_name]
 
 
-async def load_collector(state : CollectorState):
+async def load_collector(state: CollectorState):
     collector = get_collector_of_module_name(state.identifier)
     await collector.load_state(state)
     return collector

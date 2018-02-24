@@ -13,6 +13,8 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 DEBUG = True
 
+COLLECTORS_DIR = 'collectors'
+
 # fetcher settings
 
 CONCURRENT_TASKS_COUNT = 128

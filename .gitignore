@@ -9,4 +9,4 @@ migrations
 alembic.ini
 alembic
 env/
-local_checkers/
+local/
