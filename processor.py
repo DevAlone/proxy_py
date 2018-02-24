@@ -217,7 +217,7 @@ class Processor:
         try:
             start_checking_time = time.time()
             check_result, checker_additional_info = await proxy_utils.check_proxy(
-                proxy_url, aiohttp_proxy_check_session)
+                proxy_url)
 
             end_checking_time = time.time()
 
