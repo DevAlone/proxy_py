@@ -51,39 +51,43 @@ class BaseChecker:
         and second one is additional information structure with information like white ip address, country and so on
         """
 
+        timeout = timeout if timeout is not None else self.timeout
+
+        try:
+            return await self._request(proxy_address, timeout)
+        except (aiohttp.client_exceptions.ServerDisconnectedError,
+                aiohttp.client_exceptions.ClientHttpProxyError,
+                aiohttp.client_exceptions.ClientProxyConnectionError,
+                aiohttp.client_exceptions.ClientResponseError,
+                aiosocks.errors.SocksError,
+                aiosocks.SocksError,
+                asyncio.TimeoutError,
+                aiohttp.client_exceptions.ClientOSError,
+                ssl.CertificateError,
+                ) as ex:
+            message = str(ex)
+            if "file" in message:
+                print(message)
+            # TODO: check for "Too many open files"
+
+        return False, None
+
+    async def _request(self, proxy_address, timeout) -> tuple:
         checker_result = CheckerResult()
+
         if self.url is None:
             raise Exception()
 
         headers = {
             'User-Agent': async_requests.get_random_user_agent()
         }
-
         conn = ProxyConnector(remote_resolve=True)
 
-        timeout = timeout if timeout is not None else self.timeout
-
         with aiohttp.ClientSession(connector=conn, request_class=ProxyClientRequest) as session:
-            try:
-                async with session.request(
-                            self.request_type, self.url, proxy=proxy_address, timeout=timeout, headers=headers) as \
-                        response:
-                    is_working = await self._check(response, checker_result)
-            except (aiohttp.client_exceptions.ServerDisconnectedError,
-                    aiohttp.client_exceptions.ClientHttpProxyError,
-                    aiohttp.client_exceptions.ClientProxyConnectionError,
-                    aiohttp.client_exceptions.ClientResponseError,
-                    aiosocks.errors.SocksError,
-                    aiosocks.SocksError,
-                    asyncio.TimeoutError,
-                    aiohttp.client_exceptions.ClientOSError,
-                    ssl.CertificateError,
-                    ) as ex:
-                is_working = False
-                message = str(ex)
-                if "file" in message:
-                    print(message)
-                # TODO: check for "Too many open files"
+            async with session.request(
+                    self.request_type, self.url, proxy=proxy_address, timeout=timeout, headers=headers) as \
+                    response:
+                is_working = await self._check(response, checker_result)
 
         return is_working, checker_result
 
