@@ -11,7 +11,7 @@ DATABASE_CONNECTION_KWARGS = {}
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
-DEBUG = True
+DEBUG = False
 
 COLLECTORS_DIR = 'collectors'
 
