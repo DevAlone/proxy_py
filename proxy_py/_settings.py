@@ -3,22 +3,31 @@ from checkers.ipinfo_io_checker import IPInfoIOChecker
 
 import os
 
-DATABASE_CONNECTION_ARGS = (
-    'sqlite:///db.sqlite3',
-)
-
-DATABASE_CONNECTION_KWARGS = {}
+DATABASE_CONNECTION_ARGS = ()
+DATABASE_CONNECTION_KWARGS = {
+    'database': 'test',
+    'user': 'test',
+    'password': 'test',
+}
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 DEBUG = False
 
+# it allows you to override collectors
+# for example if you're making proxy checker for particular site
+# you can override COLLECTORS_DIR and PROXY_CHECKERS
 COLLECTORS_DIR = 'collectors'
+
+# db (do not try to change after creation of database)
+
+DB_MAX_DOMAIN_LENGTH = 128
+DB_AUTH_DATA_MAX_LENGTH = 64
 
 # fetcher settings
 
-CONCURRENT_TASKS_COUNT = 128
-PROXY_QUEUE_SIZE = 512
+CONCURRENT_TASKS_COUNT = 64
+PROXY_QUEUE_SIZE = 128
 
 MIN_PROXY_CHECKING_PERIOD = 5 * 60
 MAX_PROXY_CHECKING_PERIOD = 45 * 60

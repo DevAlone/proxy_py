@@ -1,20 +1,20 @@
 from proxy_py import settings
-from sqlalchemy import create_engine
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy import Column, Integer, String, SmallInteger, UniqueConstraint
-from sqlalchemy.orm import sessionmaker
+import peewee
+import peewee_async
+
+db = peewee_async.PooledPostgresqlDatabase(
+    *settings.DATABASE_CONNECTION_ARGS,
+    **settings.DATABASE_CONNECTION_KWARGS
+)
 
 
-engine = create_engine(*settings.DATABASE_CONNECTION_ARGS, **settings.DATABASE_CONNECTION_KWARGS)
-Base = declarative_base()
-Session = sessionmaker(bind=engine)
-
-
-class Proxy(Base):
-    __tablename__ = "proxies"
-    __table_args__ = (
-        UniqueConstraint("raw_protocol", "auth_data", "domain", "port"),
-    )
+class Proxy(peewee.Model):
+    class Meta:
+        database = db
+        db_table = 'proxies'
+        indexes = (
+            (('raw_protocol', 'auth_data', 'domain', 'port'), True),
+        )
 
     PROTOCOLS = (
         'http',
@@ -22,24 +22,25 @@ class Proxy(Base):
         'socks5',
     )
 
-    id = Column(Integer, primary_key=True)
-    raw_protocol = Column(SmallInteger, nullable=False)
-    domain = Column(String(128), nullable=False)
-    port = Column(Integer, nullable=False)
-    auth_data = Column(String(64), default="", nullable=False)
+    id = peewee.IntegerField(primary_key=True)
+    raw_protocol = peewee.SmallIntegerField(null=False)
+    domain = peewee.CharField(settings.DB_MAX_DOMAIN_LENGTH, null=False)
+    port = peewee.IntegerField(null=False)
+    auth_data = peewee.CharField(settings.DB_AUTH_DATA_MAX_LENGTH, default='', null=False)
 
-    checking_period = Column(Integer, default=settings.MIN_PROXY_CHECKING_PERIOD, nullable=False)
-    last_check_time = Column(Integer, default=0)
-    number_of_bad_checks = Column(Integer, default=0)
-    uptime = Column(Integer, nullable=True, default=None)
-    bad_uptime = Column(Integer, nullable=True, default=None)
+    checking_period = peewee.IntegerField(default=settings.MIN_PROXY_CHECKING_PERIOD, null=False)
+    last_check_time = peewee.IntegerField(default=0, null=False)
+    number_of_bad_checks = peewee.IntegerField(default=0, null=False)
+    uptime = peewee.IntegerField(default=None, null=True)
+    bad_uptime = peewee.IntegerField(default=None, null=True)
     # in microseconds
-    response_time = Column(Integer, nullable=True, default=None)
-    _white_ipv4 = Column(String(16), nullable=True)
-    _white_ipv6 = Column(String(16), nullable=True)
-    city = Column(String(), nullable=True)
-    region = Column(String(), nullable=True)
-    country_code = Column(String(3), nullable=True)
+    response_time = peewee.IntegerField(default=None, null=True)
+    # TODO: consider storing as binary
+    _white_ipv4 = peewee.CharField(16, null=True)
+    _white_ipv6 = peewee.CharField(45, null=True)
+    city = peewee.TextField(null=True)
+    region = peewee.TextField(null=True)
+    country_code = peewee.CharField(3, null=True)
 
     def get_raw_protocol(self):
         return self.raw_protocol
@@ -92,36 +93,49 @@ class Proxy(Base):
     __repr__ = __str__
 
 
-class ProxyCountItem(Base):
-    __tablename__ = "proxy_count_items"
-    timestamp = Column(Integer, primary_key=True)
-    good_proxies_count = Column(Integer, nullable=False)
-    bad_proxies_count = Column(Integer, nullable=False)
-    dead_proxies_count = Column(Integer, nullable=False)
+class ProxyCountItem(peewee.Model):
+    class Meta:
+        database = db
+        db_table = 'proxy_count_items'
+
+    timestamp = peewee.IntegerField(primary_key=True)
+    good_proxies_count = peewee.IntegerField(null=False)
+    bad_proxies_count = peewee.IntegerField(null=False)
+    dead_proxies_count = peewee.IntegerField(null=False)
 
 
-class CollectorState(Base):
-    __tablename__ = "collector_states"
-    id = Column(Integer, primary_key=True)
+class CollectorState(peewee.Model):
+    class Meta:
+        database = db
+        db_table = 'collector_states'
+
+    id = peewee.IntegerField(primary_key=True)
     # python module name
-    identifier = Column(String, unique=True)
-    processing_period = Column(Integer, nullable=False)
-    last_processing_time = Column(Integer, nullable=False)
-    last_processing_proxies_count = Column(Integer, nullable=False, default=0)
-    last_processing_new_proxies_count = Column(Integer, nullable=False, default=0)
-    data = Column(String, nullable=True, default=None)
+    identifier = peewee.TextField(unique=True)
+    processing_period = peewee.IntegerField(null=False)
+    last_processing_time = peewee.IntegerField(null=False)
+    last_processing_proxies_count = peewee.IntegerField(default=0, null=False)
+    last_processing_new_proxies_count = peewee.IntegerField(default=0, null=False)
+    data = peewee.TextField(default=None, null=True)
 
 
-Base.metadata.create_all(engine)
-
-session = Session()
+_silent = True
+Proxy.create_table(_silent)
+ProxyCountItem.create_table(_silent)
+CollectorState.create_table(_silent)
 
 
 def get_or_create(session, model, **kwargs):
-    instance = session.query(model).filter_by(**kwargs).first()
-    if not instance:
-        instance = model(**kwargs)
-        session.add(instance)
-        session.commit()
+    # TODO: do it
+    raise NotImplementedError()
 
-    return instance
+    # instance = session.query(model).filter_by(**kwargs).first()
+    # if not instance:
+    #     instance = model(**kwargs)
+    #     session.add(instance)
+    #     session.commit()
+    #
+    # return instance
+
+
+db = peewee_async.Manager(db)

@@ -1,4 +1,4 @@
-from models import session, CollectorState
+from models import db, CollectorState
 from proxy_py import settings
 
 import os
@@ -28,16 +28,17 @@ for root, dirs, files in os.walk(settings.COLLECTORS_DIR):
 
 
 # init db
-for module_name, CollectorType in collectors.items():
-    collectorState = session.query(CollectorState).filter(CollectorState.identifier == module_name).first()
-
-    if not collectorState:
-        session.add(CollectorState(
-            identifier=module_name,
-            processing_period=CollectorType.processing_period,
-            last_processing_time=0,
-        ))
-        session.commit()
+# TODO: do it
+# for module_name, CollectorType in collectors.items():
+#     collectorState = session.query(CollectorState).filter(CollectorState.identifier == module_name).first()
+#
+#     if not collectorState:
+#         session.add(CollectorState(
+#             identifier=module_name,
+#             processing_period=CollectorType.processing_period,
+#             last_processing_time=0,
+#         ))
+#         session.commit()
 
 
 # def get_collector_state(module_name : str):
@@ -50,7 +51,9 @@ for module_name, CollectorType in collectors.items():
 
 def get_collector_of_module_name(module_name: str):
     if module_name not in collectors:
-        raise CollectorNotFoundException()
+        raise CollectorNotFoundException(
+            'Probably some collector exists in database but not in filesystem. module_name = {}'.format(module_name)
+        )
 
     return collectors[module_name]
 
