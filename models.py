@@ -4,7 +4,7 @@ import peewee_async
 
 db = peewee_async.PooledPostgresqlDatabase(
     *settings.DATABASE_CONNECTION_ARGS,
-    **settings.DATABASE_CONNECTION_KWARGS
+    **settings.DATABASE_CONNECTION_KWARGS,
 )
 
 
@@ -22,7 +22,6 @@ class Proxy(peewee.Model):
         'socks5',
     )
 
-    id = peewee.IntegerField(primary_key=True)
     raw_protocol = peewee.SmallIntegerField(null=False)
     domain = peewee.CharField(settings.DB_MAX_DOMAIN_LENGTH, null=False)
     port = peewee.IntegerField(null=False)
@@ -109,7 +108,6 @@ class CollectorState(peewee.Model):
         database = db
         db_table = 'collector_states'
 
-    id = peewee.IntegerField(primary_key=True)
     # python module name
     identifier = peewee.TextField(unique=True)
     processing_period = peewee.IntegerField(null=False)

@@ -9,14 +9,14 @@ class ApiRequestHandler:
         self.request_executor = RequestExecutor()
         self._logger = logger
 
-    def handle(self, client_address: tuple, post_data: dict):
+    async def handle(self, client_address: tuple, post_data: dict):
         try:
             req_dict = self.request_parser.parse(post_data)
 
             response = {
                 'status': 'ok',
             }
-            response.update(self.request_executor.execute(req_dict))
+            response.update(await self.request_executor.execute(req_dict))
         except ParseError as ex:
             self._logger.warning(
                 "Error during parsing request. \nClient: {} \nRequest: {} \nException: {}".format(

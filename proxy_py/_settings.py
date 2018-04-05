@@ -8,6 +8,7 @@ DATABASE_CONNECTION_KWARGS = {
     'database': 'test',
     'user': 'test',
     'password': 'test',
+    'max_connections': 20,
 }
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -26,7 +27,7 @@ DB_AUTH_DATA_MAX_LENGTH = 64
 
 # fetcher settings
 
-CONCURRENT_TASKS_COUNT = 64
+CONCURRENT_TASKS_COUNT = 128
 PROXY_QUEUE_SIZE = 128
 
 MIN_PROXY_CHECKING_PERIOD = 5 * 60

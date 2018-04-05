@@ -1,5 +1,6 @@
 # TODO: add wrapper for doing requests and saving its cookies and UserAgent
 
+
 class AbstractCollector:
     # this method should return proxies in any of the following formats:
     # ip:port
@@ -13,7 +14,7 @@ class AbstractCollector:
         self.last_processing_time = state.last_processing_time
         self.processing_period = state.processing_period
 
-    async def save_state(self, state):
+    async def set_state(self, state):
         state.last_processing_time = self.last_processing_time
         state.processing_period = self.processing_period
 

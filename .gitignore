@@ -5,8 +5,4 @@ __pycache__
 db.sqlite3*
 *.swp
 proxy_py/settings.py
-migrations
-alembic.ini
-alembic
 env/
-local/

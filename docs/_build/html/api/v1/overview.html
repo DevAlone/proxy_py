@@ -1,0 +1,232 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>proxy_py API &mdash; proxy_py 1.0.2 documentation</title>
+    
+    <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '1.0.2',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="top" title="proxy_py 1.0.2 documentation" href="../../index.html" />
+    <link rel="prev" title="Hello" href="intro.html" />
+   
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head>
+  <body role="document">  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="proxy-py-api">
+<span id="proxy-py-api"></span><h1>proxy_py API<a class="headerlink" href="#proxy-py-api" title="Permalink to this headline">¶</a></h1>
+<p>proxy_py expects HTTP POST requests with JSON as a body, so you need
+to add header <code class="docutils literal"><span class="pre">Content-Type:</span> <span class="pre">application/json</span></code> and send correct
+JSON document.</p>
+<p>Example of correct request:</p>
+<div class="highlight-json"><div class="highlight"><pre><span class="p">{</span>
+  <span class="nt">&quot;model&quot;</span><span class="p">:</span> <span class="s2">&quot;proxy&quot;</span><span class="p">,</span>
+  <span class="nt">&quot;method&quot;</span><span class="p">:</span> <span class="s2">&quot;get&quot;</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>Response is also HTTP with JSON and status code depending on whether
+error happened or not.</p>
+<ul class="simple">
+<li>200 if there wasn&#8217;t error</li>
+<li>400 if you sent bad request</li>
+<li>500 if there was an error during execution your request or in some
+other cases</li>
+</ul>
+<p>status_code is also duplicated in JSON body.</p>
+<div class="section" id="possible-keys">
+<span id="possible-keys"></span><h2>Possible keys<a class="headerlink" href="#possible-keys" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li><code class="docutils literal"><span class="pre">model</span></code> - specifies what you will work with.
+Now it&#8217;s only supported to work with <code class="docutils literal"><span class="pre">proxy</span></code> model.</li>
+<li><code class="docutils literal"><span class="pre">method</span></code> - what you&#8217;re gonna do with it<ul>
+<li><code class="docutils literal"><span class="pre">get</span></code> - get model items as json objects.
+Detailed description is below</li>
+<li><code class="docutils literal"><span class="pre">count</span></code> - count how many items there are.
+Detailed description is below</li>
+</ul>
+</li>
+</ul>
+<div class="section" id="get-method">
+<span id="get-method"></span><h3>get method<a class="headerlink" href="#get-method" title="Permalink to this headline">¶</a></h3>
+<p><code class="docutils literal"><span class="pre">get</span></code> method supports following keys:</p>
+<ul class="simple">
+<li><code class="docutils literal"><span class="pre">order_by</span></code> (string) - specifies ordering fields as comma separated
+value.</li>
+</ul>
+<p>Examples:</p>
+<p><code class="docutils literal"><span class="pre">&quot;uptime&quot;</span></code> just sorts proxies by uptime field ascending.</p>
+<p>Note: <code class="docutils literal"><span class="pre">uptime</span></code> is the timestamp from which proxy is working,
+NOT proxy&#8217;s working time</p>
+<p>To sort descending use <code class="docutils literal"><span class="pre">-</span></code> before field name.</p>
+<p><code class="docutils literal"><span class="pre">&quot;-response_time&quot;</span></code> returns proxies with maximum response_time first
+(in microseconds)</p>
+<p>It&#8217;s possible to sort using multiple fields</p>
+<p><code class="docutils literal"><span class="pre">&quot;number_of_bad_checks,</span> <span class="pre">response_time&quot;</span></code> returns proxies with minimum
+<code class="docutils literal"><span class="pre">number_of_bad_checks</span></code> first, if there are proxies with the same
+<code class="docutils literal"><span class="pre">number_of_bad_checks</span></code>, sorts them by <code class="docutils literal"><span class="pre">response_time</span></code></p>
+<ul class="simple">
+<li><code class="docutils literal"><span class="pre">limit</span></code> (integer) -  specifying how many proxies to return</li>
+<li><code class="docutils literal"><span class="pre">offset</span></code> (integer) - specifying how many proxies to skip</li>
+</ul>
+<p>Example of <code class="docutils literal"><span class="pre">get</span></code> request:</p>
+<div class="highlight-json"><div class="highlight"><pre><span class="p">{</span>
+    <span class="nt">&quot;model&quot;</span><span class="p">:</span> <span class="s2">&quot;proxy&quot;</span><span class="p">,</span>
+    <span class="nt">&quot;method&quot;</span><span class="p">:</span> <span class="s2">&quot;get&quot;</span><span class="p">,</span>
+    <span class="nt">&quot;order_by&quot;</span><span class="p">:</span> <span class="s2">&quot;number_of_bad_checks, response_time&quot;</span><span class="p">,</span>
+    <span class="nt">&quot;limit&quot;</span><span class="p">:</span> <span class="mi">100</span><span class="p">,</span>
+    <span class="nt">&quot;offset&quot;</span><span class="p">:</span> <span class="mi">200</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>Response</p>
+<div class="highlight-json"><div class="highlight"><pre>{
+    &quot;count&quot;: 6569,
+    &quot;data&quot;: [
+        {
+            &quot;address&quot;: &quot;socks5://localhost:9999&quot;,
+            &quot;auth_data&quot;: &quot;&quot;,
+            &quot;bad_proxy&quot;: false,
+            &quot;domain&quot;: &quot;localhost&quot;,
+            &quot;last_check_time&quot;: 1517089048,
+            &quot;number_of_bad_checks&quot;: 0,
+            &quot;port&quot;: 9999,
+            &quot;protocol&quot;: &quot;socks5&quot;,
+            &quot;response_time&quot;: 1819186,
+            &quot;uptime&quot;: 1517072132
+        },
+
+        ...
+
+    ],
+    &quot;has_more&quot;: true,
+    &quot;status&quot;: &quot;ok&quot;,
+    &quot;status_code&quot;: 200
+}
+</pre></div>
+</div>
+<ul class="simple">
+<li><code class="docutils literal"><span class="pre">count</span></code> (integer) - total number of proxies for that request</li>
+<li><code class="docutils literal"><span class="pre">data</span></code> (array) - list of proxies</li>
+<li><code class="docutils literal"><span class="pre">has_more</span></code> (boolean) - value indicating whether you can increase
+offset to get more proxies or not</li>
+<li><code class="docutils literal"><span class="pre">status</span></code> (string) - &#8220;error&#8221; if error happened, &#8220;ok&#8221; otherwise</li>
+</ul>
+<p>Example of error:</p>
+<p>Request:</p>
+<div class="highlight-json"><div class="highlight"><pre><span class="p">{</span>
+    <span class="nt">&quot;model&quot;</span><span class="p">:</span> <span class="s2">&quot;user&quot;</span><span class="p">,</span>
+    <span class="nt">&quot;method&quot;</span><span class="p">:</span> <span class="s2">&quot;get&quot;</span><span class="p">,</span>
+    <span class="nt">&quot;order_by&quot;</span><span class="p">:</span> <span class="s2">&quot;number_of_bad_checks, response_time&quot;</span><span class="p">,</span>
+    <span class="nt">&quot;limit&quot;</span><span class="p">:</span> <span class="mi">100</span><span class="p">,</span>
+    <span class="nt">&quot;offset&quot;</span><span class="p">:</span> <span class="mi">200</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>Response:</p>
+<div class="highlight-json"><div class="highlight"><pre><span class="p">{</span>
+    <span class="nt">&quot;error_message&quot;</span><span class="p">:</span> <span class="s2">&quot;Model \&quot;user\&quot; doesn&#39;t exist or isn&#39;t allowed&quot;</span><span class="p">,</span>
+    <span class="nt">&quot;status&quot;</span><span class="p">:</span> <span class="s2">&quot;error&quot;</span><span class="p">,</span>
+    <span class="nt">&quot;status_code&quot;</span><span class="p">:</span> <span class="mi">400</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="count-method">
+<span id="count-method"></span><h3>count method<a class="headerlink" href="#count-method" title="Permalink to this headline">¶</a></h3>
+<p>Same as get, but not returns data</p>
+</div>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="../../index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">proxy_py API</a><ul>
+<li><a class="reference internal" href="#possible-keys">Possible keys</a><ul>
+<li><a class="reference internal" href="#get-method">get method</a></li>
+<li><a class="reference internal" href="#count-method">count method</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../index.html">Documentation overview</a><ul>
+      <li>Previous: <a href="intro.html" title="previous chapter">Hello</a></li>
+  </ul></li>
+</ul>
+</div>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../../_sources/api/v1/overview.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2018, DevAlone.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.3.6</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.7</a>
+      
+      |
+      <a href="../../_sources/api/v1/overview.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

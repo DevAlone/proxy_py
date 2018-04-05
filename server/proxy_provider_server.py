@@ -1,16 +1,14 @@
-import json
-import time
-
-import datetime
-
-import functools
 from proxy_py import settings
 from server.api_request_handler import ApiRequestHandler
-from models import session, Proxy, ProxyCountItem, CollectorState
+from models import db, Proxy, ProxyCountItem, CollectorState
 
+import json
+import time
+import datetime
+import functools
+import logging
 import aiohttp
 import aiohttp.web
-import logging
 import aiohttp_jinja2
 import jinja2
 
@@ -39,20 +37,31 @@ def get_response_wrapper(template_name):
         @functools.wraps(func)
         @aiohttp_jinja2.template(template_name)
         async def wrap(self, *args, **kwargs):
-            good_proxies_count = session.query(Proxy).filter(Proxy.number_of_bad_checks == 0).count()
+            good_proxies_count = await db.count(
+                Proxy.select().where(Proxy.number_of_bad_checks == 0)
+            )
 
-            bad_proxies_count = session.query(Proxy).filter(Proxy.number_of_bad_checks > 0)\
-                .filter(Proxy.number_of_bad_checks < settings.DEAD_PROXY_THRESHOLD).count()
+            bad_proxies_count = await db.count(
+                Proxy.select().where(
+                    Proxy.number_of_bad_checks > 0,
+                    Proxy.number_of_bad_checks < settings.DEAD_PROXY_THRESHOLD,
+                )
+            )
 
-            dead_proxies_count = session.query(Proxy)\
-                .filter(Proxy.number_of_bad_checks >= settings.DEAD_PROXY_THRESHOLD).count()
+            dead_proxies_count = await db.count(
+                Proxy.select().where(
+                    Proxy.number_of_bad_checks >= settings.DEAD_PROXY_THRESHOLD,
+                )
+            )
 
             response = {
                 "bad_proxies_count": bad_proxies_count,
                 "good_proxies_count": good_proxies_count,
                 "dead_proxies_count": dead_proxies_count,
             }
+
             response.update(await func(self, *args, **kwargs))
+
             return response
         return wrap
 
@@ -86,9 +95,12 @@ class ProxyProviderServer:
         return server
 
     async def get_best_http_proxy(self, request):
-        proxy_address = session.query(Proxy).filter(Proxy.number_of_bad_checks == 0)\
-            .filter(Proxy.raw_protocol == Proxy.PROTOCOLS.index("http"))\
-            .order_by("response_time").first().address
+        proxy_address = (await db.get(
+            Proxy.select().where(
+                Proxy.number_of_bad_checks == 0,
+                Proxy.raw_protocol == Proxy.PROTOCOLS.index("http"),
+            ).order_by(Proxy.response_time)
+        )).address
 
         return aiohttp.web.Response(text=proxy_address)
 
@@ -109,7 +121,7 @@ class ProxyProviderServer:
         try:
             data = json.loads(data.decode())
 
-            response = _api_request_handler.handle(client_address, data)
+            response = await _api_request_handler.handle(client_address, data)
         except ValueError:
             response = {
                 'status': 'error',
@@ -132,15 +144,15 @@ class ProxyProviderServer:
     @get_response_wrapper("collector_state.html")
     async def get_collector_state_html(self, request):
         return {
-            "collector_states": list(session.query(CollectorState).all())
+            "collector_states": list(await db.execute(CollectorState.select())),
         }
 
     @get_response_wrapper("proxies.html")
     async def get_proxies_html(self, request):
-        proxies = list(session.query(Proxy)
-                       .filter(Proxy.number_of_bad_checks == 0)
-                       .order_by(Proxy.response_time))
-
+        proxies = await db.execute(
+            Proxy.select().where(Proxy.number_of_bad_checks == 0).order_by(Proxy.response_time)
+        )
+        proxies = list(proxies)
         current_timestamp = time.time()
 
         return {
@@ -165,7 +177,7 @@ class ProxyProviderServer:
     @get_response_wrapper("proxy_count_items.html")
     async def get_proxy_count_items_html(self, request):
         return {
-            "proxy_count_items": list(session.query(ProxyCountItem).order_by(ProxyCountItem.timestamp))
+            "proxy_count_items": list(await db.execute(ProxyCountItem.select().order_by(ProxyCountItem.timestamp)))
         }
 
     @aiohttp_jinja2.template("index.html")

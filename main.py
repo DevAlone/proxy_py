@@ -1,10 +1,8 @@
 #!/usr/bin/env python3
 
 from proxy_py import settings
-# # from processor import Processor
-# from server.proxy_provider_server import ProxyProviderServer
-# import collectors_list
-import peewee
+from processor import Processor
+from server.proxy_provider_server import ProxyProviderServer
 
 from models import Proxy, ProxyCountItem, db
 
@@ -45,18 +43,17 @@ async def proxy_counter():
 
 
 if __name__ == "__main__":
-    # proxy_processor = Processor()
+    proxy_processor = Processor()
 
-    # proxy_provider_server = ProxyProviderServer.get_proxy_provider_server(
-    #     settings.PROXY_PROVIDER_SERVER_ADDRESS['HOST'],
-    #     settings.PROXY_PROVIDER_SERVER_ADDRESS['PORT'],
-    #     None,  # proxy_processor,
-    # )
+    proxy_provider_server = ProxyProviderServer.get_proxy_provider_server(
+        settings.PROXY_PROVIDER_SERVER_ADDRESS['HOST'],
+        settings.PROXY_PROVIDER_SERVER_ADDRESS['PORT'],
+        None,  # proxy_processor,
+    )
 
     loop = asyncio.get_event_loop()
-    # loop.run_until_complete(proxy_provider_server.start(loop))
+    loop.run_until_complete(proxy_provider_server.start(loop))
     loop.run_until_complete(asyncio.wait([
-        # TODO:
-        # proxy_processor.exec(),
+        proxy_processor.exec(),
         proxy_counter(),
     ]))

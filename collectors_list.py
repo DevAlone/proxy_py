@@ -1,3 +1,7 @@
+import asyncio
+
+import peewee
+
 from models import db, CollectorState
 from proxy_py import settings
 
@@ -28,31 +32,36 @@ for root, dirs, files in os.walk(settings.COLLECTORS_DIR):
 
 
 # init db
-# TODO: do it
-# for module_name, CollectorType in collectors.items():
-#     collectorState = session.query(CollectorState).filter(CollectorState.identifier == module_name).first()
-#
-#     if not collectorState:
-#         session.add(CollectorState(
-#             identifier=module_name,
-#             processing_period=CollectorType.processing_period,
-#             last_processing_time=0,
-#         ))
-#         session.commit()
+
+for module_name, CollectorType in collectors.items():
+    try:
+        collector_state = asyncio.get_event_loop().run_until_complete(db.get(
+            CollectorState.select().where(CollectorState.identifier == module_name)
+        ))
+    except CollectorState.DoesNotExist:
+        asyncio.get_event_loop().run_until_complete(db.create(
+            CollectorState,
+            identifier=module_name,
+            processing_period=CollectorType.processing_period,
+            last_processing_time=0,
+        ))
 
 
-# def get_collector_state(module_name : str):
-#     collectorState = session.query(CollectorState).filter(CollectorState.identifier == module_name).first()
-#     if not collectorState:
-#         raise CollectorNotFoundException()
-#
-#     return collectorState
+def get_collector_state(module_name: str):
+    try:
+        collector_state = asyncio.get_event_loop().run_until_complete(db.get(
+            CollectorState.select().where(CollectorState.identifier == module_name)
+        ))
+    except CollectorState.DoesNotExist:
+        raise CollectorNotFoundException()
+
+    return collector_state
 
 
 def get_collector_of_module_name(module_name: str):
     if module_name not in collectors:
         raise CollectorNotFoundException(
-            'Probably some collector exists in database but not in filesystem. module_name = {}'.format(module_name)
+            "Probably some collector exists in database but not in filesystem. module_name = {}".format(module_name)
         )
 
     return collectors[module_name]
