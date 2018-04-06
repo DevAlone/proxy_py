@@ -16,6 +16,8 @@ PROXY_VALIDATE_REGEX = \
     r"((?P<auth_data>[a-zA-Z0-9_\.]+:[a-zA-Z0-9_\.]+)@)?" \
     r"(?P<domain>([0-9]{1,3}\.){3}[0-9]{1,3}|([a-zA-Z0-9_]+\.)+[a-zA-Z]+):(?P<port>[0-9]{1,5})/?$"
 
+LOGGERS_FORMAT = "%(levelname)s ~ %(asctime)s ~ %(funcName)30s() ~ %(message)s"
+
 
 class Processor:
     """
@@ -26,31 +28,29 @@ class Processor:
     def __init__(self):
         # TODO: find better logger
         self.logger = logging.getLogger("proxy_py/processor")
-        self.logger.setLevel(logging.DEBUG)
-        error_file_handler = logging.FileHandler("logs/processor.error.log")
-        error_file_handler.setLevel(logging.ERROR)
-        warning_file_handler = logging.FileHandler("logs/processor.warning.log")
-        warning_file_handler.setLevel(logging.WARNING)
-        info_file_handler = logging.FileHandler("logs/processor.log")
-        info_file_handler.setLevel(logging.INFO)
 
-        self.logger.addHandler(error_file_handler)
-        self.logger.addHandler(warning_file_handler)
-        self.logger.addHandler(info_file_handler)
         if settings.DEBUG:
-            debug_file_handler = logging.FileHandler("logs/processor.debug.log")
-            debug_file_handler.setLevel(logging.DEBUG)
-            self.logger.addHandler(debug_file_handler)
+            self.logger.setLevel(logging.DEBUG)
+        else:
+            self.logger.setLevel(logging.INFO)
 
-        self.collector_logger = logging.getLogger("proxy_py/collectors")
-        self.collector_logger.setLevel(logging.WARNING)
-        collector_logger_error_file_handler = logging.FileHandler("logs/collectors.error.log")
-        collector_logger_error_file_handler.setLevel(logging.ERROR)
-        collector_logger_warning_file_handler = logging.FileHandler("logs/collectors.warning.log")
-        collector_logger_warning_file_handler.setLevel(logging.WARNING)
+        logger_file_handler = logging.FileHandler("logs/processor.log")
+        logger_file_handler.setLevel(logging.DEBUG)
+        logger_file_handler.setFormatter(logging.Formatter(LOGGERS_FORMAT))
 
-        self.collector_logger.addHandler(collector_logger_error_file_handler)
-        self.collector_logger.addHandler(collector_logger_warning_file_handler)
+        self.logger.addHandler(logger_file_handler)
+
+        self.collectors_logger = logging.getLogger("proxy_py/collectors")
+        if settings.DEBUG:
+            self.collectors_logger.setLevel(logging.DEBUG)
+        else:
+            self.collectors_logger.setLevel(logging.INFO)
+
+        collectors_logger_file_handler = logging.FileHandler("logs/collectors.log")
+        collectors_logger_file_handler.setLevel(logging.DEBUG)
+        logger_file_handler.setFormatter(logging.Formatter(LOGGERS_FORMAT))
+
+        self.collectors_logger.addHandler(collectors_logger_file_handler)
 
         self.logger.debug("processor initialization...")
 
@@ -162,7 +162,7 @@ class Processor:
             proxies = set(await collector.collect())
 
             if not proxies:
-                self.collector_logger.warning(
+                self.collectors_logger.warning(
                     "got 0 proxies from collector of type \"{}\"".format(type(collector))
                 )
             else:
@@ -173,10 +173,10 @@ class Processor:
         except KeyboardInterrupt as ex:
             raise ex
         except BaseException as ex:
-            self.collector_logger.error(
+            self.collectors_logger.error(
                 "Error in collector of type \"{}\"".format(collector_state.identifier)
             )
-            self.collector_logger.exception(ex)
+            self.collectors_logger.exception(ex)
         finally:
             collector.last_processing_time = int(time.time())
             await collector.set_state(collector_state)
