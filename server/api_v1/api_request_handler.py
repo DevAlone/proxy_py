@@ -1,5 +1,5 @@
-from server.requests_to_models.request_parser import RequestParser, ParseError
-from server.requests_to_models.request_executor import RequestExecutor, ExecutionError
+from .requests_to_models.request_parser import RequestParser, ParseError
+from .requests_to_models.request_executor import RequestExecutor, ExecutionError
 from proxy_py import settings
 
 

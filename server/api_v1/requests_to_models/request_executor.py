@@ -1,6 +1,6 @@
 from proxy_py import settings
 from models import db
-from server.requests_to_models.request import Request, GetRequest, CountRequest, FetchRequest
+from ..requests_to_models.request import Request, GetRequest, CountRequest, FetchRequest
 import importlib
 
 

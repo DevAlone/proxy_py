@@ -43,16 +43,18 @@ async def proxy_counter():
 
 
 if __name__ == "__main__":
+    loop = asyncio.get_event_loop()
+
     proxy_processor = Processor()
 
-    proxy_provider_server = ProxyProviderServer.get_proxy_provider_server(
+    proxy_provider_server = ProxyProviderServer(
         settings.PROXY_PROVIDER_SERVER_ADDRESS['HOST'],
         settings.PROXY_PROVIDER_SERVER_ADDRESS['PORT'],
-        None,  # proxy_processor,
+        proxy_processor,
     )
 
-    loop = asyncio.get_event_loop()
     loop.run_until_complete(proxy_provider_server.start(loop))
+
     loop.run_until_complete(asyncio.wait([
         proxy_processor.exec(),
         proxy_counter(),

@@ -1,18 +1,16 @@
 from proxy_py import settings
-from server.api_request_handler import ApiRequestHandler
-from models import db, Proxy, ProxyCountItem, CollectorState
+from .base_app import BaseApp
+from .api_v1.app import App as ApiV1App
+from .frontend.app import App as FrontendApp
+from aiohttp import web
 
-import json
-import time
-import datetime
-import functools
 import logging
 import aiohttp
-import aiohttp.web
-import aiohttp_jinja2
 import jinja2
+import aiohttp_jinja2
 
 
+# TODO: refactor it
 _proxy_provider_server = None
 _logger = logging.getLogger('proxy_py/server')
 _logger.setLevel(logging.DEBUG)
@@ -29,157 +27,71 @@ _logger.addHandler(debug_file_handler)
 _logger.addHandler(error_file_handler)
 _logger.addHandler(info_file_handler)
 
-_api_request_handler = ApiRequestHandler(_logger)
 
-
-def get_response_wrapper(template_name):
-    def decorator_wrapper(func):
-        @functools.wraps(func)
-        @aiohttp_jinja2.template(template_name)
-        async def wrap(self, *args, **kwargs):
-            good_proxies_count = await db.count(
-                Proxy.select().where(Proxy.number_of_bad_checks == 0)
-            )
-
-            bad_proxies_count = await db.count(
-                Proxy.select().where(
-                    Proxy.number_of_bad_checks > 0,
-                    Proxy.number_of_bad_checks < settings.DEAD_PROXY_THRESHOLD,
-                )
-            )
-
-            dead_proxies_count = await db.count(
-                Proxy.select().where(
-                    Proxy.number_of_bad_checks >= settings.DEAD_PROXY_THRESHOLD,
-                )
-            )
-
-            response = {
-                "bad_proxies_count": bad_proxies_count,
-                "good_proxies_count": good_proxies_count,
-                "dead_proxies_count": dead_proxies_count,
-            }
-
-            response.update(await func(self, *args, **kwargs))
-
-            return response
-        return wrap
-
-    return decorator_wrapper
-
-
-class ProxyProviderServer:
-    @staticmethod
-    def get_proxy_provider_server(host, port, processor):
-        global _proxy_provider_server
-        if _proxy_provider_server is None:
-            _proxy_provider_server = ProxyProviderServer(host, port, processor)
-        return _proxy_provider_server
-
+class ProxyProviderServer(BaseApp):
     def __init__(self, host, port, processor):
+
+        super(ProxyProviderServer, self).__init__(_logger)
+
         self._processor = processor
         self.host = host
         self.port = port
 
     async def start(self, loop):
-        app = aiohttp.web.Application()
-        aiohttp_jinja2.setup(app, loader=jinja2.FileSystemLoader("server/templates"))
-        app.router.add_post('/', self.post)
-        app.router.add_get('/', self.index)
-        app.router.add_get('/get/proxy/', self.get_proxies_html)
-        app.router.add_get('/get/proxy_count_item/', self.get_proxy_count_items_html)
-        app.router.add_get('/get/collector_state/', self.get_collector_state_html)
-        app.router.add_get('/get/best/http/proxy/', self.get_best_http_proxy)
+        await self.init()
 
-        server = await loop.create_server(app.make_handler(), self.host, self.port)
+        server = await loop.create_server(
+            self._app.make_handler(),
+            self.host,
+            self.port
+        )
+
         return server
 
-    async def get_best_http_proxy(self, request):
-        proxy_address = (await db.get(
-            Proxy.select().where(
-                Proxy.number_of_bad_checks == 0,
-                Proxy.raw_protocol == Proxy.PROTOCOLS.index("http"),
-            ).order_by(Proxy.response_time)
-        )).address
+    async def setup_router(self):
+        api_v1_app = ApiV1App(logger=self.logger)
+        await api_v1_app.init()
+        frontend_app = FrontendApp(logger=self.logger)
+        await frontend_app.init()
 
-        return aiohttp.web.Response(text=proxy_address)
+        self._app.add_subapp('/api/v1/', api_v1_app.app)
+        self._app.add_subapp('/i/', frontend_app.app)
 
-    async def post(self, request):
-        client_address = request.transport.get_extra_info('peername')
-        host, port = (None, None)
+    async def setup_middlewares(self):
+        error_middleware = self.error_pages_handler({
+            404: self.handle_404,
+            500: self.handle_500,
+        })
 
-        if client_address is not None:
-            host, port = client_address
-        else:
-            client_address = (host, port)
+        self._app.middlewares.append(error_middleware)
 
-        data = await request.read()
+    def error_pages_handler(self, overrides):
+        @aiohttp.web.middleware
+        async def middleware(request, handler):
+            try:
+                response = await handler(request)
+                override = overrides.get(response.status)
+                if override is None:
+                    return response
+                else:
+                    return await override(request, response)
+            except aiohttp.web.HTTPException as ex:
+                override = overrides.get(ex.status)
+                if override is None:
+                    raise
+                else:
+                    return await override(request, ex)
 
-        with open("logs/server_connections", 'a') as f:
-            f.write("client - {}:{}, data - {}\n".format(host, port, data))
+        return middleware
 
-        try:
-            data = json.loads(data.decode())
-
-            response = await _api_request_handler.handle(client_address, data)
-        except ValueError:
-            response = {
-                'status': 'error',
-                'status_code': 400,
-                'error_message': "Your request doesn't look like request",
-            }
-
-        if 'status_code' in response:
-            status_code = response['status_code']
-        else:
-            if response['status'] != 'ok':
-                status_code = 500
-            else:
-                status_code = 200
-
-            response['status_code'] = status_code
-
-        return aiohttp.web.json_response(response, status=status_code)
-
-    @get_response_wrapper("collector_state.html")
-    async def get_collector_state_html(self, request):
-        return {
-            "collector_states": list(await db.execute(CollectorState.select())),
-        }
-
-    @get_response_wrapper("proxies.html")
-    async def get_proxies_html(self, request):
-        proxies = await db.execute(
-            Proxy.select().where(Proxy.number_of_bad_checks == 0).order_by(Proxy.response_time)
+    async def handle_404(self, request, _):
+        resp = aiohttp_jinja2.render_template(
+            "index.html", request, {}
         )
-        proxies = list(proxies)
-        current_timestamp = time.time()
 
-        return {
-            "proxies": [{
-                "address": proxy.address,
-                "response_time": proxy.response_time / 1000 if proxy.response_time is not None else None,
-                "uptime": datetime.timedelta(
-                    seconds=int(current_timestamp - proxy.uptime)) if proxy.uptime is not None else None,
-                "bad_uptime": datetime.timedelta(
-                    seconds=int(current_timestamp - proxy.bad_uptime)) if proxy.bad_uptime is not None else None,
-                "last_check_time": proxy.last_check_time,
-                "checking_period": proxy.checking_period,
-                "number_of_bad_checks": proxy.number_of_bad_checks,
-                "bad_proxy": proxy.bad_proxy,
-                "white_ipv4": proxy.white_ipv4,
-                "city": proxy.city,
-                "region": proxy.region,
-                "country_code": proxy.country_code,
-            } for proxy in proxies]
-        }
+        resp.set_status(404)
 
-    @get_response_wrapper("proxy_count_items.html")
-    async def get_proxy_count_items_html(self, request):
-        return {
-            "proxy_count_items": list(await db.execute(ProxyCountItem.select().order_by(ProxyCountItem.timestamp)))
-        }
+        return resp
 
-    @aiohttp_jinja2.template("index.html")
-    async def index(self, request):
-        return {}
+    async def handle_500(self, *_):
+        return aiohttp.web.Response(status=500, text="Server error")

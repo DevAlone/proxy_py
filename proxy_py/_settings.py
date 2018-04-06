@@ -70,3 +70,5 @@ PROXY_CHECKERS = [
     IPInfoIOChecker(PROXY_CHECKING_TIMEOUT),
     D3DInfoChecker(PROXY_CHECKING_TIMEOUT),
 ]
+
+TEMPLATES_PATH = "server/templates"
