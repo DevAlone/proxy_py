@@ -10,7 +10,7 @@ class App(BaseApp):
     def __init__(self, *args, **kwargs):
         super(App, self).__init__(*args, **kwargs)
 
-        self.request_handler = ApiRequestHandler(self.logger)
+        self.request_handler = ApiRequestHandler(self)
 
     async def setup_router(self):
         self.app.router.add_post('/', self.post)
@@ -32,7 +32,7 @@ class App(BaseApp):
         try:
             data = json.loads(data.decode())
 
-            response = await self.request_handler.handle(client_address, data)
+            response = await self.request_handler.handle(request, data)
         except ValueError:
             response = {
                 'status': 'error',

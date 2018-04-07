@@ -1,15 +1,18 @@
+import aiohttp
+
+from server.base_app import BaseApp
 from .requests_to_models.request_parser import RequestParser, ParseError
 from .requests_to_models.request_executor import RequestExecutor, ExecutionError
 from proxy_py import settings
 
 
 class ApiRequestHandler:
-    def __init__(self, logger):
+    def __init__(self, app: BaseApp):
         self.request_parser = RequestParser(settings.PROXY_PROVIDER_SERVER_API_CONFIG)
         self.request_executor = RequestExecutor()
-        self._logger = logger
+        self.app = app
 
-    async def handle(self, client_address: tuple, post_data: dict):
+    async def handle(self, request: aiohttp.ClientRequest, post_data: dict):
         try:
             req_dict = self.request_parser.parse(post_data)
 
@@ -18,9 +21,9 @@ class ApiRequestHandler:
             }
             response.update(await self.request_executor.execute(req_dict))
         except ParseError as ex:
-            self._logger.warning(
-                "Error during parsing request. \nClient: {} \nRequest: {} \nException: {}".format(
-                    client_address,
+            self.app.log_info(
+                request,
+                "Error during parsing request. Request: {} Exception: {}".format(
                     post_data,
                     ex
                 )
@@ -32,11 +35,12 @@ class ApiRequestHandler:
                 'error_message': str(ex)
             }
         except ExecutionError as ex:
-            self._logger.warning(
-                "Error during execution request. \nClient: {} \nRequest: {} \nException: {}".format(
-                    client_address,
+            self.app.log_error(
+                request,
+                "Error during execution request. Request: {} Exception: {}".format(
                     post_data,
-                    ex)
+                    ex
+                )
             )
 
             response = {

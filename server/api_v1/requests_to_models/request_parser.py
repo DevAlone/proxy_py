@@ -11,6 +11,9 @@ class RequestParser:
     ALLOWED_KEYS = {'model', 'method', 'fields', 'filter', 'order_by', 'limit', 'offset'}
     MAXIMUM_KEY_LENGTH = 64
     MAXIMUM_VALUE_LENGTH = 512
+    # TODO: move to settings
+    MINIMUM_LIMIT_VALUE = 1
+    MAXIMUM_LIMIT_VALUE = 1024
 
     def __init__(self, config):
         self.config = config
@@ -30,6 +33,9 @@ class RequestParser:
                     raise ValidationError('Value of key "{}" should be integer'.format(key))
 
             self.validate_value(key, request[key])
+
+        if 'limit' not in request:
+            request['limit'] = self.MAXIMUM_LIMIT_VALUE
 
         return self.parse_dict(request)
 
@@ -60,6 +66,13 @@ class RequestParser:
             self._validate_value_type(key, value, int)
             if value < 0:
                 raise ValidationError('Value of key "{}" should be positive'.format(key))
+
+            if key == 'limit' and (value < self.MINIMUM_LIMIT_VALUE or value > self.MAXIMUM_LIMIT_VALUE):
+                raise ValidationError(
+                    'Value of key limit should be from {} to {} (inclusive)'.format(
+                        self.MINIMUM_LIMIT_VALUE, self.MAXIMUM_LIMIT_VALUE
+                    )
+                )
         else:
             # It means I forget to add validation of field
             raise ValidationError('Server Error')

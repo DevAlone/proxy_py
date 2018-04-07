@@ -1,3 +1,5 @@
+import json
+
 from proxy_py import settings
 from .base_app import BaseApp
 from .api_v1.app import App as ApiV1App
@@ -6,36 +8,32 @@ from aiohttp import web
 
 import logging
 import aiohttp
-import jinja2
 import aiohttp_jinja2
-
-
-# TODO: refactor it
-_proxy_provider_server = None
-_logger = logging.getLogger('proxy_py/server')
-_logger.setLevel(logging.DEBUG)
-debug_file_handler = logging.FileHandler('logs/server.debug.log')
-debug_file_handler.setLevel(logging.DEBUG)
-error_file_handler = logging.FileHandler('logs/server.error.log')
-error_file_handler.setLevel(logging.ERROR)
-error_file_handler = logging.FileHandler('logs/server.warning.log')
-error_file_handler.setLevel(logging.WARNING)
-info_file_handler = logging.FileHandler('logs/server.log')
-info_file_handler.setLevel(logging.INFO)
-
-_logger.addHandler(debug_file_handler)
-_logger.addHandler(error_file_handler)
-_logger.addHandler(info_file_handler)
 
 
 class ProxyProviderServer(BaseApp):
     def __init__(self, host, port, processor):
+        logger = logging.getLogger("proxy_py/server")
 
-        super(ProxyProviderServer, self).__init__(_logger)
+        if settings.DEBUG:
+            logger.setLevel(logging.DEBUG)
+        else:
+            logger.setLevel(logging.INFO)
+
+        logger_file_handler = logging.FileHandler("logs/server.log")
+        logger_file_handler.setLevel(logging.DEBUG)
+        logger_file_handler.setFormatter(logging.Formatter(
+            "%(levelname)s ~ %(asctime)s ~ %(client_ip)s ~ %(message)s"
+        ))
+
+        logger.addHandler(logger_file_handler)
+
+        super(ProxyProviderServer, self).__init__(logger)
 
         self._processor = processor
         self.host = host
         self.port = port
+        self._request_number = 0
 
     async def start(self, loop):
         await self.init()
@@ -63,10 +61,47 @@ class ProxyProviderServer(BaseApp):
             500: self.handle_500,
         })
 
-        self._app.middlewares.append(error_middleware)
+        self.app.middlewares.append(error_middleware)
+        self.app.middlewares.append(self.logging_middleware)
+
+    @web.middleware
+    async def logging_middleware(self, request: aiohttp.ClientRequest, handler):
+        self._request_number += 1
+
+        current_request_number = self._request_number
+
+        request_data = {
+            "request_number": current_request_number,
+            "method": request.method,
+            "url": str(request.url),
+            "user-agent": request.headers.get("User-Agent", None),
+        }
+
+        if request.body_exists:
+            request_data["body"] = (await request.read()).decode()
+
+        self.log_info(request, "-> data={}".format(json.dumps(request_data)))
+
+        status_code = None
+
+        try:
+            response = await handler(request)
+            status_code = response.status
+        except web.web_exceptions.HTTPException as ex:
+            status_code = ex.status
+            raise ex
+        except BaseException as ex:
+            raise ex
+        finally:
+            self.log_info(request, "<- data={}".format(json.dumps({
+                "request_number": current_request_number,
+                "status_code": status_code,
+            })))
+
+        return response
 
     def error_pages_handler(self, overrides):
-        @aiohttp.web.middleware
+        @web.middleware
         async def middleware(request, handler):
             try:
                 response = await handler(request)
