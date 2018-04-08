@@ -1,28 +1,20 @@
-import asyncio
-
-import peewee
-
 from models import db, CollectorState
 from proxy_py import settings
 
 import os
+import asyncio
 import importlib.util
 
 
 collectors = {}
 
 
-print("collectors dir: {}".format(settings.COLLECTORS_DIR))
 for root, dirs, files in os.walk(settings.COLLECTORS_DIR):
     for file in files:
         if file.endswith(".py"):
-            print("processing file: {}".format(file))
-
             file_path = os.path.join(root, file)
             module_name = os.path.splitext(file_path)[0].replace('/', '.')
-            print("module name: {}".format(module_name))
             spec = importlib.util.spec_from_file_location(module_name, file_path)
-
             collector_module = importlib.util.module_from_spec(spec)
             spec.loader.exec_module(collector_module)
 
@@ -61,7 +53,8 @@ def get_collector_state(module_name: str):
 def get_collector_of_module_name(module_name: str):
     if module_name not in collectors:
         raise CollectorNotFoundException(
-            "Probably some collector exists in database but not in filesystem. module_name = {}".format(module_name)
+            "Probably some collector exists in database but not in filesystem. "
+            "module_name = {}".format(module_name)
         )
 
     return collectors[module_name]

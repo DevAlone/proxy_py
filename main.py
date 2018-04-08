@@ -3,7 +3,6 @@
 from proxy_py import settings
 from processor import Processor
 from server.proxy_provider_server import ProxyProviderServer
-
 from models import Proxy, ProxyCountItem, db
 
 import asyncio

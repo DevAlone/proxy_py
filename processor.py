@@ -4,7 +4,6 @@ from models import Proxy, CollectorState, db
 
 import collectors_list
 import proxy_utils
-
 import asyncio
 import time
 import re
@@ -26,7 +25,6 @@ class Processor:
     """
 
     def __init__(self):
-        # TODO: find better logger
         self.logger = logging.getLogger("proxy_py/processor")
 
         if settings.DEBUG:
@@ -66,17 +64,23 @@ class Processor:
         tasks = []
         while True:
             await asyncio.sleep(0.1)
-            i = 0
+            try:
+                i = 0
 
-            while not self.queue.empty() and i <= settings.CONCURRENT_TASKS_COUNT:
-                proxy_data = self.queue.get_nowait()
-                tasks.append(self.process_proxy(*proxy_data))
-                self.queue.task_done()
-                i += 1
+                while not self.queue.empty() and i <= settings.CONCURRENT_TASKS_COUNT:
+                    proxy_data = self.queue.get_nowait()
+                    tasks.append(self.process_proxy(*proxy_data))
+                    self.queue.task_done()
+                    i += 1
 
-            if tasks:
-                await asyncio.wait(tasks)
-                tasks.clear()
+                if tasks:
+                    await asyncio.wait(tasks)
+                    tasks.clear()
+            except KeyboardInterrupt:
+                raise
+            except BaseException as ex:
+                self.logger.exception(ex)
+                await asyncio.sleep(10)
 
     async def producer(self):
         while True:
