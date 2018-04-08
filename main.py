@@ -54,7 +54,7 @@ if __name__ == "__main__":
 
     loop.run_until_complete(proxy_provider_server.start(loop))
 
-    loop.run_until_complete(asyncio.wait([
+    loop.run_until_complete(asyncio.gather(*[
         proxy_processor.exec(),
         proxy_counter(),
     ]))

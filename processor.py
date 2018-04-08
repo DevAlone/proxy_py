@@ -55,7 +55,7 @@ class Processor:
         self.queue = asyncio.Queue(maxsize=settings.PROXY_QUEUE_SIZE)
 
     async def exec(self):
-        await asyncio.wait([
+        await asyncio.gather(*[
             self.producer(),
             self.consumer(),
         ])
@@ -74,7 +74,7 @@ class Processor:
                     i += 1
 
                 if tasks:
-                    await asyncio.wait(tasks)
+                    await asyncio.gather(*tasks)
                     tasks.clear()
             except KeyboardInterrupt:
                 raise
@@ -91,7 +91,7 @@ class Processor:
                 collector_states = await db.execute(
                     CollectorState.select().where(
                         CollectorState.last_processing_time < time.time() - CollectorState.processing_period
-                    )
+                    ).limit(settings.CONCURRENT_TASKS_COUNT)
                 )
 
                 tasks = [
@@ -100,7 +100,7 @@ class Processor:
                 ]
 
                 if tasks:
-                    await asyncio.wait(tasks)
+                    await asyncio.gather(*tasks)
                     tasks.clear()
 
                 # check proxies
@@ -193,11 +193,11 @@ class Processor:
         for proxy in proxies:
             tasks.append(self.process_raw_proxy(proxy, collector_id))
             if len(tasks) > settings.CONCURRENT_TASKS_COUNT:
-                await asyncio.wait(tasks)
+                await asyncio.gather(*tasks)
                 tasks.clear()
 
         if tasks:
-            await asyncio.wait(tasks)
+            await asyncio.gather(*tasks)
 
     async def process_raw_proxy(self, proxy, collector_id):
         self.logger.debug("adding raw proxy \"{}\" to queue".format(proxy))
