@@ -4,6 +4,10 @@ proxy_py is a program which collects proxies, saves them in a database
 and makes periodically checks.
 It has a server for getting proxies with nice API(see below).
 
+## Where is the documentation?
+
+It's [here](http://proxy-py.readthedocs.io)
+
 ## How to build?
 
 1 Clone this repository
