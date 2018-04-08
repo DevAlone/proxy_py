@@ -83,19 +83,23 @@ class ProxyProviderServer(BaseApp):
         self.log_info(request, "-> data={}".format(json.dumps(request_data)))
 
         status_code = None
+        exc = None
 
         try:
             response = await handler(request)
             status_code = response.status
         except web.web_exceptions.HTTPException as ex:
             status_code = ex.status
+            exc = ex
             raise ex
         except BaseException as ex:
+            exc = ex
             raise ex
         finally:
             self.log_info(request, "<- data={}".format(json.dumps({
                 "request_number": current_request_number,
                 "status_code": status_code,
+                "exception": str(exc),
             })))
 
         return response

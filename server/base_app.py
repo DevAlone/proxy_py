@@ -52,14 +52,15 @@ class BaseApp:
         self.log('debug', *args, **kwargs)
 
     def log(self, level, request, message):
-        if settings.DEBUG:
+        if False and settings.DEBUG:
             client_host, client_port = request.transport.get_extra_info("peername")
             client_ip = "{}:{}".format(client_host, client_port)
         else:
             # behind nginx or other reverse proxy
-            client_ip = str(request.headers.get('X-Real-IP', None))
-            if client_ip is None:
-                self.logger.error("Your reverse proxy doesn't present user's IP")
+            client_ip = str(request.headers.get("X-Real-IP", "None"))
+            
+            if client_ip == "None" or client_ip.startswith("127.0.0.1"):
+                self.logger.error("Your reverse proxy doesn't present user's IP", extra={"client_ip": client_ip})
 
         getattr(self.logger, level)(message, extra={
             "client_ip": client_ip,
