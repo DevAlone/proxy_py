@@ -186,6 +186,7 @@ class Processor:
             await collector.set_state(collector_state)
             collector_state.last_processing_proxies_count = len(proxies)
             # TODO: save new proxies count
+            await db.update(collector_state)
 
     async def process_raw_proxies(self, proxies, collector_id):
         tasks = []

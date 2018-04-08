@@ -58,7 +58,7 @@ class BaseApp:
         else:
             # behind nginx or other reverse proxy
             client_ip = str(request.headers.get("X-Real-IP", "None"))
-            
+
             if client_ip == "None" or client_ip.startswith("127.0.0.1"):
                 self.logger.error("Your reverse proxy doesn't present user's IP", extra={"client_ip": client_ip})
 
