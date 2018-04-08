@@ -188,29 +188,69 @@ class Processor:
             # TODO: save new proxies count
 
     async def process_raw_proxies(self, proxies, collector_id):
+        tasks = []
+
         for proxy in proxies:
-            self.logger.debug("adding raw proxy \"{}\" to queue".format(proxy))
-            matches = re.match(PROXY_VALIDATE_REGEX, proxy)
-            if matches:
-                matches = matches.groupdict()
-                auth_data = matches["auth_data"]
-                domain = matches["domain"]
-                port = matches["port"]
+            tasks.append(self.process_raw_proxy(proxy, collector_id))
+            if len(tasks) > settings.CONCURRENT_TASKS_COUNT:
+                await asyncio.wait(tasks)
+                tasks.clear()
 
-                if auth_data is None:
-                    auth_data = ""
+        if tasks:
+            await asyncio.wait(tasks)
 
-                if domain is None or port is None:
-                    raise Exception("Bad raw proxy \"{}\" from collector \"{}\"".format(proxy, collector_id))
+    async def process_raw_proxy(self, proxy, collector_id):
+        self.logger.debug("adding raw proxy \"{}\" to queue".format(proxy))
 
-                for raw_protocol in range(len(Proxy.PROTOCOLS)):
-                    await self.queue.put((
-                        raw_protocol,
-                        auth_data,
-                        domain,
-                        port,
-                        collector_id,
-                    ))
+        matches = re.match(PROXY_VALIDATE_REGEX, proxy)
+        if matches:
+            matches = matches.groupdict()
+            auth_data = matches["auth_data"]
+            domain = matches["domain"]
+            port = matches["port"]
+
+            if auth_data is None:
+                auth_data = ""
+
+            if domain is None or port is None:
+                self.collectors_logger.error(
+                    "Bad raw proxy \"{}\" from collector \"{}\"".format(proxy, collector_id)
+                )
+                return
+
+            # don't care about protocol
+            try:
+                proxy = await db.get(
+                    Proxy.select().where(
+                        Proxy.auth_data == auth_data,
+                        Proxy.domain == domain,
+                        Proxy.port == port,
+                    )
+                )
+
+                if proxy.last_check_time + settings.PROXY_NOT_CHECKING_PERIOD >= time.time():
+                    proxy_short_address = ""
+                    if auth_data:
+                        proxy_short_address += "@" + auth_data
+
+                    proxy_short_address += "{}:{}".format(domain, port)
+
+                    self.logger.debug(
+                        "skip proxy \"{}\" from collector \"{}\"".format(
+                            proxy_short_address, collector_id)
+                    )
+                    return
+            except Proxy.DoesNotExist:
+                pass
+
+            for raw_protocol in range(len(Proxy.PROTOCOLS)):
+                await self.queue.put((
+                    raw_protocol,
+                    auth_data,
+                    domain,
+                    port,
+                    collector_id,
+                ))
 
     async def process_proxy(self, raw_protocol: int, auth_data: str, domain: str, port: int, collector_id: int):
         self.logger.debug(
