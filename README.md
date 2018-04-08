@@ -1,6 +1,8 @@
 # proxy_py
 
-proxy_py is a program which collects proxies, saves them in database and makes periodically checks. It has server for getting proxies with nice API(see below). 
+proxy_py is a program which collects proxies, saves them in a database
+and makes periodically checks.
+It has a server for getting proxies with nice API(see below).
 
 ## How to build?
 
@@ -19,7 +21,7 @@ pip3 install -r requirements.txt
 
 `cp config_examples/settings.py proxy_py/settings.py`
 
-4 (Optional) Change database in settings.py file
+4 Install postgresql and change database configuration in settings.py file
 
 5 (Optional) Configure alembic
 
@@ -31,13 +33,18 @@ pip3 install -r requirements.txt
 
 ## I'm too lazy. Can I just use it?
 
-Yes, you can download virtualbox image [here](https://drive.google.com/file/d/1oPf6xwOADRH95oZW0vkPr1Uu_iLDe9jc/view?usp=sharing). After downloading check that port forwarding is still working, you need forwarding of 55555 host port to 55555 guest. 
+Yes, you can download virtualbox image
+[here](https://drive.google.com/file/d/1oPf6xwOADRH95oZW0vkPr1Uu_iLDe9jc/view?usp=sharing).
+After downloading check that port forwarding is still working,
+you need forwarding of 55555 host port to 55555 guest.
 
 ## How to get proxies?
 
-proxy_py has server based on aiohttp which is listening 127.0.0.1:55555
-(you can change it in settings file) and provides proxies.
-To get proxies you should send following json request:
+proxy_py has a server, based on aiohttp, which is listening 127.0.0.1:55555
+(you can change it in the settings file) and provides proxies.
+To get proxies you should send the following json request
+on address `http://127.0.0.1:55555/api/v1/`
+(or other domain if behind reverse proxy):
 
 ```json
 {
@@ -47,10 +54,11 @@ To get proxies you should send following json request:
 }
 ```
 
-Note: order_by makes result sorting by one or more fields separated by comma.
+Note: order_by makes the result sorted
+by one or more fields(separated by comma).
 You can skip it. The required fields are `model` and `method`.
 
-It will return json response like this:
+It's gonna return you the json response like this:
 
 ```json
 {
@@ -75,7 +83,7 @@ It will return json response like this:
 ```
 
 Note: All fields except *protocol*, *domain*, *port*, *auth_data*,
-*checking_period* and *address* can be null
+*checking_period* and *address* CAN be null
 
 Or error if something went wrong:
 
@@ -91,13 +99,13 @@ Note: status_code is also duplicated in HTTP status code
 
 Example using curl:
 
-`curl -X POST http://example.com:55555 -H "Content-Type: application/json" --data '{"model": "proxy", "method": "get"}'`
+`curl -X POST http://127.0.0.1:55555/api/v1/ -H "Content-Type: application/json" --data '{"model": "proxy", "method": "get"}'`
 
 Example using httpie:
 
-`http POST http://example.com:55555 model=proxy method=get`
+`http POST http://127.0.0.1:55555/api/v1/ model=proxy method=get`
 
-Example using python requests library:
+Example using python's `requests` library:
 
 ```python
 import requests
@@ -111,7 +119,7 @@ def get_proxies():
         "method": "get",
     }
 
-    response = requests.post('http://example.com:55555', json=json_data)
+    response = requests.post('http://127.0.0.1:55555/api/v1/', json=json_data)
     if response.status_code == 200:
         response = json.loads(response.text)
         for proxy in response['data']:
@@ -136,7 +144,7 @@ async def get_proxies():
     }
     
     async with aiohttp.ClientSession() as session:
-        async with session.post('http://example.com:55555', json=json_data) as response:
+        async with session.post('http://127.0.0.1:55555/api/v1/', json=json_data) as response:
             if response.status == 200:
                 response = json.loads(await response.text())
                 for proxy in response['data']:
@@ -152,9 +160,13 @@ async def get_proxies():
 
 Read more about API  [here](https://github.com/DevAlone/proxy_py/tree/master/docs/API.md)
 
+## How to contribute?
+
+`TODO: write guide about it`
+
 ## How to test it?
 
-If you made changes to code and want to check that you didn't break
+If you made the changes to code and want to check that you didn't break
 anything, go [here](https://github.com/DevAlone/proxy_py/tree/master/docs/tests.md)
 
 ## How to deploy on production using supervisor, nginx and postgresql in 8 steps?
@@ -165,20 +177,25 @@ anything, go [here](https://github.com/DevAlone/proxy_py/tree/master/docs/tests.
 
 2 Create virtual environment and install requirements on it
 
-3 Install psycopg2
+3 Copy settings.py example:
 
-`(proxy_py) proxy_py@server:~/proxy_py$ pip3 install psycopg2`
+`proxy_py@server:~/proxy_py$ cp config_examples/settings.py proxy_py/`
 
-4 create unprivileged user in postgresql database and add database authentication data to settings.py
+4 create unprivileged user in postgresql database
+and change database authentication data in settings.py
 
 ```bash
 proxy_py@server:~/proxy_py$ vim proxy_py/settings.py
 ```
 
 ```bash
-DATABASE_CONNECTION_ARGS = (
-    'postgresql://USERNAME:PASSWORD@localhost/DB_NAME',
-)
+DATABASE_CONNECTION_KWARGS = {
+    'database': 'YOUR_POSTGRES_DATABASE',
+    'user': 'YOUR_POSTGRES_USER',
+    'password': 'YOUR_POSTGRES_PASSWORD',
+    # number of simultaneous connections
+    # 'max_connections': 20,
+}
 ```
 
 5 Copy supervisor config example and change it for your case
@@ -196,7 +213,7 @@ root@server:~$ ln -s /etc/nginx/sites-available/proxy_py /etc/nginx/sites-enable
 root@server:~$ vim /etc/nginx/sites-available/proxy_py
 ```
 
-7 Restart supervisor and nginx
+7 Restart supervisor and Nginx
 
 ```bash
 root@server:~$ supervisorctl reread
@@ -209,4 +226,4 @@ root@server:~$ /etc/init.d/nginx restart
 
 ## What is it depend on?
 
-See requirements.txt
+See `requirements.txt`
