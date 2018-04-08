@@ -33,6 +33,8 @@ pip3 install -r requirements.txt
 
 ## I'm too lazy. Can I just use it?
 
+`TODO: update, old version!`
+
 Yes, you can download virtualbox image
 [here](https://drive.google.com/file/d/1oPf6xwOADRH95oZW0vkPr1Uu_iLDe9jc/view?usp=sharing).
 After downloading check that port forwarding is still working,
