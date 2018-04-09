@@ -4,6 +4,11 @@ from collectors.collector import AbstractCollector
 
 # TODO: save pages to collector state
 class PagesCollector(AbstractCollector):
+    """
+    Collector for paginated APIs.
+    Here you should override ``process_page(page_index)`` method
+    """
+
     async def collect(self):
         if "_current_page" in self.data:
             self.current_page = self.data["_current_page"]
@@ -39,8 +44,9 @@ class PagesCollector(AbstractCollector):
 
     async def process_page(self, page_index):
         """
-        you should override this in your class derived from PagesCollector
-        `pageIndex` changes from 0 to pagesCount(excluded)
+        you should override this in your class derived from PagesCollector.
+
+        `page_index` changes from 0 to pages_count(excluded)
         """
         return []
 

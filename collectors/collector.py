@@ -6,14 +6,21 @@ import models
 
 
 class AbstractCollector:
-    """
-    this method should return proxies in any of the following formats:
-    ip:port
-    domain:port
-    protocol://ip:port
-    protocol://domain:port
-    """
+    """Base class for all types of collectors"""
+
     async def collect(self):
+        """
+        this method should return proxies in any of the following formats:
+
+        ::
+
+            ip:port
+            domain:port
+            protocol://ip:port
+            protocol://domain:port
+
+        """
+
         return []
 
     async def _collect(self):
@@ -30,22 +37,28 @@ class AbstractCollector:
         state.processing_period = self.processing_period
         state.data = json.dumps(self.data)
 
-    """time in unix timestamp(seconds from 01.01.1970)"""
     last_processing_time = 0
-    """processing period in seconds"""
+    """time in unix timestamp(seconds from 01.01.1970)"""
+
     processing_period = 60 * 60
+    """processing period in seconds"""
+
+    # TODO: create this feature
+    floating_processing_period = True
     """
     this means processing period may be changed
     if collector returns too few proxies, it will be increased
     """
-    # TODO: create this feature
-    floating_processing_period = True
+
+    override_maximum_processing_period = None
     """
     ignore settings' maximum processing period and set
     it to value of this variable
     """
-    override_maximum_processing_period = None
+
     override_minimum_processing_period = None
+
+    data = {}
     """
     here you can store some information,
     it will be written into and read from database
@@ -53,4 +66,3 @@ class AbstractCollector:
     Just don't use names starting with underscore
     like this one: _last_page
     """
-    data = {}
