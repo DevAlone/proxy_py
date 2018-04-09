@@ -163,7 +163,7 @@ class Processor:
             self.logger.debug(
                 "start processing collector of type \"{}\"".format(type(collector))
             )
-            proxies = set(await collector.collect())
+            proxies = set(await collector._collect())
 
             if not proxies:
                 self.collectors_logger.warning(

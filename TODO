@@ -1,5 +1,2 @@
 new web interface
 statistics for proxies and for collectors
-logging
-default limit to api results
-do not update proxies which have been updated recently

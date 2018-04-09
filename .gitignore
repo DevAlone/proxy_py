@@ -9,3 +9,4 @@ env/
 dist/
 proxy_py.egg-info
 proxypy.egg-info/
+build/

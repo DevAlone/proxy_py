@@ -1,17 +1,40 @@
+from proxy_py import settings
 from collectors.collector import AbstractCollector
 
 
 # TODO: save pages to collector state
 class PagesCollector(AbstractCollector):
     async def collect(self):
-        proxies = await self.process_page(self.current_page)
+        if "_current_page" in self.data:
+            self.current_page = self.data["_current_page"]
+
+        print('processing page {}'.format(self.current_page))
+        proxies = (await self.process_page(self.current_page)
+                   )[:settings.COLLECTOR_MAXIMUM_NUMBER_OF_PROXIES_PER_REQUEST]
 
         if self.dynamic_pages_count:
-            self.pages_count = self.current_page + 2 if proxies else self.current_page + 1
+            if proxies:
+                self.pages_count = self.current_page + 2
+                """
+                for those APIs which returns
+                the last page for nonexistent ones 
+                """
+                proxies_set = set(proxies)
+
+                if "_last_proxies_set" in self.data:
+                    if set(self.data["_last_proxies_set"]) == proxies_set:
+                        self.pages_count = self.current_page + 1
+
+                self.data["_last_proxies_set"] = list(proxies_set)
+            else:
+                self.pages_count = self.current_page + 1
 
         self.current_page += 1
         if self.current_page >= self.pages_count:
             self.current_page = 0
+
+        self.data["_current_page"] = self.current_page
+
         return proxies
 
     async def process_page(self, page_index):
@@ -21,10 +44,10 @@ class PagesCollector(AbstractCollector):
         """
         return []
 
-    # and also you should set pages_count
+    """set this value or use dynamic pages count"""
     pages_count = 0
     current_page = 0
-    # or set dynamic pages count
-    dynamic_pages_count = False
+    """use dynamic pages count"""
+    dynamic_pages_count = True
 
     processing_period = 60 * 10
