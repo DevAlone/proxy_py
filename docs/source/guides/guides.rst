@@ -1,4 +1,4 @@
-Guides
+proxy_py Guides
 ========
 
 .. toctree::

@@ -9,3 +9,4 @@ jinja2
 peewee-async
 aiopg
 recommonmark
+sphinx_rtd_theme
