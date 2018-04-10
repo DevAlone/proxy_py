@@ -37,17 +37,34 @@ async def request(method, url, **kwargs):
     elif 'User-Agent' not in kwargs['headers']:
             kwargs['headers']['User-Agent'] = get_random_user_agent()
 
+    if 'override_session' in kwargs:
+        session = kwargs['override_session']
+        del kwargs['override_session']
+        async with session.request(method, url, **kwargs) as response:
+            return await Response.from_aiohttp_response(response)
+
     async with aiohttp.ClientSession(**session_kwargs) as session:
         async with session.request(method, url, **kwargs) as response:
             status = response.status
             text = await response.text()
-            return Response(status, text)
+            return await Response.from_aiohttp_response(response)
 
 
 class Response:
-    def __init__(self, status, text):
+    def __init__(self, status, text, aiohttp_response=None):
         self.status = status
         self.text = text
+        self.aiohttp_response = aiohttp_response
+
+    @staticmethod
+    async def from_aiohttp_response(aiohttp_response):
+        return Response(
+                status=aiohttp_response.status,
+                text=await aiohttp_response.text(),
+                aiohttp_response=aiohttp_response
+        )
+
+        return result
 
     def __str__(self):
         return json.dumps({

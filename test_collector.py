@@ -1,4 +1,7 @@
-from collectors.freeproxylists_net.freeproxylists_net import Collector
+# from collectors.freeproxylists_net.freeproxylists_net import Collector
+import traceback
+
+from collectors.checkerproxy_net.collector_checkerproxy_net_today import Collector
 
 import proxy_utils
 
@@ -35,10 +38,11 @@ async def main():
         tasks = []
         # print(proxies)
         for proxy in proxies:
-            tasks.append(check_raw_proxy(proxy))
+            print(proxy)
+            # tasks.append(check_raw_proxy(proxy))
 
         if tasks:
-            await asyncio.wait(tasks)
+            await asyncio.gather(*tasks)
         else:
             print("Empty")
         print()
