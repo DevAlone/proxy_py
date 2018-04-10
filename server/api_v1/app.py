@@ -16,18 +16,7 @@ class App(BaseApp):
         self.app.router.add_post('/', self.post)
 
     async def post(self, request):
-        client_address = request.transport.get_extra_info('peername')
-        host, port = (None, None)
-
-        if client_address is not None:
-            host, port = client_address
-        else:
-            client_address = (host, port)
-
         data = await request.read()
-
-        with open("logs/apiv1_server_connections", 'a') as f:
-            f.write("client - {}:{}, data - {}\n".format(host, port, data))
 
         try:
             data = json.loads(data.decode())

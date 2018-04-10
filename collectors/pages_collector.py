@@ -13,7 +13,6 @@ class PagesCollector(AbstractCollector):
         if "_current_page" in self.data:
             self.current_page = self.data["_current_page"]
 
-        print('processing page {}'.format(self.current_page))
         proxies = (await self.process_page(self.current_page)
                    )[:settings.COLLECTOR_MAXIMUM_NUMBER_OF_PROXIES_PER_REQUEST]
 

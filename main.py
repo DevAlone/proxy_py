@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+import logging
+import sys
 
 from proxy_py import settings
 from processor import Processor
@@ -30,6 +32,8 @@ async def create_proxy_count_item():
 
 async def proxy_counter():
     while True:
+        print('.', end='')
+
         if (await db.count(ProxyCountItem.select())) == 0:
             await create_proxy_count_item()
         else:
@@ -38,10 +42,23 @@ async def proxy_counter():
             if int(last_item.timestamp // 60) * 60 + 60 < time.time():
                 await create_proxy_count_item()
 
-        await asyncio.sleep(5)
+        # await asyncio.sleep(10)
 
 
 if __name__ == "__main__":
+    main_logger = logging.getLogger("proxy_py/main")
+
+    if settings.DEBUG:
+        main_logger.setLevel(logging.DEBUG)
+    else:
+        main_logger.setLevel(logging.INFO)
+
+    logger_file_handler = logging.FileHandler("logs/main.log")
+    logger_file_handler.setLevel(logging.DEBUG)
+    logger_file_handler.setFormatter(logging.Formatter("%(levelname)s ~ %(asctime)s ~ %(funcName)30s() ~ %(message)s"))
+
+    main_logger.addHandler(logger_file_handler)
+
     loop = asyncio.get_event_loop()
 
     proxy_processor = Processor()
@@ -54,7 +71,11 @@ if __name__ == "__main__":
 
     loop.run_until_complete(proxy_provider_server.start(loop))
 
-    loop.run_until_complete(asyncio.gather(*[
-        proxy_processor.exec(),
-        proxy_counter(),
-    ]))
+    try:
+        loop.run_until_complete(asyncio.gather(*[
+            proxy_processor.exec(),
+            proxy_counter(),
+        ]))
+    except BaseException as ex:
+        main_logger.exception(ex)
+        print("error happened, see logs/main.log")
