@@ -14,6 +14,20 @@ class Proxy(peewee.Model):
         db_table = 'proxies'
         indexes = (
             (('raw_protocol', 'auth_data', 'domain', 'port'), True),
+            (('auth_data', 'domain', 'port'), False),  # important!
+            (('raw_protocol',), False),
+            (('auth_data',), False),
+            (('domain',), False),
+            (('port',), False),
+            (('number_of_bad_checks',), False),
+            (('last_check_time',), False),
+            (('checking_period',), False),
+            (('uptime',), False),
+            (('bad_uptime',), False),
+            (('response_time',), False),
+            (('_white_ipv4',), False),
+            (('_white_ipv6',), False),
+            (('country_code',), False),
         )
 
     PROTOCOLS = (
@@ -107,6 +121,10 @@ class CollectorState(peewee.Model):
     class Meta:
         database = db
         db_table = 'collector_states'
+        indexes = (
+            (('processing_period',), False),
+            (('last_processing_time',), False),
+        )
 
     # python module name
     identifier = peewee.TextField(unique=True)

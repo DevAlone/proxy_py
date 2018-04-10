@@ -110,7 +110,7 @@ class Processor:
                     Proxy.select().where(
                         Proxy.number_of_bad_checks == 0,
                         Proxy.last_check_time < time.time() - Proxy.checking_period,
-                    )
+                    ).limit(settings.CONCURRENT_TASKS_COUNT)
                 )
 
                 for proxy in proxies:
@@ -122,7 +122,7 @@ class Processor:
                         Proxy.number_of_bad_checks > 0,
                         Proxy.number_of_bad_checks < settings.DEAD_PROXY_THRESHOLD,
                         Proxy.last_check_time < time.time() - settings.BAD_PROXY_CHECKING_PERIOD,
-                    )
+                    ).limit(settings.CONCURRENT_TASKS_COUNT)
                 )
 
                 for proxy in bad_proxies:
@@ -133,7 +133,7 @@ class Processor:
                     Proxy.select().where(
                         Proxy.number_of_bad_checks >= settings.DEAD_PROXY_THRESHOLD,
                         Proxy.last_check_time < time.time() - settings.DEAD_PROXY_CHECKING_PERIOD,
-                    )
+                    ).limit(settings.CONCURRENT_TASKS_COUNT)
                 )
 
                 for proxy in dead_proxies:
