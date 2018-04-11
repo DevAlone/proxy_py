@@ -37,7 +37,7 @@ async def proxy_counter():
         if (await db.count(ProxyCountItem.select())) == 0:
             await create_proxy_count_item()
         else:
-            last_item = await db.get(ProxyCountItem.select().order_by(ProxyCountItem.timestamp.desc()))
+            last_item = await db.get(ProxyCountItem.select().order_by(ProxyCountItem.timestamp.desc()).limit(1))
 
             if int(last_item.timestamp // 60) * 60 + 60 < time.time():
                 await create_proxy_count_item()
