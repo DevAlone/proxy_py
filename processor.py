@@ -61,12 +61,12 @@ class Processor:
         ])
 
     async def consumer(self):
-        tasks = []
         while True:
             await asyncio.sleep(0.1)
+
             try:
                 i = 0
-
+                tasks = []
                 while not self.queue.empty() and i <= settings.CONCURRENT_TASKS_COUNT:
                     proxy_data = self.queue.get_nowait()
                     tasks.append(self.process_proxy(*proxy_data))
@@ -75,7 +75,6 @@ class Processor:
 
                 if tasks:
                     await asyncio.gather(*tasks)
-                    tasks.clear()
             except KeyboardInterrupt:
                 raise
             except BaseException as ex:

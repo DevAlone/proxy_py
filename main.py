@@ -12,7 +12,8 @@ import time
 
 
 async def create_proxy_count_item():
-    good_proxies_count = await db.count(Proxy.select().where(Proxy.number_of_bad_checks == 0))
+    good_proxies_count = await db.count(
+            Proxy.select().where(Proxy.number_of_bad_checks == 0))
     bad_proxies_count = await db.count(Proxy.select().where(
         Proxy.number_of_bad_checks > 0,
         Proxy.number_of_bad_checks < settings.DEAD_PROXY_THRESHOLD,
@@ -32,17 +33,16 @@ async def create_proxy_count_item():
 
 async def proxy_counter():
     while True:
-        print('.', end='')
-
         if (await db.count(ProxyCountItem.select())) == 0:
             await create_proxy_count_item()
         else:
-            last_item = await db.get(ProxyCountItem.select().order_by(ProxyCountItem.timestamp.desc()).limit(1))
+            last_item = await db.get(ProxyCountItem.select().order_by(
+                ProxyCountItem.timestamp.desc()).limit(1))
 
             if int(last_item.timestamp // 60) * 60 + 60 < time.time():
                 await create_proxy_count_item()
 
-        # await asyncio.sleep(10)
+        await asyncio.sleep(10)
 
 
 if __name__ == "__main__":
