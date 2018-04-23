@@ -90,7 +90,9 @@ class Processor:
                 collector_states = await db.execute(
                     CollectorState.select().where(
                         CollectorState.last_processing_time < time.time() - CollectorState.processing_period
-                    ).limit(settings.CONCURRENT_TASKS_COUNT)
+                    # TODO: temp fix
+                    # ).limit(settings.CONCURRENT_TASKS_COUNT)
+                    ).limit(1)
                 )
 
                 tasks = [
@@ -109,7 +111,7 @@ class Processor:
                     Proxy.select().where(
                         Proxy.number_of_bad_checks == 0,
                         Proxy.last_check_time < time.time() - Proxy.checking_period,
-                    ).limit(settings.CONCURRENT_TASKS_COUNT)
+                    ).order_by(Proxy.last_check_time).limit(settings.CONCURRENT_TASKS_COUNT)
                 )
 
                 for proxy in proxies:
@@ -121,7 +123,7 @@ class Processor:
                         Proxy.number_of_bad_checks > 0,
                         Proxy.number_of_bad_checks < settings.DEAD_PROXY_THRESHOLD,
                         Proxy.last_check_time < time.time() - settings.BAD_PROXY_CHECKING_PERIOD,
-                    ).limit(settings.CONCURRENT_TASKS_COUNT)
+                    ).order_by(Proxy.last_check_time).limit(settings.CONCURRENT_TASKS_COUNT)
                 )
 
                 for proxy in bad_proxies:
@@ -132,7 +134,7 @@ class Processor:
                     Proxy.select().where(
                         Proxy.number_of_bad_checks >= settings.DEAD_PROXY_THRESHOLD,
                         Proxy.last_check_time < time.time() - settings.DEAD_PROXY_CHECKING_PERIOD,
-                    ).limit(settings.CONCURRENT_TASKS_COUNT)
+                    ).order_by(Proxy.last_check_time).limit(settings.CONCURRENT_TASKS_COUNT)
                 )
 
                 for proxy in dead_proxies:
@@ -200,7 +202,7 @@ class Processor:
             await asyncio.gather(*tasks)
 
     async def process_raw_proxy(self, proxy, collector_id):
-        self.logger.debug("adding raw proxy \"{}\" to queue".format(proxy))
+        self.logger.debug("processing raw proxy \"{}\"".format(proxy))
 
         matches = re.match(PROXY_VALIDATE_REGEX, proxy)
         if matches:
@@ -231,12 +233,12 @@ class Processor:
                 if proxy.last_check_time + settings.PROXY_NOT_CHECKING_PERIOD >= time.time():
                     proxy_short_address = ""
                     if auth_data:
-                        proxy_short_address += "@" + auth_data
+                        proxy_short_address += auth_data + "@"
 
                     proxy_short_address += "{}:{}".format(domain, port)
 
                     self.logger.debug(
-                        "skip proxy \"{}\" from collector \"{}\"".format(
+                        "skipping proxy \"{}\" from collector \"{}\"".format(
                             proxy_short_address, collector_id)
                     )
                     return
