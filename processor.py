@@ -84,8 +84,7 @@ class Processor:
 
     async def producer(self):
         await asyncio.gather(*(
-            # TODO: remove
-            # self.process_collectors(),
+            self.process_collectors(),
             self.process_proxies(),
         ))
 
@@ -93,8 +92,6 @@ class Processor:
         while True:
             await asyncio.sleep(0.01)
             try:
-                # TODO: split checking collectors and proxies to the different coroutines
-
                 # check collectors
                 collector_states = await db.execute(
                     CollectorState.select().where(
@@ -127,8 +124,6 @@ class Processor:
                         Proxy.last_check_time < time.time() - Proxy.checking_period,
                     ).order_by(Proxy.last_check_time).limit(settings.CONCURRENT_TASKS_COUNT)
                 )
-                print(proxies[0])
-                os._exit(1)
 
                 for proxy in proxies:
                     await self.add_proxy_to_queue(proxy)
