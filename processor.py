@@ -83,7 +83,8 @@ class Processor:
 
     async def producer(self):
         await asyncio.gather(*(
-            self.process_collectors(),
+            # TODO: remove
+            # self.process_collectors(),
             self.process_proxies(),
         ))
 
