@@ -86,6 +86,8 @@ class Processor:
             await asyncio.sleep(0.1)
 
             try:
+                # TODO: split checking collectors and proxies to the different coroutines
+
                 # check collectors
                 collector_states = await db.execute(
                     CollectorState.select().where(
