@@ -89,6 +89,7 @@ class Processor:
 
     async def process_collectors(self):
         while True:
+            print('checking collectors')
             await asyncio.sleep(0.01)
             try:
                 # TODO: split checking collectors and proxies to the different coroutines
@@ -116,6 +117,7 @@ class Processor:
 
     async def process_proxies(self):
         while True:
+            print('checking proxies')
             await asyncio.sleep(0.01)
             try:
                 # check good proxies
