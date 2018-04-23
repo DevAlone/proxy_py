@@ -8,6 +8,7 @@ import asyncio
 import time
 import re
 import logging
+import os
 
 # TODO: add ipv6 addresses
 PROXY_VALIDATE_REGEX = \
@@ -62,7 +63,7 @@ class Processor:
 
     async def consumer(self):
         while True:
-            await asyncio.sleep(0.1)
+            await asyncio.sleep(0.01)
 
             try:
                 i = 0
@@ -126,6 +127,8 @@ class Processor:
                         Proxy.last_check_time < time.time() - Proxy.checking_period,
                     ).order_by(Proxy.last_check_time).limit(settings.CONCURRENT_TASKS_COUNT)
                 )
+                print(proxies[0])
+                os._exit(1)
 
                 for proxy in proxies:
                     await self.add_proxy_to_queue(proxy)
