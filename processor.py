@@ -82,9 +82,14 @@ class Processor:
                 await asyncio.sleep(10)
 
     async def producer(self):
-        while True:
-            await asyncio.sleep(0.1)
+        await asyncio.gather(*(
+            self.process_collectors(),
+            self.process_proxies(),
+        ))
 
+    async def process_collectors(self):
+        while True:
+            await asyncio.sleep(0.01)
             try:
                 # TODO: split checking collectors and proxies to the different coroutines
 
@@ -92,9 +97,7 @@ class Processor:
                 collector_states = await db.execute(
                     CollectorState.select().where(
                         CollectorState.last_processing_time < time.time() - CollectorState.processing_period
-                    # TODO: temp fix
-                    # ).limit(settings.CONCURRENT_TASKS_COUNT)
-                    ).limit(1)
+                    ).limit(settings.CONCURRENT_TASKS_COUNT)
                 )
 
                 tasks = [
@@ -105,9 +108,16 @@ class Processor:
                 if tasks:
                     await asyncio.gather(*tasks)
                     tasks.clear()
+            except KeyboardInterrupt as ex:
+                raise ex
+            except BaseException as ex:
+                self.logger.exception(ex)
+                await asyncio.sleep(10)
 
-                # check proxies
-
+    async def process_proxies(self):
+        while True:
+            await asyncio.sleep(0.01)
+            try:
                 # check good proxies
                 proxies = await db.execute(
                     Proxy.select().where(
