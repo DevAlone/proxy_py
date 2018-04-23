@@ -318,7 +318,8 @@ class Processor:
                         "removing proxy {0} permanently...".format(proxy.to_url())
                     )
                     await db.delete(proxy)
-
+                else:
+                    await db.update(proxy)
             except Proxy.DoesNotExist:
                 pass
 
