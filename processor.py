@@ -144,6 +144,7 @@ class Processor:
                 dead_proxies = await db.execute(
                     Proxy.select().where(
                         Proxy.number_of_bad_checks >= settings.DEAD_PROXY_THRESHOLD,
+                        Proxy.number_of_bad_checks < settings.REMOVE_ON_N_BAD_CHECKS,
                         Proxy.last_check_time < time.time() - settings.DEAD_PROXY_CHECKING_PERIOD,
                     ).order_by(Proxy.last_check_time).limit(settings.CONCURRENT_TASKS_COUNT)
                 )
@@ -310,16 +311,13 @@ class Processor:
                 proxy.number_of_bad_checks += 1
                 proxy.uptime = int(time.time())
 
-                if proxy.number_of_bad_checks > settings.DEAD_PROXY_THRESHOLD:
+                if proxy.number_of_bad_checks >= settings.DEAD_PROXY_THRESHOLD:
                     proxy.bad_uptime = int(time.time())
 
-                if proxy.number_of_bad_checks > settings.REMOVE_ON_N_BAD_CHECKS:
-                    self.logger.debug(
-                        "removing proxy {0} permanently...".format(proxy.to_url())
-                    )
-                    await db.delete(proxy)
-                else:
-                    await db.update(proxy)
+                if proxy.number_of_bad_checks == settings.REMOVE_ON_N_BAD_CHECKS:
+                    self.logger.debug("proxy {} isn't checked anymore".format(proxy.to_url()))
+
+                await db.update(proxy)
             except Proxy.DoesNotExist:
                 pass
 
@@ -354,7 +352,7 @@ class Processor:
                 proxy.uptime = int(time.time())
 
             if proxy.bad_uptime is None or proxy.bad_uptime == 0 or \
-                    proxy.number_of_bad_checks > settings.DEAD_PROXY_THRESHOLD:
+                    proxy.number_of_bad_checks >= settings.DEAD_PROXY_THRESHOLD:
                 proxy.bad_uptime = int(time.time())
 
             proxy.response_time = response_time

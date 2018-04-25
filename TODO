@@ -2,3 +2,6 @@ new web interface
 statistics for proxies and for collectors
 logging for collectors
 log slow sql queries
+check dead proxies rarely
+set limit for total number of proxies
+
