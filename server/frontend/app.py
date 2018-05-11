@@ -88,7 +88,11 @@ class App(BaseApp):
     @get_response_wrapper("proxy_count_items.html")
     async def get_proxy_count_items_html(self, request):
         return {
-            "proxy_count_items": list(await db.execute(ProxyCountItem.select().order_by(ProxyCountItem.timestamp)))
+            "proxy_count_items": list(await db.execute(
+                ProxyCountItem.select().where(
+                    ProxyCountItem.timestamp >= time.time() - 3600 * 24 * 7,
+                ).order_by(ProxyCountItem.timestamp)
+            ))
         }
 
     async def get_best_http_proxy(self, request):
