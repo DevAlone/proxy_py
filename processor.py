@@ -8,7 +8,6 @@ import asyncio
 import time
 import re
 import logging
-import os
 
 # TODO: add ipv6 addresses
 PROXY_VALIDATE_REGEX = \
@@ -80,6 +79,8 @@ class Processor:
                 raise
             except BaseException as ex:
                 self.logger.exception(ex)
+                if settings.DEBUG:
+                    raise ex
                 await asyncio.sleep(10)
 
     async def producer(self):
@@ -90,7 +91,7 @@ class Processor:
 
     async def process_collectors(self):
         while True:
-            await asyncio.sleep(0.01)
+            await asyncio.sleep(0.001)
             try:
                 # check collectors
                 collector_states = await db.execute(
@@ -107,6 +108,8 @@ class Processor:
                 if tasks:
                     await asyncio.gather(*tasks)
                     tasks.clear()
+
+                await self.queue.join()
             except KeyboardInterrupt as ex:
                 raise ex
             except BaseException as ex:
@@ -115,8 +118,17 @@ class Processor:
 
     async def process_proxies(self):
         while True:
-            await asyncio.sleep(0.01)
+            await asyncio.sleep(0.001)
             try:
+                def get_task(proxy):
+                    return self.process_proxy(*(
+                        proxy.get_raw_protocol(),
+                        proxy.auth_data,
+                        proxy.domain,
+                        proxy.port,
+                        None,
+                    ))
+
                 # check good proxies
                 proxies = await db.execute(
                     Proxy.select().where(
@@ -125,8 +137,7 @@ class Processor:
                     ).order_by(Proxy.last_check_time).limit(settings.CONCURRENT_TASKS_COUNT)
                 )
 
-                for proxy in proxies:
-                    await self.add_proxy_to_queue(proxy)
+                await asyncio.gather(*[get_task(proxy) for proxy in proxies])
 
                 # check bad proxies
                 bad_proxies = await db.execute(
@@ -137,8 +148,7 @@ class Processor:
                     ).order_by(Proxy.last_check_time).limit(settings.CONCURRENT_TASKS_COUNT)
                 )
 
-                for proxy in bad_proxies:
-                    await self.add_proxy_to_queue(proxy)
+                await asyncio.gather(*[get_task(proxy) for proxy in bad_proxies])
 
                 # check dead proxies
                 dead_proxies = await db.execute(
@@ -149,14 +159,13 @@ class Processor:
                     ).order_by(Proxy.last_check_time).limit(settings.CONCURRENT_TASKS_COUNT)
                 )
 
-                for proxy in dead_proxies:
-                    await self.add_proxy_to_queue(proxy)
-
-                await self.queue.join()
+                await asyncio.gather(*[get_task(proxy) for proxy in dead_proxies])
             except KeyboardInterrupt as ex:
                 raise ex
             except BaseException as ex:
                 self.logger.exception(ex)
+                if settings.DEBUG:
+                    raise ex
                 await asyncio.sleep(10)
 
     async def add_proxy_to_queue(self, proxy: Proxy):
@@ -266,7 +275,7 @@ class Processor:
                     collector_id,
                 ))
 
-    async def process_proxy(self, raw_protocol: int, auth_data: str, domain: str, port: int, collector_id: int):
+    async def process_proxy(self, raw_protocol: int, auth_data: str, domain: str, port: int, collector_id):
         self.logger.debug(
             "start processing proxy {}://{}@{}:{} with collector id {}".format(
                 raw_protocol, auth_data, domain, port, collector_id)

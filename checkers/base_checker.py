@@ -1,11 +1,9 @@
-import ssl
+from aiosocks.connector import ProxyConnector, ProxyClientRequest
 
+import ssl
 import aiosocks
 import asyncio
-
 import async_requests
-
-from aiosocks.connector import ProxyConnector, ProxyClientRequest
 import aiohttp
 
 
@@ -63,13 +61,13 @@ class BaseChecker:
                 aiosocks.errors.SocksError,
                 aiosocks.SocksError,
                 asyncio.TimeoutError,
-                aiohttp.client_exceptions.ClientOSError,
                 ssl.CertificateError,
+                aiohttp.client_exceptions.ClientOSError,
                 ) as ex:
-            message = str(ex)
-            if "file" in message:
-                print(message)
-            # TODO: check for "Too many open files"
+            message = str(ex).lower()
+
+            if "too many open file" in message:
+                raise OSError("Too many open files")
 
         return False, None
 
