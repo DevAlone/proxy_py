@@ -82,7 +82,7 @@ class BaseChecker:
         }
         conn = ProxyConnector(remote_resolve=True)
 
-        with aiohttp.ClientSession(connector=conn, request_class=ProxyClientRequest) as session:
+        async with aiohttp.ClientSession(connector=conn, request_class=ProxyClientRequest) as session:
             async with session.request(
                     self.request_type, self.url, proxy=proxy_address, timeout=timeout, headers=headers) as \
                     response:
