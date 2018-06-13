@@ -1,5 +1,4 @@
 from checkers.base_checker import BaseChecker, CheckerResult
-
 import aiohttp
 
 
@@ -12,11 +11,17 @@ class IPInfoIOChecker(BaseChecker):
             return False
 
         json_result = await response.json()
-        checker_result.ipv4 = json_result['ip']
-        checker_result.city = json_result['city']
-        checker_result.region = json_result['region']
-        checker_result.country_code = json_result['country']
-        checker_result.location_coordinates = tuple(float(x) for x in json_result['loc'].split(','))
-        checker_result.organization_name = json_result['org']
+        if 'ip' in json_result:
+            checker_result.ipv4 = json_result['ip']
+        if 'city' in json_result:
+            checker_result.city = json_result['city']
+        if 'region' in json_result:
+            checker_result.region = json_result['region']
+        if 'country' in json_result:
+            checker_result.country_code = json_result['country']
+        if 'loc' in json_result:
+            checker_result.location_coordinates = tuple(float(x) for x in json_result['loc'].split(','))
+        if 'org' in json_result:
+            checker_result.organization_name = json_result['org']
 
         return True
