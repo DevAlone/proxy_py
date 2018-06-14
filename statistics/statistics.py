@@ -1,4 +1,5 @@
 from models import Proxy, ProxyCountItem, NumberOfProxiesToProcess, db
+from models import CollectorState, NumberOfCollectorsToProcess
 from proxy_py import settings
 import time
 import asyncio
@@ -8,6 +9,7 @@ async def worker():
     while True:
         await process_graph(ProxyCountItem, 60, create_proxy_count_item)
         await process_graph(NumberOfProxiesToProcess, 60, number_of_proxies_to_process)
+        await process_graph(NumberOfCollectorsToProcess, 60, number_of_collectors_to_process)
         await asyncio.sleep(10)
 
 
@@ -77,4 +79,21 @@ async def number_of_proxies_to_process():
         good_proxies=good_proxies_count,
         bad_proxies=bad_proxies_count,
         dead_proxies=dead_proxies_count,
+    )
+
+
+async def number_of_collectors_to_process():
+    timestamp = time.time()
+
+    number_of_collectors = await db.count(
+        CollectorState.select().where(
+            CollectorState.last_processing_time <
+            timestamp - CollectorState.processing_period,
+        )
+    )
+
+    await db.create(
+        NumberOfCollectorsToProcess,
+        timestamp=timestamp,
+        value=number_of_collectors,
     )

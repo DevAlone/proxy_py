@@ -151,10 +151,18 @@ class NumberOfProxiesToProcess(StatBaseModel):
     dead_proxies = peewee.IntegerField(null=False)
 
 
+class NumberOfCollectorsToProcess(StatBaseModel):
+    class Meta:
+        db_table = 'number_of_collectors_to_process'
+
+    value = peewee.IntegerField(null=False)
+
+
 _silent = True
 Proxy.create_table(_silent)
 ProxyCountItem.create_table(_silent)
 CollectorState.create_table(_silent)
 NumberOfProxiesToProcess.create_table(_silent)
+NumberOfCollectorsToProcess.create_table(_silent)
 
 db = peewee_async.Manager(db)

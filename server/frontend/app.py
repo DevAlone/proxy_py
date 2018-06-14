@@ -28,6 +28,13 @@ def get_response_wrapper(template_name):
             dead_proxies_count = await db.count(
                 Proxy.select().where(
                     Proxy.number_of_bad_checks >= settings.DEAD_PROXY_THRESHOLD,
+                    Proxy.number_of_bad_checks < settings.REMOVE_ON_N_BAD_CHECKS,
+                )
+            )
+
+            not_checked_proxies_count = await db.count(
+                Proxy.select().where(
+                    Proxy.number_of_bad_checks >= settings.REMOVE_ON_N_BAD_CHECKS,
                 )
             )
 
@@ -35,6 +42,7 @@ def get_response_wrapper(template_name):
                 "bad_proxies_count": bad_proxies_count,
                 "good_proxies_count": good_proxies_count,
                 "dead_proxies_count": dead_proxies_count,
+                "not_checked_proxies_count": not_checked_proxies_count,
             }
 
             response.update(await func(self, *args, **kwargs))

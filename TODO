@@ -4,4 +4,6 @@ logging for collectors
 log slow sql queries
 check dead proxies rarely
 set limit for total number of proxies
+do not update never working proxies
+more statistics
 
