@@ -135,23 +135,26 @@ class CollectorState(peewee.Model):
     data = peewee.TextField(default=None, null=True)
 
 
+class StatBaseModel(peewee.Model):
+    class Meta:
+        database = db
+
+    timestamp = peewee.BigIntegerField(primary_key=True)
+
+
+class NumberOfProxiesToProcess(StatBaseModel):
+    class Meta:
+        db_table = 'number_of_proxies_to_process'
+
+    good_proxies = peewee.IntegerField(null=False)
+    bad_proxies = peewee.IntegerField(null=False)
+    dead_proxies = peewee.IntegerField(null=False)
+
+
 _silent = True
 Proxy.create_table(_silent)
 ProxyCountItem.create_table(_silent)
 CollectorState.create_table(_silent)
-
-
-def get_or_create(session, model, **kwargs):
-    # TODO: do it
-    raise NotImplementedError()
-
-    # instance = session.query(model).filter_by(**kwargs).first()
-    # if not instance:
-    #     instance = model(**kwargs)
-    #     session.add(instance)
-    #     session.commit()
-    #
-    # return instance
-
+NumberOfProxiesToProcess.create_table(_silent)
 
 db = peewee_async.Manager(db)

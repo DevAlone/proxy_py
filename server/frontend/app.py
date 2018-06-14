@@ -1,5 +1,5 @@
 from proxy_py import settings
-from models import db, Proxy, ProxyCountItem, CollectorState
+from models import db, Proxy, ProxyCountItem, CollectorState, NumberOfProxiesToProcess
 from server.base_app import BaseApp
 from aiohttp import web
 
@@ -49,6 +49,7 @@ class App(BaseApp):
     async def setup_router(self):
         self.app.router.add_get('/get/proxy/', self.get_proxies_html)
         self.app.router.add_get('/get/proxy_count_item/', self.get_proxy_count_items_html)
+        self.app.router.add_get('/get/number_of_proxies_to_process/', self.get_number_of_proxies_to_process_html)
         self.app.router.add_get('/get/collector_state/', self.get_collector_state_html)
         self.app.router.add_get('/get/best/http/proxy/', self.get_best_http_proxy)
 
@@ -92,6 +93,16 @@ class App(BaseApp):
                 ProxyCountItem.select().where(
                     ProxyCountItem.timestamp >= time.time() - 3600 * 24 * 7,
                 ).order_by(ProxyCountItem.timestamp)
+            ))
+        }
+
+    @get_response_wrapper("number_of_proxies_to_process.html")
+    async def get_number_of_proxies_to_process_html(self, request):
+        return {
+            "number_of_proxies_to_process": list(await db.execute(
+                NumberOfProxiesToProcess.select().where(
+                    NumberOfProxiesToProcess.timestamp >= time.time() - 3600 * 24 * 7,
+                ).order_by(NumberOfProxiesToProcess.timestamp)
             ))
         }
 

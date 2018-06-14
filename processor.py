@@ -54,7 +54,7 @@ class Processor:
 
         self.queue = asyncio.Queue(maxsize=settings.PROXY_QUEUE_SIZE)
 
-    async def exec(self):
+    async def worker(self):
         await asyncio.gather(*[
             self.producer(),
             self.consumer(),
@@ -332,9 +332,14 @@ class Processor:
 
     @staticmethod
     async def create_or_update_proxy(
-            raw_protocol: Proxy.PROTOCOLS, auth_data: str, domain: str, port: int,
-            start_checking_time: int, end_checking_time: int, additional_info: CheckerResult):
-
+        raw_protocol: Proxy.PROTOCOLS,
+        auth_data: str,
+        domain: str,
+        port: int,
+        start_checking_time: int,
+        end_checking_time: int,
+        additional_info: CheckerResult
+    ):
         if raw_protocol is None or domain is None or port is None or auth_data is None or start_checking_time is None\
                 or end_checking_time is None:
             raise ValueError("Processor.create_or_update_proxy: Bad arguments")
