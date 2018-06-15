@@ -6,4 +6,8 @@ check dead proxies rarely
 set limit for total number of proxies
 do not update never working proxies
 more statistics
-
+api for getting proxy near location
+client library
+api for filtering proxies
+floating updating period for collectors
+p2p

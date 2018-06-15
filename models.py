@@ -54,6 +54,7 @@ class Proxy(peewee.Model):
     city = peewee.TextField(null=True)
     region = peewee.TextField(null=True)
     country_code = peewee.CharField(3, null=True)
+    # TODO: add location
 
     def get_raw_protocol(self):
         return self.raw_protocol

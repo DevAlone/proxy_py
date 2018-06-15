@@ -18,7 +18,10 @@ DEBUG = False
 # it allows you to override collectors
 # for example if you're making proxy checker for particular site
 # you can override COLLECTORS_DIR and PROXY_CHECKERS
-COLLECTORS_DIR = 'collectors'
+COLLECTORS_DIRS = [
+    'collectors',
+    # 'local/collectors',  # use to add your own collectors
+]
 
 # db (do not try to change after creation of database)
 

@@ -8,19 +8,20 @@ import importlib.util
 
 collectors = {}
 
+_collector_dirs = settings.COLLECTORS_DIRS if type(settings.COLLECTORS_DIRS) is list else [settings.COLLECTORS_DIRS]
+for collectors_dir in _collector_dirs:
+    for root, dirs, files in os.walk(collectors_dir):
+        for file in files:
+            if file.endswith(".py"):
+                file_path = os.path.join(root, file)
+                module_name = os.path.splitext(file_path)[0].replace('/', '.')
+                spec = importlib.util.spec_from_file_location(module_name, file_path)
+                collector_module = importlib.util.module_from_spec(spec)
+                spec.loader.exec_module(collector_module)
 
-for root, dirs, files in os.walk(settings.COLLECTORS_DIR):
-    for file in files:
-        if file.endswith(".py"):
-            file_path = os.path.join(root, file)
-            module_name = os.path.splitext(file_path)[0].replace('/', '.')
-            spec = importlib.util.spec_from_file_location(module_name, file_path)
-            collector_module = importlib.util.module_from_spec(spec)
-            spec.loader.exec_module(collector_module)
-
-            if hasattr(collector_module, "Collector"):
-                if hasattr(collector_module.Collector, "__collector__") and collector_module.Collector.__collector__:
-                    collectors[module_name] = collector_module.Collector()
+                if hasattr(collector_module, "Collector"):
+                    if hasattr(collector_module.Collector, "__collector__") and collector_module.Collector.__collector__:
+                        collectors[module_name] = collector_module.Collector()
 
 
 # init db
