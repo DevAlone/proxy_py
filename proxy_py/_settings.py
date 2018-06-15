@@ -27,7 +27,7 @@ DB_AUTH_DATA_MAX_LENGTH = 64
 
 # fetcher settings
 
-CONCURRENT_TASKS_COUNT = 128
+CONCURRENT_TASKS_COUNT = 256
 # makes aiohttp to not send more
 # than this number of simultaneous requests
 # works by common connector
@@ -43,7 +43,7 @@ DEAD_PROXY_CHECKING_PERIOD = 6 * 24 * 60 * 60
 DEAD_PROXY_THRESHOLD = 8
 # TODO: rename to DO_NOT_CHECK_ON_N_BAD_CHECKS
 REMOVE_ON_N_BAD_CHECKS = DEAD_PROXY_THRESHOLD + 6
-PROXY_CHECKING_TIMEOUT = 20
+PROXY_CHECKING_TIMEOUT = 30
 # do not check proxy from collector if it has been checked recently
 PROXY_NOT_CHECKING_PERIOD = 15 * 60
 COLLECTOR_MAXIMUM_NUMBER_OF_PROXIES_PER_REQUEST = 16384
