@@ -6,7 +6,7 @@ async def check_proxy(proxy_url: str, timeout=None) -> tuple:
     results = []
 
     for checker in settings.PROXY_CHECKERS:
-        result = await checker.check(proxy_url, timeout=timeout)
+        result = await checker().check(proxy_url, timeout=timeout)
         if result[0] and settings.PROXY_CHECKING_CONDITION == 'or':
             return result
 

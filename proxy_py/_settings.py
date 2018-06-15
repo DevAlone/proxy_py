@@ -28,6 +28,12 @@ DB_AUTH_DATA_MAX_LENGTH = 64
 # fetcher settings
 
 CONCURRENT_TASKS_COUNT = 128
+# makes aiohttp to not send more
+# than this number of simultaneous requests
+# works by common connector
+SIMULTANEOUS_REQUESTS_COUNT = 128
+# the same, but per host
+SIMULTANEOUS_REQUESTS_PER_HOST_COUNT = 128
 PROXY_QUEUE_SIZE = 65535
 
 MIN_PROXY_CHECKING_PERIOD = 10 * 60
@@ -41,6 +47,7 @@ PROXY_CHECKING_TIMEOUT = 20
 # do not check proxy from collector if it has been checked recently
 PROXY_NOT_CHECKING_PERIOD = 15 * 60
 COLLECTOR_MAXIMUM_NUMBER_OF_PROXIES_PER_REQUEST = 16384
+SLEEP_AFTER_ERROR_PERIOD = 10
 
 PROXY_PROVIDER_SERVER_ADDRESS = {
     'HOST': 'localhost',
@@ -71,8 +78,8 @@ PROXY_PROVIDER_SERVER_API_CONFIG = {
 PROXY_CHECKING_CONDITION = 'or'
 
 PROXY_CHECKERS = [
-    IPInfoIOChecker(PROXY_CHECKING_TIMEOUT),
-    D3DInfoChecker(PROXY_CHECKING_TIMEOUT),
+    IPInfoIOChecker,
+    D3DInfoChecker,
 ]
 
 TEMPLATES_PATH = "server/templates"

@@ -1,4 +1,5 @@
 from aiosocks.connector import ProxyConnector, ProxyClientRequest
+from proxy_py import settings
 
 import ssl
 import aiosocks
@@ -22,7 +23,7 @@ class CheckerResult:
         def set_attr_if_is_not_none(attribute_name, first_obj, second_obj):
             second_val = getattr(second_obj, attribute_name)
             if second_val is not None:
-                setattr(first_obj, attribute_name, second_val )
+                setattr(first_obj, attribute_name, second_val)
 
         set_attr_if_is_not_none('ipv4', self, other)
         set_attr_if_is_not_none('ipv6', self, other)
@@ -34,10 +35,31 @@ class CheckerResult:
 
 
 class BaseChecker:
-    def __init__(self, url=None, request_type="GET", timeout=10):
+    aiohttp_connector = None
+
+    def __init__(self, url=None, request_type="GET", timeout=None):
+        if BaseChecker.aiohttp_connector is None:
+            BaseChecker.aiohttp_connector = ProxyConnector(
+                remote_resolve=True,
+                limit=settings.SIMULTANEOUS_REQUESTS_COUNT,
+                limit_per_host=settings.SIMULTANEOUS_REQUESTS_PER_HOST_COUNT,
+            )
         self.request_type = request_type
-        self.timeout = timeout
+        self.timeout = timeout if timeout is not None else settings.PROXY_CHECKING_TIMEOUT
         self.url = url
+
+    @staticmethod
+    def get_aiohttp_connector():
+        return BaseChecker.aiohttp_connector
+
+    @staticmethod
+    def clean():
+        """
+        Should be called at the end of the program
+
+        :return:
+        """
+        BaseChecker.aiohttp_connector.close()
 
     async def check(self, proxy_address: str, timeout: int=None) -> tuple:
         """
@@ -80,9 +102,10 @@ class BaseChecker:
         headers = {
             'User-Agent': async_requests.get_random_user_agent()
         }
-        conn = ProxyConnector(remote_resolve=True)
+        conn = BaseChecker.get_aiohttp_connector()
 
-        async with aiohttp.ClientSession(connector=conn, request_class=ProxyClientRequest) as session:
+        async with aiohttp.ClientSession(
+                connector=conn, connector_owner=False, request_class=ProxyClientRequest) as session:
             async with session.request(
                     self.request_type, self.url, proxy=proxy_address, timeout=timeout, headers=headers) as \
                     response:

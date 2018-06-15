@@ -1,5 +1,6 @@
 from models import Proxy, ProxyCountItem, NumberOfProxiesToProcess, db
-from models import CollectorState, NumberOfCollectorsToProcess
+from models import CollectorState, NumberOfCollectorsToProcess, ProcessorProxiesQueueSize
+from processor import Processor
 from proxy_py import settings
 import time
 import asyncio
@@ -10,12 +11,15 @@ async def worker():
         await process_graph(ProxyCountItem, 60, create_proxy_count_item)
         await process_graph(NumberOfProxiesToProcess, 60, number_of_proxies_to_process)
         await process_graph(NumberOfCollectorsToProcess, 60, number_of_collectors_to_process)
+        await process_graph(ProcessorProxiesQueueSize, 60, processor_proxies_queue_size)
         await asyncio.sleep(10)
 
 
 async def process_graph(model, period, func):
+    timestamp = time.time()
+
     if (await db.count(model.select())) == 0:
-        await func()
+        await func(timestamp)
     else:
         last_item = await db.get(
             model.select().order_by(
@@ -23,11 +27,11 @@ async def process_graph(model, period, func):
             ).limit(1)
         )
 
-        if int(last_item.timestamp // period) * period + period < time.time():
-            await func()
+        if int(last_item.timestamp // period) * period + period < timestamp:
+            await func(timestamp)
 
 
-async def create_proxy_count_item():
+async def create_proxy_count_item(timestamp):
     good_proxies_count = await db.count(
         Proxy.select().where(Proxy.number_of_bad_checks == 0)
     )
@@ -41,15 +45,14 @@ async def create_proxy_count_item():
 
     await db.create(
         ProxyCountItem,
-        timestamp=int(time.time()),
+        timestamp=timestamp,
         good_proxies_count=good_proxies_count,
         bad_proxies_count=bad_proxies_count,
         dead_proxies_count=dead_proxies_count,
     )
 
 
-async def number_of_proxies_to_process():
-    timestamp = time.time()
+async def number_of_proxies_to_process(timestamp):
     good_proxies_count = await db.count(
         Proxy.select().where(
             Proxy.number_of_bad_checks == 0,
@@ -82,9 +85,7 @@ async def number_of_proxies_to_process():
     )
 
 
-async def number_of_collectors_to_process():
-    timestamp = time.time()
-
+async def number_of_collectors_to_process(timestamp):
     number_of_collectors = await db.count(
         CollectorState.select().where(
             CollectorState.last_processing_time <
@@ -96,4 +97,12 @@ async def number_of_collectors_to_process():
         NumberOfCollectorsToProcess,
         timestamp=timestamp,
         value=number_of_collectors,
+    )
+
+
+async def processor_proxies_queue_size(timestamp):
+    await db.create(
+        ProcessorProxiesQueueSize,
+        timestamp=timestamp,
+        value=Processor.get_instance().queue.qsize(),
     )

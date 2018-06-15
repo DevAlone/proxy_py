@@ -3,7 +3,7 @@ import aiohttp
 
 
 class IPInfoIOChecker(BaseChecker):
-    def __init__(self, timeout=10):
+    def __init__(self, timeout=None):
         super(IPInfoIOChecker, self).__init__("https://ipinfo.io/json", timeout=timeout)
 
     async def _check(self, response: aiohttp.ClientResponse, checker_result: CheckerResult) -> bool:

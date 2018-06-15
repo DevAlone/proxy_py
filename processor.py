@@ -23,6 +23,7 @@ class Processor:
     main class which collects proxies from collectors,
     checks them and saves in database
     """
+    instance = None
 
     def __init__(self):
         self.logger = logging.getLogger("proxy_py/processor")
@@ -53,6 +54,14 @@ class Processor:
         self.logger.debug("processor initialization...")
 
         self.queue = asyncio.Queue(maxsize=settings.PROXY_QUEUE_SIZE)
+        self.proxies_semaphore = asyncio.BoundedSemaphore(settings.CONCURRENT_TASKS_COUNT)
+
+    @staticmethod
+    def get_instance():
+        if Processor.instance is None:
+            Processor.instance = Processor()
+
+        return Processor.instance
 
     async def worker(self):
         await asyncio.gather(*[
@@ -62,26 +71,30 @@ class Processor:
 
     async def consumer(self):
         while True:
-            await asyncio.sleep(0.01)
+            await asyncio.sleep(0.0001)
 
             try:
-                i = 0
-                tasks = []
-                while not self.queue.empty() and i <= settings.CONCURRENT_TASKS_COUNT:
-                    proxy_data = self.queue.get_nowait()
-                    tasks.append(self.process_proxy(*proxy_data))
-                    self.queue.task_done()
-                    i += 1
+                # i = 0
+                # tasks = []
+                if not self.proxies_semaphore.locked():
+                    asyncio.ensure_future(self.process_proxy(
+                        *(await self.queue.get())
+                    ))
+                # while not self.queue.empty() and i <= settings.CONCURRENT_TASKS_COUNT:
+                #     proxy_data = self.queue.get_nowait()
+                    # tasks.append(self.process_proxy(*proxy_data))
+                    # self.queue.task_done()
+                    # i += 1
 
-                if tasks:
-                    await asyncio.gather(*tasks)
+                # if tasks:
+                #     await asyncio.gather(*tasks)
             except KeyboardInterrupt:
                 raise
             except BaseException as ex:
                 self.logger.exception(ex)
                 if settings.DEBUG:
                     raise ex
-                await asyncio.sleep(10)
+                await asyncio.sleep(settings.SLEEP_AFTER_ERROR_PERIOD)
 
     async def producer(self):
         await asyncio.gather(*(
@@ -91,7 +104,7 @@ class Processor:
 
     async def process_collectors(self):
         while True:
-            await asyncio.sleep(0.001)
+            await asyncio.sleep(0.0001)
             try:
                 # check collectors
                 collector_states = await db.execute(
@@ -109,25 +122,22 @@ class Processor:
                     await asyncio.gather(*tasks)
                     tasks.clear()
 
-                await self.queue.join()
+                # await self.queue.join()
             except KeyboardInterrupt as ex:
                 raise ex
             except BaseException as ex:
                 self.logger.exception(ex)
-                await asyncio.sleep(10)
+                await asyncio.sleep(settings.SLEEP_AFTER_ERROR_PERIOD)
 
     async def process_proxies(self):
         while True:
-            await asyncio.sleep(0.001)
+            await asyncio.sleep(0.1)
             try:
-                def get_task(proxy):
-                    return self.process_proxy(*(
-                        proxy.get_raw_protocol(),
-                        proxy.auth_data,
-                        proxy.domain,
-                        proxy.port,
-                        None,
-                    ))
+                def is_queue_free():
+                    return self.queue.qsize() < settings.CONCURRENT_TASKS_COUNT
+
+                if not is_queue_free():
+                    continue
 
                 # check good proxies
                 proxies = await db.execute(
@@ -137,10 +147,13 @@ class Processor:
                     ).order_by(Proxy.last_check_time).limit(settings.CONCURRENT_TASKS_COUNT)
                 )
 
-                await asyncio.gather(*[get_task(proxy) for proxy in proxies])
+                await self.add_proxies_to_queue(proxies)
+
+                if len(proxies) > 0 or not is_queue_free():
+                    continue
 
                 # check bad proxies
-                bad_proxies = await db.execute(
+                proxies = await db.execute(
                     Proxy.select().where(
                         Proxy.number_of_bad_checks > 0,
                         Proxy.number_of_bad_checks < settings.DEAD_PROXY_THRESHOLD,
@@ -148,10 +161,13 @@ class Processor:
                     ).order_by(Proxy.last_check_time).limit(settings.CONCURRENT_TASKS_COUNT)
                 )
 
-                await asyncio.gather(*[get_task(proxy) for proxy in bad_proxies])
+                await self.add_proxies_to_queue(proxies)
+
+                if len(proxies) > 0 or not is_queue_free():
+                    continue
 
                 # check dead proxies
-                dead_proxies = await db.execute(
+                proxies = await db.execute(
                     Proxy.select().where(
                         Proxy.number_of_bad_checks >= settings.DEAD_PROXY_THRESHOLD,
                         Proxy.number_of_bad_checks < settings.REMOVE_ON_N_BAD_CHECKS,
@@ -159,7 +175,7 @@ class Processor:
                     ).order_by(Proxy.last_check_time).limit(settings.CONCURRENT_TASKS_COUNT)
                 )
 
-                await asyncio.gather(*[get_task(proxy) for proxy in dead_proxies])
+                await self.add_proxies_to_queue(proxies)
             except KeyboardInterrupt as ex:
                 raise ex
             except BaseException as ex:
@@ -176,6 +192,10 @@ class Processor:
             proxy.port,
             None
         ))
+
+    async def add_proxies_to_queue(self, proxies: list):
+        for proxy in proxies:
+            await self.add_proxy_to_queue(proxy)
 
     async def process_collector_of_state(self, collector_state):
         proxies = set()
@@ -276,59 +296,61 @@ class Processor:
                 ))
 
     async def process_proxy(self, raw_protocol: int, auth_data: str, domain: str, port: int, collector_id):
-        self.logger.debug(
-            "start processing proxy {}://{}@{}:{} with collector id {}".format(
-                raw_protocol, auth_data, domain, port, collector_id)
-        )
-
-        if auth_data is None:
-            auth_data = ""
-
-        proxy_url = "{}://".format(Proxy.PROTOCOLS[raw_protocol])
-        if auth_data:
-            proxy_url += auth_data + "@"
-
-        proxy_url += domain + ":" + str(port)
-
-        start_checking_time = time.time()
-        check_result, checker_additional_info = await proxy_utils.check_proxy(proxy_url)
-        end_checking_time = time.time()
-
-        if check_result:
-            self.logger.debug("proxy {0} works".format(proxy_url))
-            await self.create_or_update_proxy(
-                raw_protocol,
-                auth_data,
-                domain,
-                port,
-                start_checking_time,
-                end_checking_time,
-                checker_additional_info
+        async with self.proxies_semaphore:
+            self.logger.debug(
+                "start processing proxy {}://{}@{}:{} with collector id {}".format(
+                    raw_protocol, auth_data, domain, port, collector_id)
             )
-        else:
-            self.logger.debug("proxy {0} doesn't work".format(proxy_url))
-            try:
-                proxy = await db.get(
-                    Proxy.select().where(
-                        Proxy.raw_protocol == raw_protocol,
-                        Proxy.auth_data == auth_data,
-                        Proxy.domain == domain,
-                        Proxy.port == port,
-                    )
+
+            if auth_data is None:
+                auth_data = ""
+
+            proxy_url = "{}://".format(Proxy.PROTOCOLS[raw_protocol])
+            if auth_data:
+                proxy_url += auth_data + "@"
+
+            proxy_url += domain + ":" + str(port)
+
+            start_checking_time = time.time()
+            check_result, checker_additional_info = await proxy_utils.check_proxy(proxy_url)
+            end_checking_time = time.time()
+
+            if check_result:
+                self.logger.debug("proxy {0} works".format(proxy_url))
+                await self.create_or_update_proxy(
+                    raw_protocol,
+                    auth_data,
+                    domain,
+                    port,
+                    start_checking_time,
+                    end_checking_time,
+                    checker_additional_info
                 )
+            else:
+                self.logger.debug("proxy {0} doesn't work".format(proxy_url))
+                try:
+                    proxy = await db.get(
+                        Proxy.select().where(
+                            Proxy.raw_protocol == raw_protocol,
+                            Proxy.auth_data == auth_data,
+                            Proxy.domain == domain,
+                            Proxy.port == port,
+                        )
+                    )
 
-                proxy.number_of_bad_checks += 1
-                proxy.uptime = int(time.time())
+                    proxy.last_check_time = int(time.time())
+                    proxy.number_of_bad_checks += 1
+                    proxy.uptime = int(time.time())
 
-                if proxy.number_of_bad_checks >= settings.DEAD_PROXY_THRESHOLD:
-                    proxy.bad_uptime = int(time.time())
+                    if proxy.number_of_bad_checks >= settings.DEAD_PROXY_THRESHOLD:
+                        proxy.bad_uptime = int(time.time())
 
-                if proxy.number_of_bad_checks == settings.REMOVE_ON_N_BAD_CHECKS:
-                    self.logger.debug("proxy {} isn't checked anymore".format(proxy.to_url()))
+                    if proxy.number_of_bad_checks == settings.REMOVE_ON_N_BAD_CHECKS:
+                        self.logger.debug("proxy {} isn't checked anymore".format(proxy.to_url()))
 
-                await db.update(proxy)
-            except Proxy.DoesNotExist:
-                pass
+                    await db.update(proxy)
+                except Proxy.DoesNotExist:
+                    pass
 
     @staticmethod
     async def create_or_update_proxy(
