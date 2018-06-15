@@ -1,10 +1,8 @@
-# from collectors.freeproxylists_net.freeproxylists_net import Collector
-import traceback
-
-from collectors.checkerproxy_net.collector_checkerproxy_net_today import Collector
-
+from proxy_py import settings
 import proxy_utils
-
+import importlib
+import importlib.util
+import os
 import asyncio
 import sys
 
@@ -31,15 +29,27 @@ async def check_raw_proxy(raw_proxy: str):
 
 
 async def main():
-    collector = Collector()
+    file_path = sys.argv[1]
+    module_name = os.path.splitext(file_path)[0].replace('/', '.')
+    spec = importlib.util.spec_from_file_location(module_name, file_path)
+    collector_module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(collector_module)
+
+    if not hasattr(collector_module, "Collector") \
+            or not hasattr(collector_module.Collector, "__collector__") \
+            or not collector_module.Collector.__collector__:
+        raise Exception('it is not a collector')
+
+    collector = collector_module.Collector()
     while True:
         proxies = await collector.collect()
+        # proxies = await collector.process_page(2)
         # print(proxies)
         tasks = []
         # print(proxies)
         for proxy in proxies:
             print(proxy)
-            # tasks.append(check_raw_proxy(proxy))
+            tasks.append(check_raw_proxy(proxy))
 
         if tasks:
             await asyncio.gather(*tasks)

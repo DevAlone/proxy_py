@@ -45,8 +45,6 @@ async def request(method, url, **kwargs):
 
     async with aiohttp.ClientSession(**session_kwargs) as session:
         async with session.request(method, url, **kwargs) as response:
-            status = response.status
-            text = await response.text()
             return await Response.from_aiohttp_response(response)
 
 
@@ -63,8 +61,6 @@ class Response:
                 text=await aiohttp_response.text(),
                 aiohttp_response=aiohttp_response
         )
-
-        return result
 
     def __str__(self):
         return json.dumps({
