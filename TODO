@@ -11,3 +11,4 @@ client library
 api for filtering proxies
 floating updating period for collectors
 p2p
+log memory consumption
