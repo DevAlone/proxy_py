@@ -131,10 +131,10 @@ class Processor:
 
     async def process_proxies(self):
         while True:
-            await asyncio.sleep(0.1)
+            await asyncio.sleep(0.01)
             try:
                 def is_queue_free():
-                    return self.queue.qsize() < settings.CONCURRENT_TASKS_COUNT
+                    return True  # self.queue.qsize() < settings.CONCURRENT_TASKS_COUNT
 
                 if not is_queue_free():
                     continue
