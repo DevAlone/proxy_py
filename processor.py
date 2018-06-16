@@ -71,7 +71,7 @@ class Processor:
 
     async def consumer(self):
         while True:
-            await asyncio.sleep(0.0001)
+            await asyncio.sleep(0.00001)
 
             try:
                 # i = 0
@@ -134,10 +134,7 @@ class Processor:
             await asyncio.sleep(0.01)
             try:
                 def is_queue_free():
-                    return True  # self.queue.qsize() < settings.CONCURRENT_TASKS_COUNT
-
-                if not is_queue_free():
-                    continue
+                    return self.queue.qsize() < settings.CONCURRENT_TASKS_COUNT
 
                 # check good proxies
                 proxies = await db.execute(
