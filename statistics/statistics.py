@@ -71,7 +71,7 @@ async def number_of_proxies_to_process(timestamp):
     dead_proxies_count = await db.count(
         Proxy.select().where(
             Proxy.number_of_bad_checks >= settings.DEAD_PROXY_THRESHOLD,
-            Proxy.number_of_bad_checks < settings.REMOVE_ON_N_BAD_CHECKS,
+            Proxy.number_of_bad_checks < settings.DO_NOT_CHECK_ON_N_BAD_CHECKS,
             Proxy.last_check_time < timestamp - settings.DEAD_PROXY_CHECKING_PERIOD,
         )
     )
