@@ -1,4 +1,4 @@
-from checkers.d3d_info_checker import D3DInfoChecker
+# from checkers.d3d_info_checker import D3DInfoChecker
 from checkers.ipinfo_io_checker import IPInfoIOChecker
 
 import os
@@ -81,7 +81,7 @@ PROXY_CHECKING_CONDITION = 'or'
 
 PROXY_CHECKERS = [
     IPInfoIOChecker,
-    D3DInfoChecker,
+    # D3DInfoChecker,
 ]
 
 TEMPLATES_PATH = "server/templates"
