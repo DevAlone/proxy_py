@@ -1,3 +1,8 @@
+import aiohttp
+import re
+
+import os
+
 from proxy_py import settings
 from models import db, Proxy, ProxyCountItem, CollectorState, NumberOfProxiesToProcess, ProcessorProxiesQueueSize
 from server.base_app import BaseApp
@@ -61,6 +66,22 @@ class App(BaseApp):
         self.app.router.add_get('/get/processor_proxies_queue_size/', self.get_processor_proxies_queue_size_html)
         self.app.router.add_get('/get/collector_state/', self.get_collector_state_html)
         self.app.router.add_get('/get/best/http/proxy/', self.get_best_http_proxy)
+    #     self.app.router.add_get('/{tail:.*}', self.default_route)
+    #
+    # async def default_route(self, request: aiohttp.ClientRequest):
+    #     path = request.path
+    #     if path == '/':
+    #         path = '/index.html'
+    #
+    #     if re.match(r'^(/([a-zA-Z0-9_]+(\.[a-zA-Z0-9]+)*)?)+$', path):
+    #         try:
+    #             path = os.path.join('./server/frontend/angular/dist', path)
+    #             with open(path, 'r'):
+    #                 return web.FileResponse(path)
+    #         except (FileNotFoundError, IsADirectoryError):
+    #             pass
+    #
+    #     return web.FileResponse('./server/frontend/angular/dist/index.html')
 
     @get_response_wrapper("collector_state.html")
     async def get_collector_state_html(self, request):
