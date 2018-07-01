@@ -8,6 +8,7 @@ import asyncio
 import time
 import re
 import logging
+import peewee
 
 # TODO: add ipv6 addresses
 PROXY_VALIDATE_REGEX = \
@@ -74,20 +75,10 @@ class Processor:
             await asyncio.sleep(0.00001)
 
             try:
-                # i = 0
-                # tasks = []
                 if not self.proxies_semaphore.locked():
                     asyncio.ensure_future(self.process_proxy(
                         *(await self.queue.get())
                     ))
-                # while not self.queue.empty() and i <= settings.CONCURRENT_TASKS_COUNT:
-                #     proxy_data = self.queue.get_nowait()
-                    # tasks.append(self.process_proxy(*proxy_data))
-                    # self.queue.task_done()
-                    # i += 1
-
-                # if tasks:
-                #     await asyncio.gather(*tasks)
             except KeyboardInterrupt:
                 raise
             except BaseException as ex:
@@ -97,10 +88,6 @@ class Processor:
                 await asyncio.sleep(settings.SLEEP_AFTER_ERROR_PERIOD)
 
     async def producer(self):
-        # await asyncio.gather(*(
-        #     self.process_collectors(),
-        #     self.process_proxies(),
-        # ))
         while True:
             await asyncio.sleep(0.000001)
             try:
@@ -121,7 +108,8 @@ class Processor:
                 collector_states = await db.execute(
                     CollectorState.select().where(
                         CollectorState.last_processing_time < time.time() - CollectorState.processing_period
-                    ).limit(settings.CONCURRENT_TASKS_COUNT)
+                    ).order_by(peewee.fn.Random()).
+                    limit(settings.NUMBER_OF_CONCURRENT_COLLECTORS)
                 )
 
                 tasks = [
@@ -131,8 +119,6 @@ class Processor:
 
                 if tasks:
                     await asyncio.gather(*tasks)
-
-                if len(tasks) > 0:
                     continue
 
                 # check bad proxies
@@ -146,7 +132,7 @@ class Processor:
 
                 await self.add_proxies_to_queue(proxies)
 
-                if len(proxies) > 0:
+                if proxies:
                     continue
 
                 # check dead proxies
