@@ -277,7 +277,7 @@ class Processor:
             self.collectors_logger.exception(ex)
         finally:
             collector.last_processing_time = int(time.time())
-            await collector.set_state(collector_state)
+            await collector.save_state(collector_state)
             # TODO: save new proxies count
             await db.update(collector_state)
 

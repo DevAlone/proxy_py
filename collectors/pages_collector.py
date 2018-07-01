@@ -14,7 +14,7 @@ class PagesCollector(AbstractCollector):
     """
 
     async def load_state(self, state):
-        super(PagesCollector, self).load_state(state)
+        await super(PagesCollector, self).load_state(state)
         if "_current_page" in self.data:
             self.current_page = self.data["_current_page"]
 
@@ -22,7 +22,7 @@ class PagesCollector(AbstractCollector):
             self.pages_count = self.data["_pages_count"]
 
     async def save_state(self, state):
-        super(PagesCollector, self).save_state(state)
+        await super(PagesCollector, self).save_state(state)
         self.data["_current_page"] = self.current_page
         self.data["_pages_count"] = self.pages_count
 
