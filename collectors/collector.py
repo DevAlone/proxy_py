@@ -5,12 +5,13 @@ import json
 import models
 
 
+# TODO: refactor saving state
 class AbstractCollector:
     """Base class for all types of collectors"""
 
     async def collect(self):
         """
-        this method should return proxies in any of the following formats:
+        This method should return proxies in any of the following formats:
 
         ::
 
@@ -19,22 +20,54 @@ class AbstractCollector:
             protocol://ip:port
             protocol://domain:port
 
+
+        ip can be both ipv4 and ipv6
+
+        will support yield in the future, now just return list
         """
 
         return []
 
     async def _collect(self):
-        """do not use!"""
-        return (await self.collect())[:settings.COLLECTOR_MAXIMUM_NUMBER_OF_PROXIES_PER_REQUEST]
+        """Do not use! It is called on collector's processing automatically"""
+
+        # i = 0
+        # async for proxy in self.collect():
+        #     if i > settings.COLLECTOR_MAXIMUM_NUMBER_OF_PROXIES_PER_REQUEST:
+        #         break
+
+        #     yield proxy
+        #     i += 1
+        proxies = list(await self.collect())
+        proxies = proxies[:settings.COLLECTOR_MAXIMUM_NUMBER_OF_PROXIES_PER_REQUEST]
+        self.last_processing_proxies_count = len(proxies)
+        return proxies
 
     async def load_state(self, state: models.CollectorState):
+        """
+        Function for loading collector's state from database model.
+        It's called automatically, don't worry. All you can do is
+        to override without forgetting to call parent's method like this:
+
+        ::
+
+            async def load_state(self, state):
+                super(MyCollector, self).load_state(state)
+                # do something here
+        """
         self.last_processing_time = state.last_processing_time
         self.processing_period = state.processing_period
+        self.last_processing_proxies_count = state.last_processing_proxies_count
         self.data = json.loads(state.data) if state.data is not None and state.data else {}
 
-    async def set_state(self, state: models.CollectorState):
+    async def save_state(self, state: models.CollectorState):
+        """
+        Function for saving collector's state to database model.
+        It's called automatically, don't worry.
+        """
         state.last_processing_time = self.last_processing_time
         state.processing_period = self.processing_period
+        state.last_processing_proxies_count = self.last_processing_proxies_count
         state.data = json.dumps(self.data)
 
     last_processing_time = 0
@@ -53,16 +86,25 @@ class AbstractCollector:
     override_maximum_processing_period = None
     """
     ignore settings' maximum processing period and set
-    it to value of this variable
+    it to the value of this variable
     """
 
     override_minimum_processing_period = None
+    """
+    ignore settings' minimum processing period and set
+    it to the value of this variable, for example
+    when some collector has requests time limit
+    """
 
     data = {}
+    # TODO: consider namespacing
     """
     here you can store some information,
     it will be written into and read from database
     by magic, don't worry about it :)
-    Just don't use names starting with underscore
+    If you're curious, see process_collector_of_state() function
+    from processor.py file
+
+    Don't use names starting with the underscore
     like this one: _last_page
     """

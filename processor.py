@@ -257,7 +257,7 @@ class Processor:
             self.logger.debug(
                 "start processing collector of type \"{}\"".format(type(collector))
             )
-            proxies = set(await collector._collect())
+            proxies = await collector._collect()
 
             if not proxies:
                 self.collectors_logger.warning(
@@ -278,7 +278,6 @@ class Processor:
         finally:
             collector.last_processing_time = int(time.time())
             await collector.set_state(collector_state)
-            collector_state.last_processing_proxies_count = len(proxies)
             # TODO: save new proxies count
             await db.update(collector_state)
 

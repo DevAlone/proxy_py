@@ -8,8 +8,11 @@ import importlib.util
 
 collectors = {}
 
-_collector_dirs = settings.COLLECTORS_DIRS if type(settings.COLLECTORS_DIRS) is list else [settings.COLLECTORS_DIRS]
-for collectors_dir in _collector_dirs:
+_collectors_dirs = settings.COLLECTORS_DIRS
+if type(_collectors_dirs) is not list:
+    _collectors_dirs = [_collectors_dirs]
+
+for collectors_dir in _collectors_dirs:
     for root, dirs, files in os.walk(collectors_dir):
         for file in files:
             if file.endswith(".py"):
