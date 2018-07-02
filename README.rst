@@ -197,7 +197,9 @@ How to test it?
 If you've made changes to the code and want to check that you didn't break
 anything, just run
 
-`py.test`
+.. code-block:: bash
+
+    py.test
 
 inside virtual environment in proxy_py project directory.
 
