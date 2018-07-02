@@ -2,7 +2,6 @@ new web interface
 statistics for proxies and for collectors
 logging for collectors
 log slow sql queries
-check dead proxies rarely
 set limit for total number of proxies
 do not update never working proxies
 more statistics
@@ -13,4 +12,3 @@ floating updating period for collectors
 p2p
 log memory consumption
 stop using ipinfo.io because of rate limits
-tests
