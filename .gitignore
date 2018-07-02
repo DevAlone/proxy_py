@@ -10,3 +10,4 @@ proxy_py.egg-info
 proxypy.egg-info/
 build/
 local/
+.pytest_cache

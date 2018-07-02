@@ -1,12 +1,10 @@
-import os
-
 from collectors.pages_collector import PagesCollector
-import async_requests
 from lxml import etree
+from py_mini_racer import py_mini_racer
 
 import lxml.html
 import re
-from py_mini_racer import py_mini_racer
+import async_requests
 
 
 class BaseCollectorPremProxyCom(PagesCollector):
@@ -50,3 +48,17 @@ class BaseCollectorPremProxyCom(PagesCollector):
             result.append(proxy)
 
         return result
+
+
+class Collector(BaseCollectorPremProxyCom):
+    __collector__ = True
+
+    def __init__(self):
+        super(Collector, self).__init__('https://premproxy.com/list/', 20)
+
+
+class Collector(BaseCollectorPremProxyCom):
+    __collector__ = True
+
+    def __init__(self):
+        super(Collector, self).__init__('https://premproxy.com/socks-list/', 20)

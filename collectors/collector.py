@@ -9,6 +9,9 @@ import models
 class AbstractCollector:
     """Base class for all types of collectors"""
 
+    __collector__ = False
+    """Set this variable to True in your collector's implementation"""
+
     async def collect(self):
         """
         This method should return proxies in any of the following formats:

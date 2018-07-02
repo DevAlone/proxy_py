@@ -11,6 +11,7 @@ URL_PATTERN = "https://nordvpn.com/wp-admin/admin-ajax.php?searchParameters[0][n
 
 class Collector(PagesCollector):
     # this collector gives a lot of bad proxies
+    # TODO: do something
     __collector__ = False
     processing_period = 10 * 60
 

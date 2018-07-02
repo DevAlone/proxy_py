@@ -10,11 +10,16 @@ import re
 import logging
 import peewee
 
-# TODO: add ipv6 addresses
+# TODO: add ipv6 addresses, make domain checking better
+_0_TO_255_REGEX = r"([0-9]|[1-8][0-9]|9[0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])"
+DOMAIN_LETTER_REGEX = r"[a-zA-Z0-9_\-]"
 PROXY_VALIDATE_REGEX = \
     r"^((?P<protocol>(http|socks4|socks5))://)?" \
     r"((?P<auth_data>[a-zA-Z0-9_\.]+:[a-zA-Z0-9_\.]+)@)?" \
-    r"(?P<domain>([0-9]{1,3}\.){3}[0-9]{1,3}|([a-zA-Z0-9_]+\.)+[a-zA-Z]+):(?P<port>[0-9]{1,5})/?$"
+    r"(?P<domain>" + \
+        r"(" + _0_TO_255_REGEX + "\.){3}" + _0_TO_255_REGEX + \
+        r"|" + DOMAIN_LETTER_REGEX + r"+(\.[a-zA-Z]" + DOMAIN_LETTER_REGEX + r"+)*):" \
+    r"(?P<port>([1-9]|[1-8][0-9]|9[0-9]|[1-8][0-9]{2}|9[0-8][0-9]|99[0-9]|[1-8][0-9]{3}|9[0-8][0-9]{2}|99[0-8][0-9]|999[0-9]|[1-5][0-9]{4}|6[0-4][0-9]{3}|65[0-4][0-9]{2}|655[0-2][0-9]|6553[0-5]))/?$"
 
 LOGGERS_FORMAT = "%(levelname)s ~ %(asctime)s ~ %(funcName)30s() ~ %(message)s"
 
@@ -342,6 +347,10 @@ class Processor:
         response_time = int(round((end_checking_time - start_checking_time) * 1000000))
 
         async with db.atomic():
+            # TODO: fix spontaneous issue with unique constraint:
+            # peewee.IntegrityError: duplicate key value violates unique constraint
+            # "proxies_raw_protocol_auth_data_domain_port"
+
             proxy, was_created = await db.get_or_create(
                 Proxy,
                 raw_protocol=raw_protocol,
