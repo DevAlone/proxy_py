@@ -194,7 +194,7 @@ How to contribute?
 How to test it?
 ***************
 
-If you've made the changes to code and want to check that you didn't break
+If you've made changes to the code and want to check that you didn't break
 anything, just run
 
 `py.test`
