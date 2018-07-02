@@ -194,8 +194,12 @@ How to contribute?
 How to test it?
 ***************
 
-If you made the changes to code and want to check that you didn't break
-anything, go `here <https://github.com/DevAlone/proxy_py/tree/master/docs/tests.md>`_
+If you've made the changes to code and want to check that you didn't break
+anything, just run
+
+`py.test`
+
+inside virtual environment in proxy_py project directory.
 
 How to deploy on production using supervisor, nginx and postgresql in 8 steps?
 ******************************************************************************
