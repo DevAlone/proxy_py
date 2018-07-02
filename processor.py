@@ -26,6 +26,13 @@ class Processor:
     """
     instance = None
 
+    @staticmethod
+    def get_instance():
+        if Processor.instance is None:
+            Processor.instance = Processor()
+
+        return Processor.instance
+
     def __init__(self):
         self.logger = logging.getLogger("proxy_py/processor")
 
@@ -55,14 +62,7 @@ class Processor:
         self.logger.debug("processor initialization...")
 
         self.queue = asyncio.Queue(maxsize=settings.PROXY_QUEUE_SIZE)
-        self.proxies_semaphore = asyncio.BoundedSemaphore(settings.CONCURRENT_TASKS_COUNT)
-
-    @staticmethod
-    def get_instance():
-        if Processor.instance is None:
-            Processor.instance = Processor()
-
-        return Processor.instance
+        self.proxies_semaphore = asyncio.BoundedSemaphore(settings.NUMBER_OF_CONCURRENT_TASKS)
 
     async def worker(self):
         await asyncio.gather(*[
@@ -89,19 +89,19 @@ class Processor:
 
     async def producer(self):
         while True:
-            await asyncio.sleep(0.000001)
+            await asyncio.sleep(0.00001)
             try:
                 # check good proxies
                 proxies = await db.execute(
                     Proxy.select().where(
                         Proxy.number_of_bad_checks == 0,
                         Proxy.last_check_time < time.time() - Proxy.checking_period,
-                        ).order_by(Proxy.last_check_time).limit(settings.CONCURRENT_TASKS_COUNT)
+                        ).order_by(Proxy.last_check_time).limit(settings.NUMBER_OF_CONCURRENT_TASKS)
                 )
 
                 await self.add_proxies_to_queue(proxies)
 
-                if len(proxies) > settings.CONCURRENT_TASKS_COUNT / 2:
+                if len(proxies) > settings.NUMBER_OF_CONCURRENT_TASKS / 2:
                     continue
 
                 # check collectors
@@ -127,7 +127,7 @@ class Processor:
                         Proxy.number_of_bad_checks > 0,
                         Proxy.number_of_bad_checks < settings.DEAD_PROXY_THRESHOLD,
                         Proxy.last_check_time < time.time() - settings.BAD_PROXY_CHECKING_PERIOD,
-                        ).order_by(Proxy.last_check_time).limit(settings.CONCURRENT_TASKS_COUNT)
+                        ).order_by(Proxy.last_check_time).limit(settings.NUMBER_OF_CONCURRENT_TASKS)
                 )
 
                 await self.add_proxies_to_queue(proxies)
@@ -141,7 +141,7 @@ class Processor:
                         Proxy.number_of_bad_checks >= settings.DEAD_PROXY_THRESHOLD,
                         Proxy.number_of_bad_checks < settings.DO_NOT_CHECK_ON_N_BAD_CHECKS,
                         Proxy.last_check_time < time.time() - settings.DEAD_PROXY_CHECKING_PERIOD,
-                        ).order_by(Proxy.last_check_time).limit(settings.CONCURRENT_TASKS_COUNT)
+                        ).order_by(Proxy.last_check_time).limit(settings.NUMBER_OF_CONCURRENT_TASKS)
                 )
 
                 await self.add_proxies_to_queue(proxies)
@@ -154,87 +154,8 @@ class Processor:
 
                 await asyncio.sleep(settings.SLEEP_AFTER_ERROR_PERIOD)
 
-    # async def process_collectors(self):
-    #     while True:
-    #         await asyncio.sleep(0.001)
-    #         try:
-    #             if not self.is_queue_free():
-    #                 continue
-    #
-    #             # check collectors
-    #             collector_states = await db.execute(
-    #                 CollectorState.select().where(
-    #                     CollectorState.last_processing_time < time.time() - CollectorState.processing_period
-    #                 ).limit(settings.CONCURRENT_TASKS_COUNT)
-    #             )
-    #
-    #             tasks = [
-    #                 self.process_collector_of_state(collector_state)
-    #                 for collector_state in collector_states
-    #             ]
-    #
-    #             if tasks:
-    #                 await asyncio.gather(*tasks)
-    #                 tasks.clear()
-    #
-    #             # await self.queue.join()
-    #         except KeyboardInterrupt as ex:
-    #             raise ex
-    #         except BaseException as ex:
-    #             self.logger.exception(ex)
-    #             await asyncio.sleep(settings.SLEEP_AFTER_ERROR_PERIOD)
-
     def is_queue_free(self):
-        return self.queue.qsize() < settings.CONCURRENT_TASKS_COUNT
-
-    # async def process_proxies(self):
-    #     while True:
-    #         await asyncio.sleep(0.001)
-    #         try:
-    #             # check good proxies
-    #             proxies = await db.execute(
-    #                 Proxy.select().where(
-    #                     Proxy.number_of_bad_checks == 0,
-    #                     Proxy.last_check_time < time.time() - Proxy.checking_period,
-    #                 ).order_by(Proxy.last_check_time).limit(settings.CONCURRENT_TASKS_COUNT)
-    #             )
-    #
-    #             await self.add_proxies_to_queue(proxies)
-    #
-    #             if len(proxies) > 0 or not self.is_queue_free():
-    #                 continue
-    #
-    #             # check bad proxies
-    #             proxies = await db.execute(
-    #                 Proxy.select().where(
-    #                     Proxy.number_of_bad_checks > 0,
-    #                     Proxy.number_of_bad_checks < settings.DEAD_PROXY_THRESHOLD,
-    #                     Proxy.last_check_time < time.time() - settings.BAD_PROXY_CHECKING_PERIOD,
-    #                 ).order_by(Proxy.last_check_time).limit(settings.CONCURRENT_TASKS_COUNT)
-    #             )
-    #
-    #             await self.add_proxies_to_queue(proxies)
-    #
-    #             if len(proxies) > 0 or not self.is_queue_free():
-    #                 continue
-    #
-    #             # check dead proxies
-    #             proxies = await db.execute(
-    #                 Proxy.select().where(
-    #                     Proxy.number_of_bad_checks >= settings.DEAD_PROXY_THRESHOLD,
-    #                     Proxy.number_of_bad_checks < settings.REMOVE_ON_N_BAD_CHECKS,
-    #                     Proxy.last_check_time < time.time() - settings.DEAD_PROXY_CHECKING_PERIOD,
-    #                 ).order_by(Proxy.last_check_time).limit(settings.CONCURRENT_TASKS_COUNT)
-    #             )
-    #
-    #             await self.add_proxies_to_queue(proxies)
-    #         except KeyboardInterrupt as ex:
-    #             raise ex
-    #         except BaseException as ex:
-    #             self.logger.exception(ex)
-    #             if settings.DEBUG:
-    #                 raise ex
-    #             await asyncio.sleep(10)
+        return self.queue.qsize() < settings.NUMBER_OF_CONCURRENT_TASKS
 
     async def add_proxy_to_queue(self, proxy: Proxy):
         await self.queue.put((
@@ -250,8 +171,6 @@ class Processor:
             await self.add_proxy_to_queue(proxy)
 
     async def process_collector_of_state(self, collector_state):
-        proxies = set()
-
         collector = await collectors_list.load_collector(collector_state)
         try:
             self.logger.debug(
@@ -277,16 +196,15 @@ class Processor:
             self.collectors_logger.exception(ex)
         finally:
             collector.last_processing_time = int(time.time())
-            await collector.save_state(collector_state)
-            # TODO: save new proxies count
-            await db.update(collector_state)
+            # TODO: new proxies count
+            await collectors_list.save_collector(collector_state)
 
     async def process_raw_proxies(self, proxies, collector_id):
         tasks = []
 
         for proxy in proxies:
             tasks.append(self.process_raw_proxy(proxy, collector_id))
-            if len(tasks) > settings.CONCURRENT_TASKS_COUNT:
+            if len(tasks) > settings.NUMBER_OF_CONCURRENT_TASKS:
                 await asyncio.gather(*tasks)
                 tasks.clear()
 

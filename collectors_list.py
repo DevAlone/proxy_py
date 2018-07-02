@@ -23,35 +23,40 @@ for collectors_dir in _collectors_dirs:
                 spec.loader.exec_module(collector_module)
 
                 if hasattr(collector_module, "Collector"):
-                    if hasattr(collector_module.Collector, "__collector__") and collector_module.Collector.__collector__:
+                    if hasattr(collector_module.Collector, "__collector__") \
+                            and collector_module.Collector.__collector__:
                         collectors[module_name] = collector_module.Collector()
 
 
 # init db
 
-for module_name, CollectorType in collectors.items():
+for module_name, Collector in collectors.items():
     try:
-        collector_state = asyncio.get_event_loop().run_until_complete(db.get(
-            CollectorState.select().where(CollectorState.identifier == module_name)
+        asyncio.get_event_loop().run_until_complete(db.get(
+            CollectorState.select().where(
+                CollectorState.identifier == module_name
+            )
         ))
     except CollectorState.DoesNotExist:
         asyncio.get_event_loop().run_until_complete(db.create(
             CollectorState,
             identifier=module_name,
-            processing_period=CollectorType.processing_period,
+            processing_period=Collector.processing_period,
             last_processing_time=0,
         ))
 
 
-def get_collector_state(module_name: str):
-    try:
-        collector_state = asyncio.get_event_loop().run_until_complete(db.get(
-            CollectorState.select().where(CollectorState.identifier == module_name)
-        ))
-    except CollectorState.DoesNotExist:
-        raise CollectorNotFoundException()
-
-    return collector_state
+# def get_collector_state(module_name: str):
+#     try:
+#         collector_state = asyncio.get_event_loop().run_until_complete(db.get(
+#             CollectorState.select().where(
+#                 CollectorState.identifier == module_name
+#             )
+#         ))
+#     except CollectorState.DoesNotExist:
+#         raise CollectorNotFoundException()
+#
+#     return collector_state
 
 
 def get_collector_of_module_name(module_name: str):
@@ -68,6 +73,12 @@ async def load_collector(state: CollectorState):
     collector = get_collector_of_module_name(state.identifier)
     await collector.load_state(state)
     return collector
+
+
+async def save_collector(state: CollectorState):
+    collector = get_collector_of_module_name(state.identifier)
+    await collector.save_state(state)
+    await db.update(state)
 
 
 class CollectorNotFoundException(BaseException):

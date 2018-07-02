@@ -41,8 +41,8 @@ class BaseChecker:
         if BaseChecker.aiohttp_connector is None:
             BaseChecker.aiohttp_connector = ProxyConnector(
                 remote_resolve=True,
-                limit=settings.SIMULTANEOUS_REQUESTS_COUNT,
-                limit_per_host=settings.SIMULTANEOUS_REQUESTS_PER_HOST_COUNT,
+                limit=settings.NUMBER_OF_SIMULTANEOUS_REQUESTS,
+                limit_per_host=settings.NUMBER_OF_SIMULTANEOUS_REQUESTS_PER_HOST,
             )
         self.request_type = request_type
         self.timeout = timeout if timeout is not None else settings.PROXY_CHECKING_TIMEOUT
