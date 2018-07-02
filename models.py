@@ -132,6 +132,7 @@ class CollectorState(peewee.Model):
     processing_period = peewee.IntegerField(null=False)
     last_processing_time = peewee.IntegerField(null=False)
     last_processing_proxies_count = peewee.IntegerField(default=0, null=False)
+    # TODO: add new proxies
     last_processing_new_proxies_count = peewee.IntegerField(default=0, null=False)
     data = peewee.TextField(default=None, null=True)
 

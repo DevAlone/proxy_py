@@ -12,6 +12,10 @@ class AbstractCollector:
     __collector__ = False
     """Set this variable to True in your collector's implementation"""
 
+    def __init__(self):
+        self.data = {}
+        self.saved_variables = set()
+
     async def collect(self):
         """
         This method should return proxies in any of the following formats:
@@ -62,6 +66,9 @@ class AbstractCollector:
         self.processing_period = state.processing_period
         self.last_processing_proxies_count = state.last_processing_proxies_count
         self.data = json.loads(state.data) if state.data is not None and state.data else {}
+        if '_variables' in self.data:
+            for var_name in self.data['_variables']:
+                setattr(self, var_name, self.data['_variables'][var_name])
 
     async def save_state(self, state: models.CollectorState):
         """
@@ -71,10 +78,20 @@ class AbstractCollector:
         state.last_processing_time = self.last_processing_time
         state.processing_period = self.processing_period
         state.last_processing_proxies_count = self.last_processing_proxies_count
+
+        for var_name in self.saved_variables:
+            if '_variables' not in self.data:
+                self.data['_variables'] = {}
+
+            self.data['_variables'][var_name] = getattr(self, var_name)
+
         state.data = json.dumps(self.data)
 
     last_processing_time = 0
     """time in unix timestamp(seconds from 01.01.1970)"""
+
+    last_processing_proxies_count = 0
+    """how many proxies we got on last request, do not change manually"""
 
     processing_period = 60 * 60
     """processing period in seconds"""
@@ -99,8 +116,7 @@ class AbstractCollector:
     when some collector has requests time limit
     """
 
-    data = {}
-    # TODO: consider namespacing
+    data = None
     """
     here you can store some information,
     it will be written into and read from database
@@ -111,3 +127,9 @@ class AbstractCollector:
     Don't use names starting with the underscore
     like this one: _last_page
     """
+
+    saved_variables = None
+    """
+    Set of variables which are saved to database automatically(inside data dict)
+    """
+

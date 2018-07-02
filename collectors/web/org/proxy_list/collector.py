@@ -11,6 +11,7 @@ class Collector(PagesCollector):
     __collector__ = True
 
     def __init__(self):
+        super(Collector, self).__init__()
         self.pages_count = 10
 
     async def process_page(self, page_index):

@@ -22,6 +22,7 @@ class Collector(PagesCollector):
     __collector__ = False
 
     def __init__(self):
+        super(Collector, self).__init__()
         self.dynamic_pages_count = True
 
     async def process_page(self, page_index):

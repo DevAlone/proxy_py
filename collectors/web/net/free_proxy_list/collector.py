@@ -7,6 +7,7 @@ import async_requests
 
 class BaseCollectorFreeProxyListNet(AbstractCollector):
     def __init__(self, url):
+        super(BaseCollectorFreeProxyListNet, self).__init__()
         self.url = url
 
     async def collect(self):

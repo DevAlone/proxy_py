@@ -9,6 +9,7 @@ import async_requests
 
 class BaseCollectorPremProxyCom(PagesCollector):
     def __init__(self, url, pages_count):
+        super(BaseCollectorPremProxyCom, self).__init__()
         self.url = url
         self.pages_count = pages_count
 
@@ -57,8 +58,8 @@ class Collector(BaseCollectorPremProxyCom):
         super(Collector, self).__init__('https://premproxy.com/list/', 20)
 
 
-class Collector(BaseCollectorPremProxyCom):
+class CollectorSocksList(BaseCollectorPremProxyCom):
     __collector__ = True
 
     def __init__(self):
-        super(Collector, self).__init__('https://premproxy.com/socks-list/', 20)
+        super(CollectorSocksList, self).__init__('https://premproxy.com/socks-list/', 20)

@@ -16,6 +16,7 @@ class Collector(PagesCollector):
     processing_period = 10 * 60
 
     def __init__(self):
+        super(Collector, self).__init__()
         self.pages_count = 10
         self.limit = 100
 

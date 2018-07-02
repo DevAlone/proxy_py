@@ -9,6 +9,7 @@ class Collector(AbstractCollector):
     __collector__ = True
 
     def __init__(self):
+        super(Collector, self).__init__()
         self.processing_period = 3600 * 12
         self.time_delta = datetime.timedelta(-1)
 
@@ -27,5 +28,6 @@ class CollectorToday(Collector):
     __collector__ = True
 
     def __init__(self):
+        super(CollectorToday, self).__init__()
         self.processing_period = 3600 * 3
         self.time_delta = datetime.timedelta(0)

@@ -13,18 +13,12 @@ class PagesCollector(AbstractCollector):
     behavior, just set dynamic_pages_count to false and set pages_count manually.
     """
 
-    async def load_state(self, state):
-        await super(PagesCollector, self).load_state(state)
-        if "_current_page" in self.data:
-            self.current_page = self.data["_current_page"]
-
-        if "_pages_count" in self.data:
-            self.pages_count = self.data["_pages_count"]
-
-    async def save_state(self, state):
-        await super(PagesCollector, self).save_state(state)
-        self.data["_current_page"] = self.current_page
-        self.data["_pages_count"] = self.pages_count
+    def __init__(self):
+        super(PagesCollector, self).__init__()
+        self.last_proxies_list = []
+        self.saved_variables.add('current_page')
+        self.saved_variables.add('pages_count')
+        self.saved_variables.add('last_proxies_list')
 
     async def collect(self):
         proxies = list(
@@ -40,18 +34,16 @@ class PagesCollector(AbstractCollector):
                 """
                 proxies_set = set(proxies)
 
-                if "_last_proxies_set" in self.data:
-                    if set(self.data["_last_proxies_set"]) == proxies_set:
-                        self.pages_count = self.current_page + 1
+                if set(self.last_proxies_list) == proxies_set:
+                    self.pages_count = self.current_page + 1
 
-                self.data["_last_proxies_set"] = list(proxies_set)
+                self.last_proxies_list = list(proxies_set)
             else:
                 self.pages_count = self.current_page + 1
 
         self.current_page += 1
         if self.current_page >= self.pages_count:
             self.current_page = 0
-
 
         return proxies
 
@@ -70,3 +62,5 @@ class PagesCollector(AbstractCollector):
     dynamic_pages_count = True
 
     processing_period = 60 * 10
+
+    last_proxies_list = None
