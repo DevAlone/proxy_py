@@ -1,4 +1,4 @@
-from collectors.collector import AbstractCollector
+from collectors.abstract_collector import AbstractCollector
 import lxml.html
 import lxml.etree
 

@@ -1,5 +1,5 @@
 from proxy_py import settings
-from collectors.collector import AbstractCollector
+from collectors.abstract_collector import AbstractCollector
 
 
 # TODO: save pages to collector state
