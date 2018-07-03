@@ -38,6 +38,7 @@ class AbstractCollector:
     async def _collect(self):
         """Do not use! It is called on collector's processing automatically"""
 
+        # TODO: uncomment when python 3.6 come to ubuntu lts
         # i = 0
         # async for proxy in self.collect():
         #     if i > settings.COLLECTOR_MAXIMUM_NUMBER_OF_PROXIES_PER_REQUEST:

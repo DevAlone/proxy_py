@@ -10,7 +10,8 @@ class PagesCollector(AbstractCollector):
     This collector will care about pages, increment it on each processing
     and will reset it to 0 if there is no proxies on the page or if proxies
     are the same as those on the previous one. If you don't want such smart
-    behavior, just set dynamic_pages_count to false and set pages_count manually.
+    behavior, just set dynamic_pages_count to false
+    and set pages_count manually.
     """
 
     def __init__(self):
@@ -30,7 +31,7 @@ class PagesCollector(AbstractCollector):
                 self.pages_count = self.current_page + 2
                 """
                 for those APIs which returns
-                the last page for nonexistent ones 
+                the last page for nonexistent ones
                 """
                 proxies_set = set(proxies)
 
@@ -55,11 +56,12 @@ class PagesCollector(AbstractCollector):
         """
         return []
 
-    """set this value or use dynamic pages count"""
     pages_count = 0
+    """set this value or use dynamic pages count"""
     current_page = 0
-    """use dynamic pages count"""
+
     dynamic_pages_count = True
+    """use dynamic pages count"""
 
     processing_period = 60 * 10
 
