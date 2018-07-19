@@ -35,6 +35,7 @@ class CheckerResult:
 
 
 class BaseChecker:
+    # TODO: rewrite using HttpClient
     aiohttp_connector = None
 
     def __init__(self, url=None, request_type="GET", timeout=None):
