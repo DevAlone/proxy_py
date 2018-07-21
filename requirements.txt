@@ -10,3 +10,4 @@ recommonmark
 sphinx_rtd_theme
 py_mini_racer
 pytest
+pytest-asyncio

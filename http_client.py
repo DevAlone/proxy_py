@@ -1,8 +1,29 @@
+import json
+
 from proxy_py import settings
 from fake_useragent import UserAgent
 from aiosocks.connector import ProxyConnector, ProxyClientRequest
 
 import aiohttp
+
+
+class HttpClientResult:
+    text = None
+    aiohttp_response = None
+
+    @staticmethod
+    async def make(aiohttp_response):
+        obj = HttpClientResult()
+        obj.aiohttp_response = aiohttp_response
+        obj.text = await obj.aiohttp_response.text()
+
+        return obj
+
+    def as_text(self):
+        return self.text
+
+    def as_json(self):
+        return json.loads(self.text)
 
 
 # TODO: complete cookies saving
@@ -31,7 +52,7 @@ class HttpClient:
         :param url:
         :return:
         """
-        pass
+        return await self.request('GET', url, None)
 
     async def post(self, url, data):
         """
@@ -41,12 +62,11 @@ class HttpClient:
         :param data:
         :return:
         """
-        raise NotImplementedError()
+        return await self.request('POST', url, data)
 
     async def request(self, method, url, data) -> HttpClientResult:
         headers = {
             'User-Agent': self.user_agent,
-
         }
 
         async with aiohttp.ClientSession(connector=HttpClient._aiohttp_connector,
@@ -55,37 +75,26 @@ class HttpClient:
                                          ) as session:
             async with session.request(method,
                                        url=url,
+                                       data=data,
                                        proxy=self.proxy_address,
                                        timeout=self.timeout,
                                        headers=headers) as response:
-                return HttpClientResult.make(response)
+                return await HttpClientResult.make(response)
 
     @staticmethod
     async def clean():
         HttpClient._aiohttp_connector.close()
 
 
-class HttpClientResult:
-    text = None
-    aiohttp_response = None
-
-    @staticmethod
-    async def make(aiohttp_response):
-        obj = HttpClientResult()
-        obj.aiohttp_response = aiohttp_response
-        obj.text = await obj.aiohttp_response.text()
-
-        return obj
-
-    def as_text(self):
-        return self.text
-
-
 async def get_text(url):
     """
-    fast method for getting get response without creating extra objects
+    fast method for sending get response without creating extra objects
 
     :param url:
     :return:
     """
     return (await HttpClient().get(url)).as_text()
+
+
+async def get_json(url):
+    return (await HttpClient().get(url)).as_json()
