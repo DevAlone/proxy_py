@@ -68,6 +68,7 @@ class Processor:
 
         self.queue = asyncio.Queue(maxsize=settings.PROXY_QUEUE_SIZE)
         self.proxies_semaphore = asyncio.BoundedSemaphore(settings.NUMBER_OF_CONCURRENT_TASKS)
+        self.good_proxies_are_processed = False
 
     async def worker(self):
         await asyncio.gather(*[
@@ -94,6 +95,13 @@ class Processor:
 
     async def producer(self):
         while True:
+            await asyncio.gather(*[
+                self.process_proxies(),
+                self.process_collectors(),
+            ])
+
+    async def process_proxies(self):
+        while True:
             await asyncio.sleep(0.00001)
             try:
                 # check good proxies
@@ -103,28 +111,15 @@ class Processor:
                         Proxy.last_check_time < time.time() - Proxy.checking_period,
                         ).order_by(Proxy.last_check_time).limit(settings.NUMBER_OF_CONCURRENT_TASKS)
                 )
+                if proxies:
+                    self.good_proxies_are_processed = False
 
                 await self.add_proxies_to_queue(proxies)
 
-                if len(proxies) > settings.NUMBER_OF_CONCURRENT_TASKS / 2:
+                if proxies:
                     continue
 
-                # check collectors
-                collector_states = await db.execute(
-                    CollectorState.select().where(
-                        CollectorState.last_processing_time < time.time() - CollectorState.processing_period
-                    ).order_by(peewee.fn.Random()).
-                    limit(settings.NUMBER_OF_CONCURRENT_COLLECTORS)
-                )
-
-                tasks = [
-                    self.process_collector_of_state(collector_state)
-                    for collector_state in collector_states
-                ]
-
-                if tasks:
-                    await asyncio.gather(*tasks)
-                    continue
+                self.good_proxies_are_processed = True
 
                 # check bad proxies
                 proxies = await db.execute(
@@ -159,6 +154,31 @@ class Processor:
 
                 await asyncio.sleep(settings.SLEEP_AFTER_ERROR_PERIOD)
 
+    async def process_collectors(self):
+        while True:
+            try:
+                await asyncio.sleep(0.000001)
+
+                # check collectors
+                collector_states = await db.execute(
+                    CollectorState.select().where(
+                        CollectorState.last_processing_time < time.time() - CollectorState.processing_period
+                    ).order_by(peewee.fn.Random()).limit(settings.NUMBER_OF_CONCURRENT_COLLECTORS)
+                )
+
+                await asyncio.gather(*[
+                    self.process_collector_of_state(collector_state)
+                    for collector_state in collector_states
+                ])
+            except KeyboardInterrupt as ex:
+                raise ex
+            except BaseException as ex:
+                self.collectors_logger.exception(ex)
+                if settings.DEBUG:
+                    raise ex
+
+                await asyncio.sleep(settings.SLEEP_AFTER_ERROR_PERIOD)
+
     def is_queue_free(self):
         return self.queue.qsize() < settings.NUMBER_OF_CONCURRENT_TASKS
 
@@ -183,15 +203,15 @@ class Processor:
             )
             proxies = await collector._collect()
 
-            if not proxies:
-                self.collectors_logger.warning(
-                    "got 0 proxies from collector of type \"{}\"".format(type(collector))
-                )
-            else:
+            if proxies:
                 self.logger.debug(
                     "got {} proxies from collector of type \"{}\"".format(len(proxies), type(collector))
                 )
                 await self.process_raw_proxies(proxies, collector_state.id)
+            else:
+                self.collectors_logger.warning(
+                    "got 0 proxies from collector of type \"{}\"".format(type(collector))
+                )
         except KeyboardInterrupt as ex:
             raise ex
         except BaseException as ex:
@@ -208,6 +228,7 @@ class Processor:
         tasks = []
 
         for proxy in proxies:
+            # TODO: refactor it
             tasks.append(self.process_raw_proxy(proxy, collector_id))
             if len(tasks) > settings.NUMBER_OF_CONCURRENT_TASKS:
                 await asyncio.gather(*tasks)
@@ -261,6 +282,9 @@ class Processor:
                 pass
 
             for raw_protocol in range(len(Proxy.PROTOCOLS)):
+                while not self.good_proxies_are_processed:
+                    await asyncio.sleep(0.01)
+
                 await self.queue.put((
                     raw_protocol,
                     auth_data,
