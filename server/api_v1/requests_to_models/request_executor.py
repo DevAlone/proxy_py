@@ -24,7 +24,8 @@ class RequestExecutor:
         # TODO: remove checking number_of_bad_checks
 
         queryset = class_name.select().where(
-            class_name.number_of_bad_checks < settings.DEAD_PROXY_THRESHOLD
+            # class_name.number_of_bad_checks < settings.DEAD_PROXY_THRESHOLD
+            class_name.number_of_bad_checks == 0
         )
 
         result = {
