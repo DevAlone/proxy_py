@@ -80,11 +80,12 @@ class AbstractCollector:
         state.processing_period = self.processing_period
         state.last_processing_proxies_count = self.last_processing_proxies_count
 
-        for var_name in self.saved_variables:
-            if '_variables' not in self.data:
-                self.data['_variables'] = {}
+        if self.saved_variables is not None:
+            for var_name in self.saved_variables:
+                if '_variables' not in self.data:
+                    self.data['_variables'] = {}
 
-            self.data['_variables'][var_name] = getattr(self, var_name)
+                self.data['_variables'][var_name] = getattr(self, var_name)
 
         state.data = json.dumps(self.data)
 
