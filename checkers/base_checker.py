@@ -21,8 +21,8 @@ class CheckerResult:
 
     def update_from_other(self, other):
         def set_attr_if_is_not_none(attribute_name, first_obj, second_obj):
-            second_val = getattr(second_obj, attribute_name)
-            if second_val is not None:
+            if hasattr(second_obj, attribute_name):
+                second_val = getattr(second_obj, attribute_name)
                 setattr(first_obj, attribute_name, second_val)
 
         set_attr_if_is_not_none('ipv4', self, other)
