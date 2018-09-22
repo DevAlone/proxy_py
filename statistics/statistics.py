@@ -11,7 +11,6 @@ async def worker():
         await process_graph(ProxyCountItem, 60, create_proxy_count_item)
         await process_graph(NumberOfProxiesToProcess, 60, number_of_proxies_to_process)
         await process_graph(NumberOfCollectorsToProcess, 60, number_of_collectors_to_process)
-        await process_graph(ProcessorProxiesQueueSize, 60, processor_proxies_queue_size)
         await asyncio.sleep(10)
 
 
@@ -97,12 +96,4 @@ async def number_of_collectors_to_process(timestamp):
         NumberOfCollectorsToProcess,
         timestamp=timestamp,
         value=number_of_collectors,
-    )
-
-
-async def processor_proxies_queue_size(timestamp):
-    await db.create(
-        ProcessorProxiesQueueSize,
-        timestamp=timestamp,
-        value=Processor.get_instance().queue.qsize(),
     )

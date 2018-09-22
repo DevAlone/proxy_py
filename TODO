@@ -13,3 +13,4 @@ p2p
 log memory consumption
 stop using ipinfo.io because of rate limits
 fix leak of something, again :(
+remove processor proxies queue model

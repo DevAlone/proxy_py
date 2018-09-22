@@ -32,14 +32,13 @@ COLLECTORS_DIRS = [
     # 'local/collectors',  # use to add your own collectors
 ]
 
-NUMBER_OF_CONCURRENT_TASKS = 512
+NUMBER_OF_CONCURRENT_TASKS = 128
 # makes aiohttp to not send more
 # than this number of simultaneous requests
 # works by common connector
-NUMBER_OF_SIMULTANEOUS_REQUESTS = 256
+NUMBER_OF_SIMULTANEOUS_REQUESTS = 64
 # the same, but per host
 NUMBER_OF_SIMULTANEOUS_REQUESTS_PER_HOST = NUMBER_OF_SIMULTANEOUS_REQUESTS
-PROXY_QUEUE_SIZE = NUMBER_OF_CONCURRENT_TASKS * 2
 
 MIN_PROXY_CHECKING_PERIOD = 10 * 60
 MAX_PROXY_CHECKING_PERIOD = 60 * 60

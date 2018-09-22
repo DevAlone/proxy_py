@@ -66,39 +66,14 @@ class Processor:
 
         self.logger.debug("processor initialization...")
 
-        self.queue = asyncio.Queue(maxsize=settings.PROXY_QUEUE_SIZE)
         self.proxies_semaphore = asyncio.BoundedSemaphore(settings.NUMBER_OF_CONCURRENT_TASKS)
         self.good_proxies_are_processed = False
 
     async def worker(self):
         await asyncio.gather(*[
-            self.producer(),
-            self.consumer(),
+            self.process_proxies(),
+            self.process_collectors(),
         ])
-
-    async def consumer(self):
-        while True:
-            await asyncio.sleep(0.00001)
-
-            try:
-                if not self.proxies_semaphore.locked():
-                    asyncio.ensure_future(self.process_proxy(
-                        *(await self.queue.get())
-                    ))
-            except KeyboardInterrupt:
-                raise
-            except BaseException as ex:
-                self.logger.exception(ex)
-                if settings.DEBUG:
-                    raise ex
-                await asyncio.sleep(settings.SLEEP_AFTER_ERROR_PERIOD)
-
-    async def producer(self):
-        while True:
-            await asyncio.gather(*[
-                self.process_proxies(),
-                self.process_collectors(),
-            ])
 
     async def process_proxies(self):
         while True:
@@ -127,7 +102,7 @@ class Processor:
                         Proxy.number_of_bad_checks > 0,
                         Proxy.number_of_bad_checks < settings.DEAD_PROXY_THRESHOLD,
                         Proxy.last_check_time < time.time() - settings.BAD_PROXY_CHECKING_PERIOD,
-                        ).order_by(Proxy.last_check_time).limit(settings.NUMBER_OF_CONCURRENT_TASKS)
+                    ).order_by(Proxy.last_check_time).limit(settings.NUMBER_OF_CONCURRENT_TASKS)
                 )
 
                 await self.add_proxies_to_queue(proxies)
@@ -141,7 +116,7 @@ class Processor:
                         Proxy.number_of_bad_checks >= settings.DEAD_PROXY_THRESHOLD,
                         Proxy.number_of_bad_checks < settings.DO_NOT_CHECK_ON_N_BAD_CHECKS,
                         Proxy.last_check_time < time.time() - settings.DEAD_PROXY_CHECKING_PERIOD,
-                        ).order_by(Proxy.last_check_time).limit(settings.NUMBER_OF_CONCURRENT_TASKS)
+                    ).order_by(Proxy.last_check_time).limit(settings.NUMBER_OF_CONCURRENT_TASKS)
                 )
 
                 await self.add_proxies_to_queue(proxies)
@@ -179,16 +154,16 @@ class Processor:
 
                 await asyncio.sleep(settings.SLEEP_AFTER_ERROR_PERIOD)
 
-    def is_queue_free(self):
-        return self.queue.qsize() < settings.NUMBER_OF_CONCURRENT_TASKS
+    async def add_proxy_to_queue(self, proxy: Proxy, collector_id=None):
+        while self.proxies_semaphore.locked():
+            await asyncio.sleep(0.001)
 
-    async def add_proxy_to_queue(self, proxy: Proxy):
-        await self.queue.put((
+        asyncio.ensure_future(self.process_proxy(
             proxy.get_raw_protocol(),
             proxy.auth_data,
             proxy.domain,
             proxy.port,
-            None
+            collector_id,
         ))
 
     async def add_proxies_to_queue(self, proxies: list):
@@ -285,13 +260,13 @@ class Processor:
                 while not self.good_proxies_are_processed:
                     await asyncio.sleep(0.01)
 
-                await self.queue.put((
-                    raw_protocol,
-                    auth_data,
-                    domain,
-                    port,
-                    collector_id,
-                ))
+                new_proxy = Proxy()
+                new_proxy.raw_protocol = raw_protocol
+                new_proxy.auth_data = auth_data
+                new_proxy.domain = domain
+                new_proxy.port = port
+
+                self.add_proxy_to_queue(new_proxy, collector_id)
 
     async def process_proxy(self, raw_protocol: int, auth_data: str, domain: str, port: int, collector_id):
         async with self.proxies_semaphore:
