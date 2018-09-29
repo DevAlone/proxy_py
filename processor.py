@@ -10,6 +10,7 @@ import re
 import logging
 import peewee
 
+
 # TODO: add ipv6 addresses, make domain checking better
 _0_TO_255_REGEX = r"([0-9]|[1-8][0-9]|9[0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])"
 DOMAIN_LETTER_REGEX = r"[a-zA-Z0-9_\-]"
@@ -77,14 +78,14 @@ class Processor:
 
     async def process_proxies(self):
         while True:
-            await asyncio.sleep(0.00001)
+            await asyncio.sleep(0.01)
             try:
                 # check good proxies
                 proxies = await db.execute(
                     Proxy.select().where(
                         Proxy.number_of_bad_checks == 0,
                         Proxy.last_check_time < time.time() - Proxy.checking_period,
-                        ).order_by(Proxy.last_check_time).limit(settings.NUMBER_OF_CONCURRENT_TASKS)
+                    ).order_by(Proxy.last_check_time).limit(settings.NUMBER_OF_CONCURRENT_TASKS)
                 )
                 if proxies:
                     self.good_proxies_are_processed = False
@@ -131,9 +132,8 @@ class Processor:
 
     async def process_collectors(self):
         while True:
+            await asyncio.sleep(0.1)
             try:
-                await asyncio.sleep(0.000001)
-
                 # check collectors
                 collector_states = await db.execute(
                     CollectorState.select().where(
@@ -155,16 +155,14 @@ class Processor:
                 await asyncio.sleep(settings.SLEEP_AFTER_ERROR_PERIOD)
 
     async def add_proxy_to_queue(self, proxy: Proxy, collector_id=None):
-        while self.proxies_semaphore.locked():
-            await asyncio.sleep(0.001)
-
-        asyncio.ensure_future(self.process_proxy(
-            proxy.get_raw_protocol(),
-            proxy.auth_data,
-            proxy.domain,
-            proxy.port,
-            collector_id,
-        ))
+        async with self.proxies_semaphore:
+            asyncio.ensure_future(self.process_proxy(
+                proxy.get_raw_protocol(),
+                proxy.auth_data,
+                proxy.domain,
+                proxy.port,
+                collector_id,
+            ))
 
     async def add_proxies_to_queue(self, proxies: list):
         for proxy in proxies:
@@ -258,7 +256,8 @@ class Processor:
 
             for raw_protocol in range(len(Proxy.PROTOCOLS)):
                 while not self.good_proxies_are_processed:
-                    await asyncio.sleep(0.01)
+                    # TODO: find a better way
+                    await asyncio.sleep(0.1)
 
                 new_proxy = Proxy()
                 new_proxy.raw_protocol = raw_protocol
@@ -266,7 +265,7 @@ class Processor:
                 new_proxy.domain = domain
                 new_proxy.port = port
 
-                self.add_proxy_to_queue(new_proxy, collector_id)
+                await self.add_proxy_to_queue(new_proxy, collector_id)
 
     async def process_proxy(self, raw_protocol: int, auth_data: str, domain: str, port: int, collector_id):
         async with self.proxies_semaphore:

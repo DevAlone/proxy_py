@@ -11,6 +11,21 @@ import logging
 
 
 if __name__ == "__main__":
+    asyncio_logger = logging.getLogger("asyncio")
+    asyncio_logger_file_handler = logging.FileHandler("logs/asyncio.log")
+    asyncio_logger_file_handler.setLevel(logging.DEBUG)
+    asyncio_logger_file_handler.setFormatter(
+        logging.Formatter(
+            "%(levelname)s ~ %(asctime)s ~ %(funcName)30s() - %(message)s"
+        )
+    )
+    asyncio_logger.addHandler(asyncio_logger_file_handler)
+
+    if settings.DEBUG:
+        asyncio.get_event_loop().set_debug(True)
+
+        asyncio_logger.setLevel(logging.DEBUG)
+
     main_logger = logging.getLogger("proxy_py/main")
 
     if settings.DEBUG:
@@ -29,7 +44,6 @@ if __name__ == "__main__":
     main_logger.addHandler(logger_file_handler)
 
     loop = asyncio.get_event_loop()
-    # TODO: consider loop.set_debug
 
     proxy_processor = Processor.get_instance()
 

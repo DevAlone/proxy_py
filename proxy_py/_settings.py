@@ -32,7 +32,7 @@ COLLECTORS_DIRS = [
     # 'local/collectors',  # use to add your own collectors
 ]
 
-NUMBER_OF_CONCURRENT_TASKS = 128
+NUMBER_OF_CONCURRENT_TASKS = 64
 # makes aiohttp to not send more
 # than this number of simultaneous requests
 # works by common connector
