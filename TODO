@@ -14,3 +14,4 @@ log memory consumption
 stop using ipinfo.io because of rate limits
 fix leak of something, again :(
 remove processor proxies queue model
+write number of asyncio tasks to DB to be able to draw more grahps(everybody loves statistics)
