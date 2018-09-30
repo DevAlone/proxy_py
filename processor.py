@@ -1,4 +1,6 @@
+import proxy_validator
 from checkers.base_checker import CheckerResult
+from parsers.regex_parser import PROXY_VALIDATE_REGEX
 from proxy_py import settings
 from models import Proxy, CollectorState, db
 
@@ -11,16 +13,6 @@ import logging
 import peewee
 
 
-# TODO: add ipv6 addresses, make domain checking better
-_0_TO_255_REGEX = r"([0-9]|[1-8][0-9]|9[0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])"
-DOMAIN_LETTER_REGEX = r"[a-zA-Z0-9_\-]"
-PROXY_VALIDATE_REGEX = \
-    r"^((?P<protocol>(http|socks4|socks5))://)?" \
-    r"((?P<auth_data>[a-zA-Z0-9_\.]+:[a-zA-Z0-9_\.]+)@)?" \
-    r"(?P<domain>" + \
-        r"(" + _0_TO_255_REGEX + "\.){3}" + _0_TO_255_REGEX + \
-        r"|" + DOMAIN_LETTER_REGEX + r"+(\.[a-zA-Z]" + DOMAIN_LETTER_REGEX + r"+)*):" \
-    r"(?P<port>([1-9]|[1-8][0-9]|9[0-9]|[1-8][0-9]{2}|9[0-8][0-9]|99[0-9]|[1-8][0-9]{3}|9[0-8][0-9]{2}|99[0-8][0-9]|999[0-9]|[1-5][0-9]{4}|6[0-4][0-9]{3}|65[0-4][0-9]{2}|655[0-2][0-9]|6553[0-5]))/?$"
 
 LOGGERS_FORMAT = "%(levelname)s ~ %(asctime)s ~ %(funcName)30s() ~ %(message)s"
 
@@ -213,59 +205,53 @@ class Processor:
     async def process_raw_proxy(self, proxy, collector_id):
         self.logger.debug("processing raw proxy \"{}\"".format(proxy))
 
-        matches = re.match(PROXY_VALIDATE_REGEX, proxy)
-        if matches:
-            matches = matches.groupdict()
-            auth_data = matches["auth_data"]
-            domain = matches["domain"]
-            port = matches["port"]
+        try:
+            _, auth_data, domain, port = proxy_validator.retrieve(proxy)
+        except proxy_validator.ValidationError as ex:
+            self.collectors_logger.error(
+                "Collector with id \"{}\" returned bad raw proxy \"{}\". "
+                "Message: {}".format(collector_id, proxy, ex)
+            )
+            return
 
-            if auth_data is None:
-                auth_data = ""
 
-            if domain is None or port is None:
-                self.collectors_logger.error(
-                    "Bad raw proxy \"{}\" from collector \"{}\"".format(proxy, collector_id)
+        # don't care about protocol
+        try:
+            proxy = await db.get(
+                Proxy.select().where(
+                    Proxy.auth_data == auth_data,
+                    Proxy.domain == domain,
+                    Proxy.port == port,
+                )
+            )
+
+            if proxy.last_check_time + settings.PROXY_NOT_CHECKING_PERIOD >= time.time():
+                proxy_short_address = ""
+                if auth_data:
+                    proxy_short_address += auth_data + "@"
+
+                proxy_short_address += "{}:{}".format(domain, port)
+
+                self.logger.debug(
+                    "skipping proxy \"{}\" from collector \"{}\"".format(
+                        proxy_short_address, collector_id)
                 )
                 return
+        except Proxy.DoesNotExist:
+            pass
 
-            # don't care about protocol
-            try:
-                proxy = await db.get(
-                    Proxy.select().where(
-                        Proxy.auth_data == auth_data,
-                        Proxy.domain == domain,
-                        Proxy.port == port,
-                    )
-                )
+        for raw_protocol in range(len(Proxy.PROTOCOLS)):
+            while not self.good_proxies_are_processed:
+                # TODO: find a better way
+                await asyncio.sleep(0.1)
 
-                if proxy.last_check_time + settings.PROXY_NOT_CHECKING_PERIOD >= time.time():
-                    proxy_short_address = ""
-                    if auth_data:
-                        proxy_short_address += auth_data + "@"
+            new_proxy = Proxy()
+            new_proxy.raw_protocol = raw_protocol
+            new_proxy.auth_data = auth_data
+            new_proxy.domain = domain
+            new_proxy.port = port
 
-                    proxy_short_address += "{}:{}".format(domain, port)
-
-                    self.logger.debug(
-                        "skipping proxy \"{}\" from collector \"{}\"".format(
-                            proxy_short_address, collector_id)
-                    )
-                    return
-            except Proxy.DoesNotExist:
-                pass
-
-            for raw_protocol in range(len(Proxy.PROTOCOLS)):
-                while not self.good_proxies_are_processed:
-                    # TODO: find a better way
-                    await asyncio.sleep(0.1)
-
-                new_proxy = Proxy()
-                new_proxy.raw_protocol = raw_protocol
-                new_proxy.auth_data = auth_data
-                new_proxy.domain = domain
-                new_proxy.port = port
-
-                await self.add_proxy_to_queue(new_proxy, collector_id)
+            await self.add_proxy_to_queue(new_proxy, collector_id)
 
     async def process_proxy(self, raw_protocol: int, auth_data: str, domain: str, port: int, collector_id):
         async with self.proxies_semaphore:

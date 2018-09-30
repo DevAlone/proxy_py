@@ -60,19 +60,6 @@ async def init():
             )
 
 
-# def get_collector_state(module_name: str):
-#     try:
-#         collector_state = asyncio.get_event_loop().run_until_complete(db.get(
-#             CollectorState.select().where(
-#                 CollectorState.identifier == module_name
-#             )
-#         ))
-#     except CollectorState.DoesNotExist:
-#         raise CollectorNotFoundException()
-#
-#     return collector_state
-
-
 def get_collector_of_module_name(module_name: str):
     if module_name not in collectors:
         raise CollectorNotFoundException(

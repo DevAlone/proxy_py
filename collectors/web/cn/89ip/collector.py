@@ -1,4 +1,6 @@
 from collectors.abstract_collector import AbstractCollector
+from parsers.regex_parser import RegexParser
+
 import http_client
 
 
@@ -18,6 +20,9 @@ class Collector(AbstractCollector):
 
     async def collect(self):
         url = 'http://www.89ip.cn/tqdl.html?num=9999&address=&kill_address=&port=&kill_port=&isp='
-        html = await http_client.get_text(url)
-
         return []
+        # html = await http_client.get_text(url)
+        with open('/tmp/mock') as f:
+            html = f.read()
+
+        return RegexParser().parse(html)
