@@ -1,9 +1,10 @@
 import asyncio
 import aiohttp
 import json
+import pytest
 
 
-API_URL = "http://localhost:55555"
+API_URL = "http://localhost:55555/api/v1/"
 
 
 async def get_proxies(session, request):
@@ -12,7 +13,7 @@ async def get_proxies(session, request):
         return json_data['data']
 
 
-async def test_ordering(session, field_name):
+async def check_ordering(session, field_name):
     request_data = {
         'method': 'get',
         'model': 'proxy',
@@ -31,7 +32,7 @@ async def test_ordering(session, field_name):
     return True
 
 
-async def test_complex_ordering(session, *args):
+async def check_complex_ordering(session, *args):
     fields = args
 
     request_data = {
@@ -58,31 +59,29 @@ async def test_complex_ordering(session, *args):
     return True
 
 
-async def run_tests(session):
+@pytest.mark.asyncio
+async def test_ordering():
     tests = [
-        (test_ordering, 'response_time'),
-        (test_ordering, 'uptime'),
-        (test_ordering, 'number_of_bad_checks'),
-        (test_ordering, 'last_check_time'),
-        (test_complex_ordering, 'uptime', 'last_check_time'),
-        (test_complex_ordering, 'number_of_bad_checks', 'uptime', 'response_time'),
+        (check_ordering, 'response_time'),
+        (check_ordering, 'uptime'),
+        (check_ordering, 'number_of_bad_checks'),
+        (check_ordering, 'last_check_time'),
     ]
 
     for test in tests:
-        try:
+        async with aiohttp.ClientSession() as session:
             result = await test[0](session, *test[1:])
-            print("PASSED" if result else "FAILED", end='')
-        except BaseException as ex:
-            print("FAILED DUE TO EXCEPTION: {}".format(ex), end='')
-        finally:
-            print(" test {} ".format(test))
+            assert result
 
 
-async def main():
-    async with aiohttp.ClientSession() as session:
-        await run_tests(session)
+@pytest.mark.asyncio
+async def test_complex_ordering():
+    tests = [
+        (check_complex_ordering, 'uptime', 'last_check_time'),
+        (check_complex_ordering, 'number_of_bad_checks', 'uptime', 'response_time'),
+    ]
 
-
-if __name__ == '__main__':
-    loop = asyncio.get_event_loop()
-    loop.run_until_complete(main())
+    for test in tests:
+        async with aiohttp.ClientSession() as session:
+            result = await test[0](session, *test[1:])
+            assert result
