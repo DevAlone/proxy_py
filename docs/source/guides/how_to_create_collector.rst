@@ -37,7 +37,7 @@ directory using reversed domain path,
 it will be `collectors/web/cn/89ip/collector.py`
 
 To make class be a collector we need to declare a variable
-`__collector__`
+`__collector__` and set it to `True`
 
 Note: name of file and name of class don't make sense,
 you can declare as many files and classes in each file
@@ -94,7 +94,7 @@ and implement method like this:
 
 That's all!
 
-Now is time to little test, to be sure your collector is working
+Now is time for a little test, to be sure your collector is working
 you can run proxy_py with `--test-collector` option:
 
 .. code-block:: bash
@@ -130,7 +130,7 @@ With 60 seconds timeout it looks better
 Paginated collector
 *******************
 
-Allright, you've done with a simple collector,
+Alright, you've done with a simple collector,
 you're almost a pro, let's now dive a little deeper
 
 # TODO: complete this guide
