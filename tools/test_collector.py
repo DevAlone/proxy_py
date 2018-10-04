@@ -43,7 +43,7 @@ async def process_proxy(proxy_url: str):
             _, auth_data, domain, port = proxy_validator.retrieve(proxy_url)
         except proxy_validator.ValidationError as ex:
             raise ValueError(
-                "Your collector returned bad proxy \"{}\". Message: \"{}\"".format(proxy, ex)
+                "Your collector returned bad proxy \"{}\". Message: \"{}\"".format(proxy_url, ex)
             )
 
         is_working = False
