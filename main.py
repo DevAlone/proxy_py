@@ -29,12 +29,21 @@ def process_cmd_arguments():
 
     cmd_parser = argparse.ArgumentParser()
     cmd_parser.add_argument("--debug", type=str_to_bool, help="override settings' debug value")
+    cmd_parser.add_argument(
+        "--proxy-checking-timeout", type=float, help="override settings' proxy checking timeout"
+    )
     cmd_parser.add_argument("--test-collector", help="test collector with a given path")
 
     args = cmd_parser.parse_args()
 
     if args.debug is not None:
         settings.DEBUG = args.debug
+
+    if args.proxy_checking_timeout is not None:
+        if args.proxy_checking_timeout < 0:
+            raise ValueError("--proxy-checking-timeout should be positive")
+
+        settings.PROXY_CHECKING_TIMEOUT = args.proxy_checking_timeout
 
     test_collector_path = args.test_collector
 

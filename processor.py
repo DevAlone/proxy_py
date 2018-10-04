@@ -1,6 +1,5 @@
 import proxy_validator
 from checkers.base_checker import CheckerResult
-from parsers.regex_parser import PROXY_VALIDATE_REGEX
 from proxy_py import settings
 from models import Proxy, CollectorState, db
 
@@ -8,7 +7,6 @@ import collectors_list
 import proxy_utils
 import asyncio
 import time
-import re
 import logging
 import peewee
 

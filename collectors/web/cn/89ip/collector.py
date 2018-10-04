@@ -1,5 +1,5 @@
-from collectors.abstract_collector import AbstractCollector
-from parsers.regex_parser import RegexParser
+from collectors import AbstractCollector
+from parsers import RegexParser
 
 import http_client
 
@@ -9,7 +9,8 @@ class Collector(AbstractCollector):
 
     def __init__(self):
         super(Collector, self).__init__()
-        self.processing_period = 30 * 60  # 30 minutes
+        # 30 minutes
+        self.processing_period = 30 * 60
         '''
         floating period means proxy_py will be changing 
         period to not make extra requests and handle 
@@ -20,9 +21,9 @@ class Collector(AbstractCollector):
 
     async def collect(self):
         url = 'http://www.89ip.cn/tqdl.html?num=9999&address=&kill_address=&port=&kill_port=&isp='
-        return []
-        # html = await http_client.get_text(url)
-        with open('/tmp/mock') as f:
-            html = f.read()
-
+        # send a request to get html code of the page
+        html = await http_client.get_text(url)
+        # and just parse it using regex parser with a default rule to parse
+        # proxies like this:
+        # 8.8.8.8:8080
         return RegexParser().parse(html)

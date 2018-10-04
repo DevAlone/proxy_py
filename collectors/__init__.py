@@ -1,0 +1,2 @@
+from collectors.abstract_collector import AbstractCollector
+from collectors.pages_collector import PagesCollector

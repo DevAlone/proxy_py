@@ -5,7 +5,6 @@ import json
 import models
 
 
-# TODO: refactor saving state
 class AbstractCollector:
     """Base class for all types of collectors"""
 
@@ -38,7 +37,7 @@ class AbstractCollector:
     async def _collect(self):
         """Do not use! It is called on collector's processing automatically"""
 
-        # TODO: uncomment when python 3.6 come to ubuntu lts
+        # TODO: uncomment when python 3.6 comes to ubuntu lts
         # i = 0
         # async for proxy in self.collect():
         #     if i > settings.COLLECTOR_MAXIMUM_NUMBER_OF_PROXIES_PER_REQUEST:
@@ -74,17 +73,16 @@ class AbstractCollector:
     async def save_state(self, state: models.CollectorState):
         """
         Function for saving collector's state to database model.
-        It's called automatically, don't worry.
+        It's called automatically, don't worry about it.
         """
         state.last_processing_time = self.last_processing_time
         state.processing_period = self.processing_period
         state.last_processing_proxies_count = self.last_processing_proxies_count
 
         if self.saved_variables is not None:
+            if '_variables' not in self.data:
+                self.data['_variables'] = {}
             for var_name in self.saved_variables:
-                if '_variables' not in self.data:
-                    self.data['_variables'] = {}
-
                 self.data['_variables'][var_name] = getattr(self, var_name)
 
         state.data = json.dumps(self.data)
