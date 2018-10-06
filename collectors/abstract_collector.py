@@ -1,4 +1,6 @@
 # TODO: add wrapper for doing requests and saving its cookies and UserAgent
+import asyncio
+
 from proxy_py import settings
 
 import json
@@ -35,20 +37,23 @@ class AbstractCollector:
         return []
 
     async def _collect(self):
-        """Do not use! It is called on collector's processing automatically"""
+        """Do not call yourself! It is called on collector's processing automatically"""
+        collect = self.collect()
+        if asyncio.iscoroutine(collect):
+            async def wrapper(f):
+                for item in (await f):
+                    yield item
+            collect = wrapper(collect)
 
-        # TODO: uncomment when python 3.6 comes to ubuntu lts
-        # i = 0
-        # async for proxy in self.collect():
-        #     if i > settings.COLLECTOR_MAXIMUM_NUMBER_OF_PROXIES_PER_REQUEST:
-        #         break
+        i = 0
+        async for proxy in collect:
+            if i > settings.COLLECTOR_MAXIMUM_NUMBER_OF_PROXIES_PER_REQUEST:
+                break
 
-        #     yield proxy
-        #     i += 1
-        proxies = list(await self.collect())
-        proxies = proxies[:settings.COLLECTOR_MAXIMUM_NUMBER_OF_PROXIES_PER_REQUEST]
-        self.last_processing_proxies_count = len(proxies)
-        return proxies
+            yield proxy
+            i += 1
+
+        self.last_processing_proxies_count = i
 
     async def load_state(self, state: models.CollectorState):
         """

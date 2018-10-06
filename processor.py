@@ -164,16 +164,27 @@ class Processor:
             self.logger.debug(
                 "start processing collector of type \"{}\"".format(type(collector))
             )
-            proxies = await collector._collect()
 
-            if proxies:
-                self.logger.debug(
-                    "got {} proxies from collector of type \"{}\"".format(len(proxies), type(collector))
-                )
-                await self.process_raw_proxies(proxies, collector_state.id)
-            else:
+            tasks = []
+            number_of_proxies = 0
+            async for proxy in collector._collect():
+                number_of_proxies += 1
+                tasks.append(self.process_raw_proxy(proxy, collector_state.id))
+
+                if len(tasks) > settings.NUMBER_OF_CONCURRENT_TASKS:
+                    await asyncio.gather(*tasks)
+                    tasks.clear()
+
+            if tasks:
+                await asyncio.gather(*tasks)
+
+            if number_of_proxies == 0:
                 self.collectors_logger.warning(
                     "got 0 proxies from collector of type \"{}\"".format(type(collector))
+                )
+            else:
+                self.collectors_logger.info(
+                    f"got {number_of_proxies} proxies from collector of type \"{type(collector)}\""
                 )
         except KeyboardInterrupt as ex:
             raise ex
@@ -186,19 +197,6 @@ class Processor:
             collector.last_processing_time = int(time.time())
             # TODO: new proxies count
             await collectors_list.save_collector(collector_state)
-
-    async def process_raw_proxies(self, proxies, collector_id):
-        tasks = []
-
-        for proxy in proxies:
-            # TODO: refactor it
-            tasks.append(self.process_raw_proxy(proxy, collector_id))
-            if len(tasks) > settings.NUMBER_OF_CONCURRENT_TASKS:
-                await asyncio.gather(*tasks)
-                tasks.clear()
-
-        if tasks:
-            await asyncio.gather(*tasks)
 
     async def process_raw_proxy(self, proxy, collector_id):
         self.logger.debug("processing raw proxy \"{}\"".format(proxy))

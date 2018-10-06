@@ -2,10 +2,10 @@ from aiosocks.connector import ProxyConnector, ProxyClientRequest
 from proxy_py import settings
 
 import ssl
+import aiohttp
 import aiosocks
 import asyncio
 import async_requests
-import aiohttp
 
 
 class CheckerResult:

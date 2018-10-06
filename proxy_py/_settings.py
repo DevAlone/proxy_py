@@ -11,9 +11,9 @@ Database settings (do not try to change after creation of the database)
 
 DATABASE_CONNECTION_ARGS = ()
 DATABASE_CONNECTION_KWARGS = {
-    'database': 'test',
-    'user': 'test',
-    'password': 'test',
+    'database': 'proxy_py',
+    'user': 'proxy_py',
+    'password': 'proxy_py',
     'max_connections': 20,
 }
 
@@ -32,11 +32,11 @@ COLLECTORS_DIRS = [
     # 'local/collectors',  # use to add your own collectors
 ]
 
-NUMBER_OF_CONCURRENT_TASKS = 64
+NUMBER_OF_CONCURRENT_TASKS = 128
 # makes aiohttp to not send more
 # than this number of simultaneous requests
 # works by common connector
-NUMBER_OF_SIMULTANEOUS_REQUESTS = 64
+NUMBER_OF_SIMULTANEOUS_REQUESTS = 128
 # the same, but per host
 NUMBER_OF_SIMULTANEOUS_REQUESTS_PER_HOST = NUMBER_OF_SIMULTANEOUS_REQUESTS
 
