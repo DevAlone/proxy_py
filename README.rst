@@ -189,7 +189,13 @@ Read more about API here -> https://github.com/DevAlone/proxy_py/tree/master/doc
 
 How to contribute?
 ******************
-*TODO: write guide about it*
+
+Just fork, do your changes(implement new collector, fix a bug
+or whatever you want) and create pull request.
+
+Here are some useful guides:
+
+`How to create a collector <https://proxy-py.readthedocs.io/en/latest/guides/how_to_create_collector.html>`_
 
 How to test it?
 ***************
