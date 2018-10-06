@@ -1,14 +1,14 @@
 proxy_py README
 ===============
 
-proxy_py is a program which collects proxies, saves them in a database
-and makes periodically checks.
+proxy_py is a program which collects proxies, saves them in
+a database and makes periodically checks.
 It has a server for getting proxies with nice API(see below).
 
 Where is the documentation?
 ***************************
 
-It's here -> http://proxy-py.readthedocs.io
+It's here -> https://proxy-py.readthedocs.io
 
 How to build?
 *************
@@ -48,7 +48,7 @@ I'm too lazy. Can I just use it?
 
 `TODO: update, old version!`
 
-Yes, you can download virtualbox image
+Yep, you can download virtualbox image
 here -> https://drive.google.com/file/d/1oPf6xwOADRH95oZW0vkPr1Uu_iLDe9jc/view?usp=sharing
 
 After downloading check that port forwarding is still working,
@@ -203,7 +203,7 @@ anything, just run
 
 inside virtual environment in proxy_py project directory.
 
-How to deploy on production using supervisor, nginx and postgresql in 8 steps?
+How to deploy on production using supervisor, nginx and postgresql in 9 steps?
 ******************************************************************************
 
 1 Install supervisor, nginx and postgresql
@@ -212,15 +212,26 @@ How to deploy on production using supervisor, nginx and postgresql in 8 steps?
 
     root@server:~$ apt install supervisor nginx postgresql
 
-2 Create virtual environment and install requirements on it
-
-3 Copy settings.py example:
+2 Clone this repository
 
 .. code-block:: bash
 
-    proxy_py@server:~/proxy_py$ cp config_examples/settings.py proxy_py/
+    user@server:~/$ git clone https://github.com/DevAlone/proxy_py.git
 
-4 create unprivileged user in postgresql database
+3 Create virtual environment and install requirements on it
+
+.. code-block:: bash
+
+    user@server:~/proxy_py$ python3 -m venv env
+    user@server:~/proxy_py$ pip3 install -r requirements.txt
+
+4 Copy settings.py example:
+
+.. code-block:: bash
+
+    proxy_py@server:~/proxy_py$ cp config_examples/settings.py ./
+
+5 create unprivileged user in postgresql database
 and change database authentication data in settings.py
 
 .. code-block:: bash
@@ -237,14 +248,14 @@ and change database authentication data in settings.py
         # 'max_connections': 20,
     }
 
-5 Copy supervisor config example and change it for your case
+6 Copy supervisor config example and change it for your case
 
 .. code-block:: bash
 
     cp /home/proxy_py/proxy_py/config_examples/proxy_py.supervisor.conf /etc/supervisor/conf.d/proxy_py.conf
     vim /etc/supervisor/conf.d/proxy_py.conf
 
-6 Copy nginx config example, enable it and change if you need
+7 Copy nginx config example, enable it and change if you need
 
 .. code-block:: bash
 
@@ -252,7 +263,7 @@ and change database authentication data in settings.py
     ln -s /etc/nginx/sites-available/proxy_py /etc/nginx/sites-enabled/
     vim /etc/nginx/sites-available/proxy_py
 
-7 Restart supervisor and Nginx
+8 Restart supervisor and Nginx
 
 .. code-block:: bash
 
@@ -261,7 +272,7 @@ and change database authentication data in settings.py
     /etc/init.d/nginx configtest
     /etc/init.d/nginx restart
 
-8 Enjoy using it on your server!
+9 Enjoy using it on your server!
 
 What is it depend on?
 *********************
