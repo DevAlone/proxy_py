@@ -64,7 +64,7 @@ Yep, here is a prepared docker image
 
 .. code-block::
 
-    docker container start proxy_py
+    docker start proxy_py
 
 It will give you a server on address localhost:55555
 
