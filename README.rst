@@ -54,7 +54,7 @@ Yep, here is a prepared docker image
 
     sudo apt install docker.io
 
-2 Create container
+2 Create a container
 
 .. code-block:: bash
 
