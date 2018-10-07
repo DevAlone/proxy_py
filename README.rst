@@ -46,13 +46,39 @@ How to build?
 I'm too lazy. Can I just use it?
 ********************************
 
-`TODO: update, old version!`
+Yep, here is a prepared docker image
 
-Yep, you can download virtualbox image
-here -> https://drive.google.com/file/d/1oPf6xwOADRH95oZW0vkPr1Uu_iLDe9jc/view?usp=sharing
+1 Install docker. If you're using ubuntu:
 
-After downloading check that port forwarding is still working,
-you need forwarding of 55555 host port to 55555 guest.
+.. code-block:: bash
+
+    sudo apt install docker.io
+
+2 Create container
+
+.. code-block:: bash
+
+    docker create -p 55555:55555 --name proxy_py proxypy/proxy_py:v2.1
+
+3 Run
+
+.. code-block::
+
+    docker container start proxy_py
+
+It will give you a server on address localhost:55555
+
+To see running containers use
+
+.. code-block:: bash
+
+    docker ps
+
+To stop proxy_py use
+
+.. code-block:: bash
+
+    docker stop proxy_py
 
 How to get proxies?
 *******************
