@@ -13,16 +13,8 @@ RUN /etc/init.d/postgresql start && \
     sed -e "s/local   all             all                                     peer/local all all md5/" | \
     tee /etc/postgresql/10/main/pg_hba.conf && \
     /etc/init.d/postgresql stop
-USER root
-#     psql --command "CREATE USER proxy_py WITH SUPERUSER PASSWORD 'proxy_py';" && \
-#     createdb -O docker docker
 
-# RUN su postgres -c '/etc/init.d/postgresql start'
-# RUN su postgres -c 'createuser proxy_py'
-# RUN su postgres -c 'createdb proxy_py'
-# RUN su postgres -c 'psql -c "alter user proxy_py with encrypted password \'proxy_py\';"'
-# RUN su postgres -c 'psql -c "grant all privileges on database proxy_py to proxy_py;"'
-# RUN /etc/init.d/postgresql restart
+USER root
 RUN ls /
 RUN wget https://github.com/DevAlone/proxy_py/archive/master.zip 2> /dev/null
 RUN unzip master.zip
