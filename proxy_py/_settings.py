@@ -78,6 +78,9 @@ PROXY_PROVIDER_SERVER_ADDRESS = {
     'PORT': 55555,
 }
 
+PROXY_PROVIDER_SERVER_MAXIMUM_REQUEST_LENGTH = 1024
+PROXY_PROVIDER_SERVER_MAXIMUM_STRING_FIELD_SIZE = 128
+
 _PROXY_PROVIDER_SERVER_API_CONFIG_FETCH_CONFIG = {
     'fields': [
         'address', 'protocol', 'auth_data', 'domain', 'port', 'last_check_time', 'number_of_bad_checks',

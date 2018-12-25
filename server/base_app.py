@@ -1,14 +1,9 @@
-import asyncio
-
 from proxy_py import settings
 from aiohttp import web
 
 import abc
-import json
-import aiohttp
 import aiohttp_jinja2
 import jinja2
-import inspect
 
 
 class BaseApp:

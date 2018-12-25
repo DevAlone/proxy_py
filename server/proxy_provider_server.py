@@ -1,11 +1,11 @@
-import json
-
 from proxy_py import settings
 from .base_app import BaseApp
 from .api_v1.app import App as ApiV1App
+from .api_v2.app import App as ApiV2App
 from .frontend.app import App as FrontendApp
 from aiohttp import web
 
+import json
 import logging
 import aiohttp
 import aiohttp_jinja2
@@ -49,10 +49,13 @@ class ProxyProviderServer(BaseApp):
     async def setup_router(self):
         api_v1_app = ApiV1App(logger=self.logger)
         await api_v1_app.init()
+        api_v2_app = ApiV2App(logger=self.logger)
+        await api_v2_app.init()
         frontend_app = FrontendApp(logger=self.logger)
         await frontend_app.init()
 
         self._app.add_subapp('/api/v1/', api_v1_app.app)
+        self._app.add_subapp('/api/v2/', api_v2_app.app)
         self._app.add_subapp('/i/', frontend_app.app)
 
     async def setup_middlewares(self):
