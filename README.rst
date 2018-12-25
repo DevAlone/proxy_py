@@ -10,6 +10,13 @@ Where is the documentation?
 
 It's here -> https://proxy-py.readthedocs.io
 
+How to support this project?
+****************************
+
+You can donate here -> https://www.patreon.com/join/2313433
+
+Thank you :)
+
 How to build?
 *************
 
