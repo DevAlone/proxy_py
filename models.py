@@ -2,16 +2,20 @@ from proxy_py import settings
 import peewee
 import peewee_async
 
-db = peewee_async.PooledPostgresqlDatabase(
+raw_db = peewee_async.PooledPostgresqlDatabase(
     *settings.DATABASE_CONNECTION_ARGS,
     **settings.DATABASE_CONNECTION_KWARGS,
 )
 
+# TODO: make it work
+# raw_db.execute_sql('CREATE EXTENSION IF NOT EXISTS tsm_system_rows;')
+raw_db.execute_sql('''CREATE MATERIALIZED VIEW IF NOT EXISTS working_proxies 
+AS SELECT * FROM proxies WHERE number_of_bad_checks = 0;''')
 
 class Proxy(peewee.Model):
     class Meta:
-        database = db
-        db_table = 'proxies'
+        database = raw_db
+        raw_db_table = 'proxies'
         indexes = (
             (('raw_protocol', 'auth_data', 'domain', 'port'), True),
             (('auth_data', 'domain', 'port'), False),  # important!
@@ -109,8 +113,8 @@ class Proxy(peewee.Model):
 
 class ProxyCountItem(peewee.Model):
     class Meta:
-        database = db
-        db_table = 'proxy_count_items'
+        database = raw_db
+        raw_db_table = 'proxy_count_items'
 
     timestamp = peewee.IntegerField(primary_key=True)
     good_proxies_count = peewee.IntegerField(null=False)
@@ -120,8 +124,8 @@ class ProxyCountItem(peewee.Model):
 
 class CollectorState(peewee.Model):
     class Meta:
-        database = db
-        db_table = 'collector_states'
+        database = raw_db
+        raw_db_table = 'collector_states'
         indexes = (
             (('processing_period',), False),
             (('last_processing_time',), False),
@@ -139,14 +143,14 @@ class CollectorState(peewee.Model):
 
 class StatBaseModel(peewee.Model):
     class Meta:
-        database = db
+        database = raw_db
 
     timestamp = peewee.BigIntegerField(primary_key=True)
 
 
 class NumberOfProxiesToProcess(StatBaseModel):
     class Meta:
-        db_table = 'number_of_proxies_to_process'
+        raw_db_table = 'number_of_proxies_to_process'
 
     good_proxies = peewee.IntegerField(null=False)
     bad_proxies = peewee.IntegerField(null=False)
@@ -155,14 +159,14 @@ class NumberOfProxiesToProcess(StatBaseModel):
 
 class NumberOfCollectorsToProcess(StatBaseModel):
     class Meta:
-        db_table = 'number_of_collectors_to_process'
+        raw_db_table = 'number_of_collectors_to_process'
 
     value = peewee.IntegerField(null=False)
 
 
 class ProcessorProxiesQueueSize(StatBaseModel):
     class Meta:
-        db_table = 'processor_proxies_queue_size'
+        raw_db_table = 'processor_proxies_queue_size'
 
     value = peewee.IntegerField(null=False)
 
@@ -175,4 +179,4 @@ NumberOfProxiesToProcess.create_table(_silent)
 NumberOfCollectorsToProcess.create_table(_silent)
 ProcessorProxiesQueueSize.create_table(_silent)
 
-db = peewee_async.Manager(db)
+db = peewee_async.Manager(raw_db)

@@ -81,7 +81,7 @@ PROXY_PROVIDER_SERVER_ADDRESS = {
 PROXY_PROVIDER_SERVER_MAXIMUM_REQUEST_LENGTH = 1024
 PROXY_PROVIDER_SERVER_MAXIMUM_STRING_FIELD_SIZE = 128
 
-_PROXY_PROVIDER_SERVER_API_CONFIG_FETCH_CONFIG = {
+PROXY_PROVIDER_SERVER_API_CONFIG_FETCH_CONFIG = {
     'fields': [
         'address', 'protocol', 'auth_data', 'domain', 'port', 'last_check_time', 'number_of_bad_checks',
         'bad_proxy', 'uptime', 'response_time', 'white_ipv4', 'white_ipv6', 'city', 'country_code', 'region'
@@ -97,8 +97,8 @@ PROXY_PROVIDER_SERVER_API_CONFIG = {
     'proxy': {
         'model_class': ['models', 'Proxy'],
         'methods': {
-            'get': _PROXY_PROVIDER_SERVER_API_CONFIG_FETCH_CONFIG,
-            'count': _PROXY_PROVIDER_SERVER_API_CONFIG_FETCH_CONFIG,
+            'get': PROXY_PROVIDER_SERVER_API_CONFIG_FETCH_CONFIG,
+            'count': PROXY_PROVIDER_SERVER_API_CONFIG_FETCH_CONFIG,
         }
     }
 }
