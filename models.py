@@ -15,7 +15,7 @@ AS SELECT * FROM proxies WHERE number_of_bad_checks = 0;''')
 class Proxy(peewee.Model):
     class Meta:
         database = raw_db
-        raw_db_table = 'proxies'
+        db_table = 'proxies'
         indexes = (
             (('raw_protocol', 'auth_data', 'domain', 'port'), True),
             (('auth_data', 'domain', 'port'), False),  # important!
@@ -114,7 +114,7 @@ class Proxy(peewee.Model):
 class ProxyCountItem(peewee.Model):
     class Meta:
         database = raw_db
-        raw_db_table = 'proxy_count_items'
+        db_table = 'proxy_count_items'
 
     timestamp = peewee.IntegerField(primary_key=True)
     good_proxies_count = peewee.IntegerField(null=False)
@@ -125,7 +125,7 @@ class ProxyCountItem(peewee.Model):
 class CollectorState(peewee.Model):
     class Meta:
         database = raw_db
-        raw_db_table = 'collector_states'
+        db_table = 'collector_states'
         indexes = (
             (('processing_period',), False),
             (('last_processing_time',), False),
@@ -150,7 +150,7 @@ class StatBaseModel(peewee.Model):
 
 class NumberOfProxiesToProcess(StatBaseModel):
     class Meta:
-        raw_db_table = 'number_of_proxies_to_process'
+        db_table = 'number_of_proxies_to_process'
 
     good_proxies = peewee.IntegerField(null=False)
     bad_proxies = peewee.IntegerField(null=False)
@@ -159,14 +159,14 @@ class NumberOfProxiesToProcess(StatBaseModel):
 
 class NumberOfCollectorsToProcess(StatBaseModel):
     class Meta:
-        raw_db_table = 'number_of_collectors_to_process'
+        db_table = 'number_of_collectors_to_process'
 
     value = peewee.IntegerField(null=False)
 
 
 class ProcessorProxiesQueueSize(StatBaseModel):
     class Meta:
-        raw_db_table = 'processor_proxies_queue_size'
+        db_table = 'processor_proxies_queue_size'
 
     value = peewee.IntegerField(null=False)
 
