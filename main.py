@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-
+import materialized_view_updater
 from proxy_py import settings
 from processor import Processor
 from server.proxy_provider_server import ProxyProviderServer
@@ -107,6 +107,7 @@ def main():
         loop.run_until_complete(asyncio.gather(*[
             proxy_processor.worker(),
             statistics.worker(),
+            materialized_view_updater.worker(),
         ]))
         BaseChecker.clean()
     except KeyboardInterrupt:
