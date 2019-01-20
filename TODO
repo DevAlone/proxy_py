@@ -14,3 +14,4 @@ stop using ipinfo.io because of rate limits
 remove processor proxies queue model
 write number of asyncio tasks to DB to be able to draw more grahps(everybody loves statistics)
 fix issue with domains like this 08.8.8.8
+refresh materialized view periodically
