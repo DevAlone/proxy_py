@@ -19,6 +19,7 @@ class Proxy(peewee.Model):
             (('domain',), False),
             (('port',), False),
             (('number_of_bad_checks',), False),
+            (('next_check_time',), False),
             (('last_check_time',), False),
             (('checking_period',), False),
             (('uptime',), False),
@@ -42,6 +43,7 @@ class Proxy(peewee.Model):
 
     checking_period = peewee.IntegerField(default=settings.MIN_PROXY_CHECKING_PERIOD, null=False)
     last_check_time = peewee.IntegerField(default=0, null=False)
+    next_check_time = peewee.IntegerField(default=0, null=False)
     number_of_bad_checks = peewee.IntegerField(default=0, null=False)
     uptime = peewee.IntegerField(default=None, null=True)
     bad_uptime = peewee.IntegerField(default=None, null=True)

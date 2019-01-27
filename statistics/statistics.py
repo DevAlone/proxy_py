@@ -55,7 +55,7 @@ async def number_of_proxies_to_process(timestamp):
     good_proxies_count = await db.count(
         Proxy.select().where(
             Proxy.number_of_bad_checks == 0,
-            Proxy.last_check_time < timestamp - Proxy.checking_period,
+            Proxy.next_check_time < timestamp - Proxy.checking_period,
         )
     )
 
@@ -63,7 +63,7 @@ async def number_of_proxies_to_process(timestamp):
         Proxy.select().where(
             Proxy.number_of_bad_checks > 0,
             Proxy.number_of_bad_checks < settings.DEAD_PROXY_THRESHOLD,
-            Proxy.last_check_time < timestamp - settings.BAD_PROXY_CHECKING_PERIOD,
+            Proxy.next_check_time < timestamp - settings.BAD_PROXY_CHECKING_PERIOD,
         )
     )
 
@@ -71,7 +71,7 @@ async def number_of_proxies_to_process(timestamp):
         Proxy.select().where(
             Proxy.number_of_bad_checks >= settings.DEAD_PROXY_THRESHOLD,
             Proxy.number_of_bad_checks < settings.DO_NOT_CHECK_ON_N_BAD_CHECKS,
-            Proxy.last_check_time < timestamp - settings.DEAD_PROXY_CHECKING_PERIOD,
+            Proxy.next_check_time < timestamp - settings.DEAD_PROXY_CHECKING_PERIOD,
         )
     )
 

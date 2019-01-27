@@ -74,8 +74,8 @@ class Processor:
                 proxies = await db.execute(
                     Proxy.select().where(
                         Proxy.number_of_bad_checks == 0,
-                        Proxy.last_check_time < time.time() - Proxy.checking_period,
-                    ).order_by(Proxy.last_check_time).limit(settings.NUMBER_OF_CONCURRENT_TASKS)
+                        Proxy.next_check_time < time.time(),
+                    ).order_by(Proxy.next_check_time).limit(settings.NUMBER_OF_CONCURRENT_TASKS)
                 )
                 if proxies:
                     self.good_proxies_are_processed = False
@@ -92,8 +92,8 @@ class Processor:
                     Proxy.select().where(
                         Proxy.number_of_bad_checks > 0,
                         Proxy.number_of_bad_checks < settings.DEAD_PROXY_THRESHOLD,
-                        Proxy.last_check_time < time.time() - settings.BAD_PROXY_CHECKING_PERIOD,
-                    ).order_by(Proxy.last_check_time).limit(settings.NUMBER_OF_CONCURRENT_TASKS)
+                        Proxy.next_check_time < time.time(),
+                    ).order_by(Proxy.next_check_time).limit(settings.NUMBER_OF_CONCURRENT_TASKS)
                 )
 
                 await self.add_proxies_to_queue(proxies)
@@ -106,8 +106,8 @@ class Processor:
                     Proxy.select().where(
                         Proxy.number_of_bad_checks >= settings.DEAD_PROXY_THRESHOLD,
                         Proxy.number_of_bad_checks < settings.DO_NOT_CHECK_ON_N_BAD_CHECKS,
-                        Proxy.last_check_time < time.time() - settings.DEAD_PROXY_CHECKING_PERIOD,
-                    ).order_by(Proxy.last_check_time).limit(settings.NUMBER_OF_CONCURRENT_TASKS)
+                        Proxy.next_check_time < time.time(),
+                    ).order_by(Proxy.next_check_time).limit(settings.NUMBER_OF_CONCURRENT_TASKS)
                 )
 
                 await self.add_proxies_to_queue(proxies)
@@ -293,6 +293,7 @@ class Processor:
                     )
 
                     proxy.last_check_time = int(time.time())
+                    proxy.next_check_time = proxy.last_check_time + proxy.checking_period
                     proxy.number_of_bad_checks += 1
                     proxy.uptime = int(time.time())
 
@@ -373,5 +374,9 @@ class Processor:
             proxy.checking_period = settings.MIN_PROXY_CHECKING_PERIOD \
                 + (checking_time / settings.PROXY_CHECKING_TIMEOUT) \
                 * (settings.MAX_PROXY_CHECKING_PERIOD - settings.MIN_PROXY_CHECKING_PERIOD)
+
+            # TODO: bad and not working proxies period
+
+            proxy.next_check_time = proxy.last_check_time + proxy.checking_period
 
             await db.update(proxy)
