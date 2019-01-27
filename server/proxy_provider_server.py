@@ -1,3 +1,5 @@
+import asyncio
+
 from proxy_py import settings
 from .base_app import BaseApp
 from .api_v1.app import App as ApiV1App
@@ -12,7 +14,7 @@ import aiohttp_jinja2
 
 
 class ProxyProviderServer(BaseApp):
-    def __init__(self, host, port, processor):
+    def __init__(self, host, port):
         logger = logging.getLogger("proxy_py/server")
 
         if settings.DEBUG:
@@ -30,21 +32,22 @@ class ProxyProviderServer(BaseApp):
 
         super(ProxyProviderServer, self).__init__(logger)
 
-        self._processor = processor
         self.host = host
         self.port = port
         self._request_number = 0
 
-    async def start(self, loop):
-        await self.init()
+    def start(self, loop):
+        loop.run_until_complete(self.init())
 
+        '''
         server = await loop.create_server(
             self._app.make_handler(),
             self.host,
             self.port
         )
+        '''
 
-        return server
+        return web.run_app(self._app, host=self.host, port=self.port, loop=loop)
 
     async def setup_router(self):
         api_v1_app = ApiV1App(logger=self.logger)

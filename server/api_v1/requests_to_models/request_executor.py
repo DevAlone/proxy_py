@@ -1,3 +1,5 @@
+import peewee_async
+
 from proxy_py import settings
 from models import db
 from ..requests_to_models.request import Request, GetRequest, CountRequest, FetchRequest

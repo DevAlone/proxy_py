@@ -1,16 +1,23 @@
 #!/usr/bin/env python3
-import materialized_view_updater
+import uvloop
+
+uvloop.install()
+
 from proxy_py import settings
 from processor import Processor
 from server.proxy_provider_server import ProxyProviderServer
 from statistics import statistics
 from checkers.base_checker import BaseChecker
+from tools import test_collector
 
+import materialized_view_updater
 import asyncio
 import logging
 import argparse
+import subprocess
+import sys
 
-from tools import test_collector
+
 
 test_collector_path = None
 main_logger = None
@@ -84,32 +91,24 @@ def prepare_loggers():
     main_logger.addHandler(logger_file_handler)
 
 
-def main():
+async def core():
+
     process_cmd_arguments()
     prepare_loggers()
 
-    loop = asyncio.get_event_loop()
-
     if test_collector_path is not None:
-        return loop.run_until_complete(test_collector.run(test_collector_path))
+        return await test_collector.run(test_collector_path)
 
     proxy_processor = Processor.get_instance()
 
-    proxy_provider_server = ProxyProviderServer(
-        settings.PROXY_PROVIDER_SERVER_ADDRESS['HOST'],
-        settings.PROXY_PROVIDER_SERVER_ADDRESS['PORT'],
-        proxy_processor,
-    )
-
-    loop.run_until_complete(proxy_provider_server.start(loop))
-
     try:
-        loop.run_until_complete(asyncio.gather(*[
+        code = await asyncio.gather(*[
             proxy_processor.worker(),
             statistics.worker(),
             materialized_view_updater.worker(),
-        ]))
+        ])
         BaseChecker.clean()
+        return code
     except KeyboardInterrupt:
         pass
     except BaseException as ex:
@@ -118,6 +117,32 @@ def main():
         return 1
 
     return 0
+
+
+def server():
+    proxy_provider_server = ProxyProviderServer(
+        settings.PROXY_PROVIDER_SERVER_ADDRESS['HOST'],
+        settings.PROXY_PROVIDER_SERVER_ADDRESS['PORT'],
+    )
+
+    return proxy_provider_server.start(asyncio.get_event_loop())
+
+
+def main():
+    if len(sys.argv) < 2:
+        # run default configuration
+        p = subprocess.Popen(["python", sys.argv[0], 'server'])
+
+        code = asyncio.get_event_loop().run_until_complete(core())
+        p.wait()
+        return code
+
+    command = sys.argv[1].strip()
+    sys.argv = sys.argv[1:]
+    return {
+        'core': lambda: asyncio.get_event_loop().run_until_complete(core()),
+        'server': server,
+    }[command]()
 
 
 if __name__ == "__main__":

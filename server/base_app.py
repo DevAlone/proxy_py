@@ -37,6 +37,9 @@ class BaseApp:
     def log_error(self, *args, **kwargs):
         self.log('error', *args, **kwargs)
 
+    def log_exception(self, *args, **kwargs):
+        self.log('exception', *args, **kwargs)
+
     def log_warning(self, *args, **kwargs):
         self.log('warning', *args, **kwargs)
 
@@ -47,15 +50,11 @@ class BaseApp:
         self.log('debug', *args, **kwargs)
 
     def log(self, level, request, message):
-        if False and settings.DEBUG:
-            client_host, client_port = request.transport.get_extra_info("peername")
-            client_ip = "{}:{}".format(client_host, client_port)
-        else:
-            # behind nginx or other reverse proxy
-            client_ip = str(request.headers.get("X-Real-IP", "None"))
+        # behind nginx or other reverse proxy
+        client_ip = str(request.headers.get("X-Real-IP", "None"))
 
-            if client_ip == "None" or client_ip.startswith("127.0.0.1"):
-                self.logger.error("Your reverse proxy doesn't present user's IP", extra={"client_ip": client_ip})
+        if client_ip == "None" or client_ip.startswith("127.0.0.1"):
+            self.logger.error("Your reverse proxy doesn't present user's IP", extra={"client_ip": client_ip})
 
         getattr(self.logger, level)(message, extra={
             "client_ip": client_ip,

@@ -42,6 +42,7 @@ class ApiRequestHandler:
                     ex
                 )
             )
+            self.app.log_exception(request, ex)
 
             response = {
                 'status': 'error',

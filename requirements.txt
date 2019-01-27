@@ -12,3 +12,4 @@ py_mini_racer
 pytest
 pytest-asyncio
 termcolor
+uvloop
