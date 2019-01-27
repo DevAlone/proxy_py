@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+import os
+
 import uvloop
 
 uvloop.install()
@@ -131,8 +133,10 @@ def server():
 def main():
     if len(sys.argv) < 2:
         # run default configuration
+        # server
         p = subprocess.Popen(["python", sys.argv[0], 'server'])
 
+        # and core
         code = asyncio.get_event_loop().run_until_complete(core())
         p.wait()
         return code
