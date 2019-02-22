@@ -110,11 +110,11 @@ class BaseChecker:
             async with session.request(
                     self.request_type, self.url, proxy=proxy_address, timeout=timeout, headers=headers) as \
                     response:
-                is_working = await self._check(response, checker_result)
+                is_working = await self.validate(response, checker_result)
 
         return is_working, checker_result
 
-    async def _check(self, response: aiohttp.ClientResponse, checker_result: CheckerResult) -> bool:
+    async def validate(self, response: aiohttp.ClientResponse, checker_result: CheckerResult) -> bool:
         """
         Implement this method. It will get response from url with http method you provided in constructor
 

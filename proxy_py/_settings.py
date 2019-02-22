@@ -1,5 +1,4 @@
-from checkers.d3d_info_checker import D3DInfoChecker
-# from checkers.ipinfo_io_checker import IPInfoIOChecker
+from checkers.google_com_checker import GoogleComChecker
 
 
 # enable to get more information in logs
@@ -65,8 +64,7 @@ NUMBER_OF_CONCURRENT_COLLECTORS = 1
 MINIMUM_NUMBER_OF_CHECKERS_PER_PROXY = 1
 
 PROXY_CHECKERS = [
-    # IPInfoIOChecker,
-    D3DInfoChecker,
+    GoogleComChecker,
 ]
 
 """

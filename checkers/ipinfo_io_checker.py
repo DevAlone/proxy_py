@@ -6,7 +6,7 @@ class IPInfoIOChecker(BaseChecker):
     def __init__(self, timeout=None):
         super(IPInfoIOChecker, self).__init__("https://ipinfo.io/json", timeout=timeout)
 
-    async def _check(self, response: aiohttp.ClientResponse, checker_result: CheckerResult) -> bool:
+    async def validate(self, response: aiohttp.ClientResponse, checker_result: CheckerResult) -> bool:
         if response.status != 200:
             return False
 

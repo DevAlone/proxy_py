@@ -1,6 +1,5 @@
 from models import Proxy, ProxyCountItem, NumberOfProxiesToProcess, db
 from models import CollectorState, NumberOfCollectorsToProcess, ProcessorProxiesQueueSize
-from processor import Processor
 from proxy_py import settings
 import time
 import asyncio
