@@ -134,7 +134,7 @@ def main():
     if len(sys.argv) < 2:
         # run default configuration
         # server
-        p = subprocess.Popen(["python", sys.argv[0], 'server'])
+        p = subprocess.Popen(["python3", sys.argv[0], 'server'])
 
         # and core
         code = asyncio.get_event_loop().run_until_complete(core())
