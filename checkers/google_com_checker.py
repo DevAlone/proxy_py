@@ -5,7 +5,7 @@ from checkers.base_checker import BaseChecker, CheckerResult
 
 class GoogleComChecker(BaseChecker):
     def __init__(self, timeout=None):
-        super(GoogleComChecker, self).__init__("https://google.com", timeout=timeout)
+        super(GoogleComChecker, self).__init__("https://www.google.com/humans.txt", timeout=timeout)
 
     async def validate(self, response: aiohttp.ClientResponse, checker_result: CheckerResult):
         '''

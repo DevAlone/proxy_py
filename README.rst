@@ -195,7 +195,6 @@ There is lib.ru inspired web interface which consists of these pages(with slash 
 - http://localhost:55555/i/get/proxy/
 - http://localhost:55555/i/get/proxy_count_item/
 - http://localhost:55555/i/get/number_of_proxies_to_process/
-- http://localhost:55555/i/get/number_of_proxies_to_process/
 - http://localhost:55555/i/get/collector_state/
 
 How to contribute?
