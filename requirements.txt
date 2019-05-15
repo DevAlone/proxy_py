@@ -8,6 +8,7 @@ peewee-async
 aiopg
 recommonmark
 sphinx_rtd_theme
+sphinx
 py_mini_racer
 pytest
 pytest-asyncio

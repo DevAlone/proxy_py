@@ -1,4 +1,4 @@
-collectors package
+statistics package
 ==================
 
 Submodules
@@ -6,13 +6,12 @@ Submodules
 
 .. toctree::
 
-   collectors.abstract_collector
-   collectors.pages_collector
+   statistics.statistics
 
 Module contents
 ---------------
 
-.. automodule:: collectors
+.. automodule:: statistics
     :members:
     :undoc-members:
     :show-inheritance:

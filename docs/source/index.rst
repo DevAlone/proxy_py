@@ -12,7 +12,7 @@ Contents:
    :maxdepth: 2
 
    readme_link
-   api_v1_overview.md
+   api_overview.md
 
    guides/guides
 

@@ -8,6 +8,7 @@ Submodules
 
    checkers.base_checker
    checkers.d3d_info_checker
+   checkers.google_com_checker
    checkers.ipinfo_io_checker
 
 Module contents

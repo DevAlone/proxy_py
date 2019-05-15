@@ -17,43 +17,10 @@ You can donate here -> https://www.patreon.com/join/2313433
 
 Thank you :)
 
-How to build?
-*************
+How to install?
+***************
 
-1 Clone this repository
-
-.. code-block:: bash
-
-    git clone https://github.com/DevAlone/proxy_py.git
-
-2 Install requirements
-
-.. code-block:: bash
-
-    cd proxy_py
-    pip3 install -r requirements.txt
-
-3 Create settings file
-
-.. code-block:: bash
-
-    cp config_examples/settings.py proxy_py/settings.py
-
-4 Install postgresql and change database configuration in settings.py file
-
-5 (Optional) Configure alembic
-
-6 Run your application
-
-.. code-block:: bash
-    python3 main.py
-
-7 Enjoy!
-
-I'm too lazy. Can I just use it?
-********************************
-
-Yep, here is a prepared docker image
+There is a prepared docker image.
 
 1 Install docker. If you're using ubuntu:
 
@@ -218,7 +185,18 @@ Example using aiohttp library:
 How to interact with API?
 *************************
 
-Read more about API here -> https://github.com/DevAlone/proxy_py/tree/master/docs/API.md
+Read more about API here -> https://proxy-py.readthedocs.io/en/latest/api_overview.html
+
+What about WEB interface?
+*************************
+
+There is lib.ru inspired web interface which consists of these pages(with slash at the end):
+
+- http://localhost:55555/i/get/proxy/
+- http://localhost:55555/i/get/proxy_count_item/
+- http://localhost:55555/i/get/number_of_proxies_to_process/
+- http://localhost:55555/i/get/number_of_proxies_to_process/
+- http://localhost:55555/i/get/collector_state/
 
 How to contribute?
 ******************
@@ -242,78 +220,35 @@ anything, just run
 
 inside virtual environment in proxy_py project directory.
 
-How to deploy on production using supervisor, nginx and postgresql in 9 steps?
-******************************************************************************
+How to build from scratch?
+**************************
 
-1 Install supervisor, nginx and postgresql
-
-.. code-block:: bash
-
-    root@server:~$ apt install supervisor nginx postgresql
-
-2 Clone this repository
+1 Clone this repository
 
 .. code-block:: bash
 
-    user@server:~/$ git clone https://github.com/DevAlone/proxy_py.git
+    git clone https://github.com/DevAlone/proxy_py.git
 
-3 Create virtual environment and install requirements on it
-
-.. code-block:: bash
-
-    user@server:~/proxy_py$ python3 -m venv env
-    user@server:~/proxy_py$ pip3 install -r requirements.txt
-
-4 Copy settings.py example:
+2 Install requirements
 
 .. code-block:: bash
 
-    proxy_py@server:~/proxy_py$ cp config_examples/settings.py ./
+    cd proxy_py
+    pip3 install -r requirements.txt
 
-5 create unprivileged user in postgresql database
-and change database authentication data in settings.py
-
-.. code-block:: bash
-
-    proxy_py@server:~/proxy_py$ vim proxy_py/settings.py
-
-.. code-block:: python
-
-    DATABASE_CONNECTION_KWARGS = {
-        'database': 'YOUR_POSTGRES_DATABASE',
-        'user': 'YOUR_POSTGRES_USER',
-        'password': 'YOUR_POSTGRES_PASSWORD',
-        # number of simultaneous connections
-        # 'max_connections': 20,
-    }
-
-6 Copy supervisor config example and change it for your case
+3 Create settings file
 
 .. code-block:: bash
 
-    cp /home/proxy_py/proxy_py/config_examples/proxy_py.supervisor.conf /etc/supervisor/conf.d/proxy_py.conf
-    vim /etc/supervisor/conf.d/proxy_py.conf
+    cp config_examples/settings.py proxy_py/settings.py
 
-7 Copy nginx config example, enable it and change if you need
+4 Install postgresql and change database configuration in settings.py file
 
-.. code-block:: bash
+5 (Optional) Configure alembic
 
-    cp /home/proxy_py/proxy_py/config_examples/proxy_py.nginx.conf /etc/nginx/sites-available/proxy_py
-    ln -s /etc/nginx/sites-available/proxy_py /etc/nginx/sites-enabled/
-    vim /etc/nginx/sites-available/proxy_py
-
-8 Restart supervisor and Nginx
+6 Run your application
 
 .. code-block:: bash
+    python3 main.py
 
-    supervisorctl reread
-    supervisorctl update
-    /etc/init.d/nginx configtest
-    /etc/init.d/nginx restart
-
-9 Enjoy using it on your server!
-
-What is it depend on?
-*********************
-
-See *requirements.txt*
+7 Enjoy!

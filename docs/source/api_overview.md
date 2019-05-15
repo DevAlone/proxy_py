@@ -1,4 +1,4 @@
-# proxy_py API
+# proxy_py API v1
 
 proxy_py expects HTTP POST requests with JSON as a body, so you need
 to add header `Content-Type: application/json` and send correct
@@ -7,8 +7,8 @@ JSON document.
 Example of correct request:
 ```json
 {
-  "model": "proxy",
-  "method": "get"
+  "method": "get",
+  "model": "proxy"
 }
 ```
 
@@ -16,7 +16,7 @@ Response is also HTTP with JSON and status code depending on whether
 error happened or not.
 
 * 200 if there wasn't error
-* 400 if you sent bad request
+* 400 if you sent a bad request
 * 500 if there was an error during execution your request or in some
 other cases
 
@@ -35,32 +35,33 @@ Now it's only supported to work with `proxy` model.
 
 ### get method
 
-`get` method supports following keys:
-* `order_by` (string) - specifies ordering fields as comma separated
+`get` method supports the following keys:
+* `order_by` (string) - specifies ordering fields as comma separated ("response_time" if not provided)
 value.
 
-Examples:
+Explanation:
 
 `"uptime"` just sorts proxies by uptime field ascending.
 
 Note: `uptime` is the timestamp from which proxy is working,
 NOT proxy's working time
 
-To sort descending use `-` before field name.
+To sort descending use `-`(minus) before the field name.
 
 `"-response_time"` returns proxies with maximum response_time first
 (in microseconds)
 
-It's possible to sort using multiple fields
+It's also possible to sort using multiple fields
 
 `"number_of_bad_checks, response_time"` returns proxies with minimum
 `number_of_bad_checks` first, if there are proxies with the same
 `number_of_bad_checks`, sorts them by `response_time`
 
-* `limit` (integer) -  specifying how many proxies to return
-* `offset` (integer) - specifying how many proxies to skip
+* `limit` (integer) -  specifies how many proxies to return (1024 if not provided)
+* `offset` (integer) - specifies how many proxies to skip (0 if not provided)
 
 Example of `get` request:
+
 ```json
 
 {
@@ -100,7 +101,9 @@ Response
 }
 ```
 
-* `count` (integer) - total number of proxies for that request
+Response fiels:
+
+* `count` (integer) - total number of proxies for that request(how many you can fetch increasing offset)
 * `data` (array) - list of proxies
 * `has_more` (boolean) - value indicating whether you can increase
 offset to get more proxies or not
@@ -132,4 +135,18 @@ Response:
 
 ### count method
 
-Same as get, but not returns data
+Same as get, but doesn't return data
+
+# proxy_py API v2
+
+Second version of API has only 2 methods so far 
+
+```bash
+curl https://localhost:55555/api/v2/get_proxy_for_id --data '{"id": "ID"}'
+```            
+```bash
+curl https://localhost:55555/api/v2/get_proxies_for_id --data '{"id": "ID", "number": 2}'
+```
+
+get_proxy_for_id should return the best proxy for a given ID avoiding overlapping with other IDs, but so far it just returns a random one ignoring ID at all.
+get_proxies_for_id is the same, but also has a parameter `number` to specify the number of proxies to return.

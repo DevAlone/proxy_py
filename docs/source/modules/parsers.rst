@@ -1,18 +1,17 @@
-collectors package
-==================
+parsers package
+===============
 
 Submodules
 ----------
 
 .. toctree::
 
-   collectors.abstract_collector
-   collectors.pages_collector
+   parsers.regex_parser
 
 Module contents
 ---------------
 
-.. automodule:: collectors
+.. automodule:: parsers
     :members:
     :undoc-members:
     :show-inheritance:
