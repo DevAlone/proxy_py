@@ -16,10 +16,7 @@ RUN /etc/init.d/postgresql start && \
 
 USER root
 RUN wget https://github.com/DevAlone/proxy_py/archive/v2.2.1.zip -O master.zip 2> /dev/null
-RUN unzip master.zip
-RUN rm master.zip 
-RUN mv proxy_py-* proxy_py
-RUN cd proxy_py
+RUN unzip master.zip; rm master.zip; mv proxy_py-* proxy_py; cd proxy_py
 WORKDIR proxy_py
 RUN pip3 install -r requirements.txt
 RUN cp config_examples/settings.py /proxy_py/proxy_py/
