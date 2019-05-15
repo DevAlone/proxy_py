@@ -32,7 +32,7 @@ There is a prepared docker image.
 
 .. code-block:: bash
 
-    docker create -p 55555:55555 --name proxy_py proxypy/proxy_py:v2.1
+    docker create -p 55555:55555 --name proxy_py devalone/proxy_py:v2.2
 
 3 Run
 
