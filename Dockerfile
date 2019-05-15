@@ -15,11 +15,10 @@ RUN /etc/init.d/postgresql start && \
     /etc/init.d/postgresql stop
 
 USER root
-RUN ls /
-RUN wget https://github.com/DevAlone/proxy_py/archive/master.zip 2> /dev/null
+RUN wget https://github.com/DevAlone/proxy_py/archive/v2.2.zip -O master.zip 2> /dev/null
 RUN unzip master.zip
 RUN rm master.zip 
-RUN mv proxy_py-master proxy_py
+RUN mv proxy_py-* proxy_py
 RUN cd proxy_py
 WORKDIR proxy_py
 RUN pip3 install -r requirements.txt
