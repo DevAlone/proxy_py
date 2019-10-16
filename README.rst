@@ -251,3 +251,11 @@ How to build from scratch?
     python3 main.py
 
 7 Enjoy!
+
+
+Mirrors
+*******
+
+* https://github.com/DevAlone/proxy_py
+* https://gitlab.com/DevAlone/proxy_py
+* https://bitbucket.org/d3dev/proxy_py
