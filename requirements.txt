@@ -1,11 +1,11 @@
 aiohttp==2.3.10
 aiohttp-jinja2==0.16.0
-aiosocks
-lxml
+aiosocks==0.2.6
+lxml==4.3.1
 fake-useragent
 jinja2
-peewee-async
-aiopg
+peewee-async==0.5.12
+aiopg==0.16.0
 recommonmark
 sphinx_rtd_theme
 sphinx
