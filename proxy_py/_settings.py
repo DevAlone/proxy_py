@@ -1,8 +1,13 @@
 from checkers.google_com_checker import GoogleComChecker
 
+import string
+import os
+import ast
+
 
 # enable to get more information in logs
 DEBUG = False
+
 
 """
 Database settings (do not try to change after creation of the database)
@@ -18,6 +23,7 @@ DATABASE_CONNECTION_KWARGS = {
 
 DB_MAX_DOMAIN_LENGTH = 128
 DB_AUTH_DATA_MAX_LENGTH = 64
+
 
 """
 Fetcher settings
@@ -67,6 +73,7 @@ PROXY_CHECKERS = [
     GoogleComChecker,
 ]
 
+
 """
 Server settings
 """
@@ -81,13 +88,20 @@ PROXY_PROVIDER_SERVER_MAXIMUM_STRING_FIELD_SIZE = 128
 
 PROXY_PROVIDER_SERVER_API_CONFIG_FETCH_CONFIG = {
     'fields': [
-        'address', 'protocol', 'auth_data', 'domain', 'port', 'last_check_time', 'next_check_time', 'number_of_bad_checks',
-        'bad_proxy', 'uptime', 'response_time', 'white_ipv4', 'white_ipv6', 'city', 'country_code', 'region'
+        'address', 'protocol', 'auth_data', 'domain', 'port',
+        'last_check_time', 'next_check_time',
+        'number_of_bad_checks', 'bad_proxy', 'uptime',
+        'response_time', 'white_ipv4', 'white_ipv6',
+        'city', 'country_code', 'region'
     ],
     'filter_fields': [
-        'last_check_time', 'protocol', 'number_of_bad_checks', 'bad_proxy', 'uptime', 'response_time'
+        'last_check_time', 'protocol', 'number_of_bad_checks', 'bad_proxy',
+        'uptime', 'response_time'
     ],
-    'order_by_fields': ['last_check_time', 'number_of_bad_checks', 'uptime', 'response_time', 'country_code'],
+    'order_by_fields': [
+        'last_check_time', 'number_of_bad_checks', 'uptime', 'response_time',
+        'country_code'
+    ],
     'default_order_by_fields': ['response_time', ],
 }
 
@@ -102,3 +116,33 @@ PROXY_PROVIDER_SERVER_API_CONFIG = {
 }
 
 TEMPLATES_PATH = "server/templates"
+
+
+"""
+Loading from the environment
+"""
+
+
+def load_settings_from_environment():
+    for key, val in globals().items():
+        # filter only variables with capital letters or digits or undescore
+        rest = "".join([
+            ch for ch in key
+            if ch not in string.ascii_uppercase and ch not in string.digits and ch != '_'
+        ])
+        if len(rest) > 0:
+            continue
+
+        env_key = "PROXY_PY_" + key
+        if env_key in os.environ:
+            env_value = os.environ[env_key]
+            try:
+                globals()[key] = ast.literal_eval(env_value)
+            except:
+                raise Exception(
+                    f"An error happened during parsing environment value. " +
+                    f"Key = {env_key}, Value = {env_value}"
+                )
+
+
+load_settings_from_environment()
