@@ -1,24 +1,25 @@
 #!/usr/bin/env python3
+
+# should be called before everything else
+def init_uvloop():
+    import uvloop
+    uvloop.install()
+
+init_uvloop()
+
 import os
-
-import uvloop
-
-uvloop.install()
-
 from proxy_py import settings
 from processor import Processor
 from server.proxy_provider_server import ProxyProviderServer
 from statistics import statistics
 from checkers.base_checker import BaseChecker
 from tools import test_collector
-
 import materialized_view_updater
 import asyncio
 import logging
 import argparse
 import subprocess
 import sys
-
 
 
 test_collector_path = None
@@ -37,11 +38,13 @@ def process_cmd_arguments():
             raise argparse.ArgumentTypeError("Boolean value expected.")
 
     cmd_parser = argparse.ArgumentParser()
-    cmd_parser.add_argument("--debug", type=str_to_bool, help="override settings' debug value")
+    cmd_parser.add_argument("--debug", type=str_to_bool,
+            help="override settings' debug value")
     cmd_parser.add_argument(
-        "--proxy-checking-timeout", type=float, help="override settings' proxy checking timeout"
-    )
-    cmd_parser.add_argument("--test-collector", help="test collector with a given path")
+            "--proxy-checking-timeout", type=float, help="override settings' proxy checking timeout"
+            )
+    cmd_parser.add_argument(
+            "--test-collector", help="test collector with a given path")
 
     args = cmd_parser.parse_args()
 
@@ -64,10 +67,10 @@ def prepare_loggers():
     asyncio_logger_file_handler = logging.FileHandler("logs/asyncio.log")
     asyncio_logger_file_handler.setLevel(logging.DEBUG)
     asyncio_logger_file_handler.setFormatter(
-        logging.Formatter(
-            "%(levelname)s ~ %(asctime)s ~ %(funcName)30s() - %(message)s"
-        )
-    )
+            logging.Formatter(
+                "%(levelname)s ~ %(asctime)s ~ %(funcName)30s() - %(message)s"
+                )
+            )
     asyncio_logger.addHandler(asyncio_logger_file_handler)
 
     if settings.DEBUG:
@@ -85,10 +88,10 @@ def prepare_loggers():
     logger_file_handler = logging.FileHandler("logs/main.log")
     logger_file_handler.setLevel(logging.DEBUG)
     logger_file_handler.setFormatter(
-        logging.Formatter(
-            "%(levelname)s ~ %(asctime)s ~ %(funcName)30s() ~ %(message)s"
-        )
-    )
+            logging.Formatter(
+                "%(levelname)s ~ %(asctime)s ~ %(funcName)30s() ~ %(message)s"
+                )
+            )
 
     main_logger.addHandler(logger_file_handler)
 
@@ -108,7 +111,7 @@ async def core():
             proxy_processor.worker(),
             statistics.worker(),
             materialized_view_updater.worker(),
-        ])
+            ])
         BaseChecker.clean()
         return code
     except KeyboardInterrupt:
@@ -123,11 +126,27 @@ async def core():
 
 def server():
     proxy_provider_server = ProxyProviderServer(
-        settings.PROXY_PROVIDER_SERVER_ADDRESS['HOST'],
-        settings.PROXY_PROVIDER_SERVER_ADDRESS['PORT'],
-    )
+            settings.PROXY_PROVIDER_SERVER_ADDRESS['HOST'],
+            settings.PROXY_PROVIDER_SERVER_ADDRESS['PORT'],
+            )
 
     return proxy_provider_server.start(asyncio.get_event_loop())
+
+
+def print_help():
+    print("""Usage: ./main.py [COMMAND] [OPTION]...
+Runs proxy_py
+
+The commands are:
+
+    "core" - runs core part of the project (proxies parsing and processing)
+    "server" - runs server for providing API
+    "" - runs both
+
+use ./main.py COMMAND --help to get more information
+
+Project's page: https://github.com/DevAlone/proxy_py
+""")
 
 
 def main():
@@ -143,10 +162,14 @@ def main():
 
     command = sys.argv[1].strip()
     sys.argv = sys.argv[1:]
-    return {
-        'core': lambda: asyncio.get_event_loop().run_until_complete(core()),
-        'server': server,
-    }[command]()
+    try:
+        return {
+            'core': lambda: asyncio.get_event_loop().run_until_complete(core()),
+            'server': server,
+        }[command]()
+    except KeyError:
+        print_help()
+        return 0
 
 
 if __name__ == "__main__":

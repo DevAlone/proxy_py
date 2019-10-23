@@ -1,3 +1,12 @@
+"""
+Settings evaluation order:
+
+1. default values from proxy_py/_settings.py
+2. environment values which are the same but with prefix "PROXY_PY_"
+3. overriden values from proxy_py/settings.py
+4. command line arguments as for example "--debug" or "--proxy-checking-timeout"
+
+"""
 from checkers.google_com_checker import GoogleComChecker
 
 import string
