@@ -72,7 +72,6 @@ class Proxy(peewee.Model):
                 'city': response.city.name,            
                 }
         else:
-            print('ff')
             '''
             DB doesn`t exists
             '''
