@@ -12,6 +12,18 @@ raw_db = peewee_async.PooledPostgresqlDatabase(
     **settings.DATABASE_CONNECTION_KWARGS,
 )
 
+location_database_reader = None
+
+def init_location_db_reader():
+    global location_database_reader
+    if os.path.isfile(settings.GEOLITE2_CITY_FILE_LOCATION):
+        location_database_reader = geoip2.database.Reader(settings.GEOLITE2_CITY_FILE_LOCATION)
+    else:
+        # DB doesn`t exists
+        log.warning("Public IP Database is not found. See GEOLITE2_CITY_FILE_LOCATION in settings.py")
+
+init_location_db_reader()
+
 class Proxy(peewee.Model):
     class Meta:
         database = raw_db
@@ -63,23 +75,18 @@ class Proxy(peewee.Model):
     
     @property
     def location(self):
-        if os.path.isfile(settings.GEOLITE2_CITY_FILE_LOCATION):
-            reader = geoip2.database.Reader(settings.GEOLITE2_CITY_FILE_LOCATION)
-            response = reader.city(self.domain)
-            
-            return {
-                'latitude': response.location.latitude,
-                'longitude': response.location.longitude,
-                'country_code': response.country.iso_code,
-                'country': response.country.name,
-                'city': response.city.name,            
-            }
-        else:
-            '''
-            DB doesn`t exists
-            '''
-            log.warning("Public IP Database has been absent")
+        if location_database_reader is None:
             return None
+
+        response = location_database_reader.city(self.domain)
+        
+        return {
+            'latitude': response.location.latitude,
+            'longitude': response.location.longitude,
+            'country_code': response.country.iso_code,
+            'country': response.country.name,
+            'city': response.city.name,            
+        }
     
     @property    
     def address(self):

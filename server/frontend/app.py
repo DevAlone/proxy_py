@@ -110,9 +110,7 @@ class App(BaseApp):
                 "number_of_bad_checks": proxy.number_of_bad_checks,
                 "bad_proxy": proxy.bad_proxy,
                 "white_ipv4": proxy.white_ipv4,
-                "city": proxy.city,
-                "region": proxy.region,
-                "country_code": proxy.country_code,
+                "location": proxy.location,
             } for proxy in proxies]
         }
 
