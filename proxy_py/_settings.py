@@ -7,6 +7,7 @@ DEBUG = False
 """
 Database settings (do not try to change after creation of the database)
 """
+GEOLITE2_CITY_FILE_LOCATION = '/tmp/proxy_py_9910549a_7d41_4102_9e9d_15d39418a5cb/GeoLite2-City.mmdb'
 
 DATABASE_CONNECTION_ARGS = ()
 DATABASE_CONNECTION_KWARGS = {
@@ -82,7 +83,7 @@ PROXY_PROVIDER_SERVER_MAXIMUM_STRING_FIELD_SIZE = 128
 PROXY_PROVIDER_SERVER_API_CONFIG_FETCH_CONFIG = {
     'fields': [
         'address', 'protocol', 'auth_data', 'domain', 'port', 'last_check_time', 'next_check_time', 'number_of_bad_checks',
-        'bad_proxy', 'uptime', 'response_time', 'white_ipv4', 'white_ipv6', 'city', 'country_code', 'region'
+        'bad_proxy', 'uptime', 'response_time', 'white_ipv4', 'white_ipv6', 'location'
     ],
     'filter_fields': [
         'last_check_time', 'protocol', 'number_of_bad_checks', 'bad_proxy', 'uptime', 'response_time'

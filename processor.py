@@ -358,14 +358,6 @@ class Processor:
                 if additional_info.ipv4 is not None:
                     proxy.white_ipv4 = additional_info.ipv4
 
-                if additional_info.city is not None:
-                    proxy.city = additional_info.city
-
-                if additional_info.region is not None:
-                    proxy.region = additional_info.region
-
-                if additional_info.country_code is not None:
-                    proxy.country_code = additional_info.country_code.strip().lower()
 
             checking_time = int(end_checking_time - start_checking_time)
             if checking_time > settings.PROXY_CHECKING_TIMEOUT:
