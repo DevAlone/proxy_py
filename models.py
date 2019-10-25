@@ -65,7 +65,7 @@ class Proxy(peewee.Model):
     def location(self):
         if os.path.isfile(settings.GEOLITE2_CITY_FILE_LOCATION):
             reader = geoip2.database.Reader(settings.GEOLITE2_CITY_FILE_LOCATION)
-            response = reader.city(domain)
+            response = reader.city(self.domain)
             
             return {
                 'latitude': response.location.latitude,
