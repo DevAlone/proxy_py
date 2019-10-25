@@ -64,36 +64,22 @@ def prepare_loggers():
     global main_logger
 
     asyncio_logger = logging.getLogger("asyncio")
-    asyncio_logger_file_handler = logging.FileHandler("logs/asyncio.log")
-    asyncio_logger_file_handler.setLevel(logging.DEBUG)
-    asyncio_logger_file_handler.setFormatter(
-            logging.Formatter(
-                "%(levelname)s ~ %(asctime)s ~ %(funcName)30s() - %(message)s"
-                )
-            )
-    asyncio_logger.addHandler(asyncio_logger_file_handler)
-
-    if settings.DEBUG:
-        asyncio.get_event_loop().set_debug(True)
-
-        asyncio_logger.setLevel(logging.DEBUG)
+    asyncio_logger.setLevel(logging.DEBUG if settings.DEBUG else logging.INFO)
+    asyncio_logger_handler = logging.StreamHandler(sys.stdout)
+    asyncio_logger_handler.setLevel(logging.DEBUG if settings.DEBUG else logging.INFO)
+    asyncio_logger_handler.setFormatter(
+        logging.Formatter(settings.LOG_FORMAT_STRING)
+    )
+    asyncio_logger.addHandler(asyncio_logger_handler)
+    asyncio.get_event_loop().set_debug(settings.DEBUG)
 
     main_logger = logging.getLogger("proxy_py/main")
-
-    if settings.DEBUG:
-        main_logger.setLevel(logging.DEBUG)
-    else:
-        main_logger.setLevel(logging.INFO)
-
-    logger_file_handler = logging.FileHandler("logs/main.log")
-    logger_file_handler.setLevel(logging.DEBUG)
-    logger_file_handler.setFormatter(
-            logging.Formatter(
-                "%(levelname)s ~ %(asctime)s ~ %(funcName)30s() ~ %(message)s"
-                )
-            )
-
-    main_logger.addHandler(logger_file_handler)
+    main_logger.setLevel(logging.DEBUG if settings.DEBUG else logging.INFO)
+    logger_handler = logging.StreamHandler(sys.stdout)
+    logger_handler.setFormatter(logging.Formatter(settings.LOG_FORMAT_STRING))
+    logger_handler.setLevel(logging.DEBUG if settings.DEBUG else logging.INFO)
+    
+    main_logger.addHandler(logger_handler)
 
 
 async def core():
@@ -164,9 +150,9 @@ def main():
     sys.argv = sys.argv[1:]
     try:
         return {
-            'core': lambda: asyncio.get_event_loop().run_until_complete(core()),
-            'server': server,
-        }[command]()
+                'core': lambda: asyncio.get_event_loop().run_until_complete(core()),
+                'server': server,
+                }[command]()
     except KeyError:
         print_help()
         return 0

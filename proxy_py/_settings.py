@@ -16,6 +16,7 @@ import ast
 
 # enable to get more information in logs
 DEBUG = False
+LOG_FORMAT_STRING = "%(levelname)s ~ [%(name)s] ~ %(asctime)s ~ %(funcName)30s():L%(lineno)d - %(message)s"
 
 
 """

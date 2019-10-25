@@ -9,10 +9,7 @@ import asyncio
 import time
 import logging
 import peewee
-
-
-
-LOGGERS_FORMAT = "%(levelname)s ~ %(asctime)s ~ %(funcName)30s() ~ %(message)s"
+import sys
 
 
 class Processor:
@@ -31,29 +28,22 @@ class Processor:
 
     def __init__(self):
         self.logger = logging.getLogger("proxy_py/processor")
+        self.logger.setLevel(logging.DEBUG if settings.DEBUG else logging.INFO)
 
-        if settings.DEBUG:
-            self.logger.setLevel(logging.DEBUG)
-        else:
-            self.logger.setLevel(logging.INFO)
+        logger_handler = logging.StreamHandler(sys.stdout)
+        logger_handler.setLevel(logging.DEBUG if settings.DEBUG else logging.INFO)
+        logger_handler.setFormatter(logging.Formatter(settings.LOG_FORMAT_STRING))
 
-        logger_file_handler = logging.FileHandler("logs/processor.log")
-        logger_file_handler.setLevel(logging.DEBUG)
-        logger_file_handler.setFormatter(logging.Formatter(LOGGERS_FORMAT))
-
-        self.logger.addHandler(logger_file_handler)
+        self.logger.addHandler(logger_handler)
 
         self.collectors_logger = logging.getLogger("proxy_py/collectors")
-        if settings.DEBUG:
-            self.collectors_logger.setLevel(logging.DEBUG)
-        else:
-            self.collectors_logger.setLevel(logging.INFO)
+        self.collectors_logger.setLevel(logging.DEBUG if settings.DEBUG else logging.INFO)
 
-        collectors_logger_file_handler = logging.FileHandler("logs/collectors.log")
-        collectors_logger_file_handler.setLevel(logging.DEBUG)
-        logger_file_handler.setFormatter(logging.Formatter(LOGGERS_FORMAT))
+        collectors_logger_handler = logging.StreamHandler(sys.stdout)
+        collectors_logger_handler.setLevel(logging.DEBUG if settings.DEBUG else logging.INFO)
+        collectors_logger_handler.setFormatter(logging.Formatter(settings.LOG_FORMAT_STRING))
 
-        self.collectors_logger.addHandler(collectors_logger_file_handler)
+        self.collectors_logger.addHandler(collectors_logger_handler)
 
         self.logger.debug("processor initialization...")
 
