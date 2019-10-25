@@ -3,6 +3,9 @@ import peewee
 import peewee_async
 import os.path
 import geoip2.database
+import logging
+
+log = logging.getLogger("proxy_py/main")
 
 raw_db = peewee_async.PooledPostgresqlDatabase(
     *settings.DATABASE_CONNECTION_ARGS,
@@ -60,7 +63,7 @@ class Proxy(peewee.Model):
     
     @property
     def location(self):
-        if os.path.exists(settings.GEOLITE2_CITY_FILE_LOCATION) and os.path.isfile(settings.GEOLITE2_CITY_FILE_LOCATION):
+        if os.path.isfile(settings.GEOLITE2_CITY_FILE_LOCATION):
             reader = geoip2.database.Reader(settings.GEOLITE2_CITY_FILE_LOCATION)
             response = reader.city(domain)
             
@@ -70,13 +73,13 @@ class Proxy(peewee.Model):
                 'country_code': response.country.iso_code,
                 'country': response.country.name,
                 'city': response.city.name,            
-                }
+            }
         else:
-            print('ff')
             '''
             DB doesn`t exists
             '''
-            return {}
+            log.warning("Public IP Database has been absent")
+            return None
     
     @property    
     def address(self):
