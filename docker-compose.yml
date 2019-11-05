@@ -1,0 +1,9 @@
+version: '3'
+services:
+    proxy_py:
+        build: .
+        ports:
+            - "55555:55555"
+    postgres:
+        image: "postgres:12"
+
