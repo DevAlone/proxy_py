@@ -25,6 +25,7 @@ Database settings (do not try to change after creation of the database)
 
 DATABASE_CONNECTION_ARGS = ()
 DATABASE_CONNECTION_KWARGS = {
+    'host': 'localhost',
     'database': 'proxy_py',
     'user': 'proxy_py',
     'password': 'proxy_py',
