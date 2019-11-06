@@ -7,8 +7,7 @@ RUN apt update && apt install -y wget > /dev/null && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /proxy_py
 USER user
-# TODO: change to master
-ARG VERSION=73850a02909242bcc68f3257a8663ca113128704
+ARG VERSION=master
 
 RUN wget https://github.com/DevAlone/proxy_py/archive/$VERSION.tar.gz -O sources.tar.gz 2> /dev/null \
 	&& tar -xf sources.tar.gz && rm sources.tar.gz \
