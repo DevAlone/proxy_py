@@ -8,5 +8,5 @@ else
 	git checkout $tag || exit 1
 fi
 
-docker build -t DevAlone/proxy_py:$tag .
-docker push DevAlone/proxy_py:$tag
+docker build -t devalone/proxy_py:$tag .
+docker push devalone/proxy_py:$tag

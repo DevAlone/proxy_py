@@ -206,8 +206,6 @@ ProcessorProxiesQueueSize.create_table(_silent)
 
 db = peewee_async.Manager(raw_db)
 
-# TODO: make it work
-# raw_db.execute_sql('CREATE EXTENSION IF NOT EXISTS tsm_system_rows;')
 raw_db.execute_sql('''CREATE MATERIALIZED VIEW IF NOT EXISTS working_proxies 
 AS SELECT * FROM proxies WHERE number_of_bad_checks = 0;''')
 db.allow_sync()
