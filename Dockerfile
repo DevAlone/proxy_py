@@ -1,25 +1,22 @@
-FROM ubuntu
+FROM python:3.7-slim
 
-ENV DEBIAN_FRONTEND noninteractive
-RUN apt-get update && apt-get install -y postgresql python3 python3-pip wget unzip sudo
+RUN apt update && apt install -y wget > /dev/null && rm -rf /var/lib/apt/lists/* \
+	&& rm /bin/sh && ln -s /bin/bash /bin/sh \
+	&& groupadd -r user && useradd --create-home --no-log-init -r -g user user \
+	&& mkdir /proxy_py && chown user:user /proxy_py
 
-USER postgres
-RUN /etc/init.d/postgresql start && \
-    createuser proxy_py && \
-    createdb proxy_py && \
-    psql -c "alter user proxy_py with encrypted password 'proxy_py';" && \
-    psql -c "grant all privileges on database proxy_py to proxy_py;" && \
-    cat /etc/postgresql/10/main/pg_hba.conf | \
-    sed -e "s/local   all             all                                     peer/local all all md5/" | \
-    tee /etc/postgresql/10/main/pg_hba.conf && \
-    /etc/init.d/postgresql stop
+WORKDIR /proxy_py
+USER user
+ARG VERSION=master
 
-USER root
-RUN wget https://github.com/DevAlone/proxy_py/archive/v2.2.zip -O master.zip 2> /dev/null
-RUN unzip master.zip; rm master.zip; mv proxy_py-* proxy_py; cd proxy_py
-WORKDIR proxy_py
-RUN pip3 install -r requirements.txt
-RUN cp config_examples/settings.py /proxy_py/proxy_py/
+RUN wget https://github.com/DevAlone/proxy_py/archive/$VERSION.tar.gz -O sources.tar.gz 2> /dev/null \
+	&& tar -xf sources.tar.gz && rm sources.tar.gz \
+	&& mv proxy_py-*/.[!.]* ./ && mv proxy_py-*/* ./ \
+	&& rmdir proxy_py-* \
+	&& python3 -m venv env
+
+RUN cp config_examples/settings.py proxy_py/settings.py
+RUN source ./env/bin/activate && pip3 install -r requirements.txt --no-cache-dir
 
 EXPOSE 55555
-CMD /etc/init.d/postgresql start; python3 main.py
+CMD ./run.sh

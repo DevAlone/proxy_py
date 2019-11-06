@@ -1,8 +1,22 @@
+"""
+Settings evaluation order:
+
+1. default values from proxy_py/_settings.py
+2. environment values which are the same but with prefix "PROXY_PY_"
+3. overriden values from proxy_py/settings.py
+4. command line arguments as for example "--debug" or "--proxy-checking-timeout"
+
+"""
 from checkers.google_com_checker import GoogleComChecker
 
+import string
+import os
+import ast
 
 # enable to get more information in logs
 DEBUG = False
+LOG_FORMAT_STRING = "%(levelname)s ~ [%(name)s] ~ %(asctime)s ~ %(funcName)30s():L%(lineno)d - %(message)s"
+
 
 """
 Database settings (do not try to change after creation of the database)
@@ -11,6 +25,7 @@ GEOLITE2_CITY_FILE_LOCATION = '/tmp/proxy_py_9910549a_7d41_4102_9e9d_15d39418a5c
 
 DATABASE_CONNECTION_ARGS = ()
 DATABASE_CONNECTION_KWARGS = {
+    'host': 'localhost',
     'database': 'proxy_py',
     'user': 'proxy_py',
     'password': 'proxy_py',
@@ -19,6 +34,7 @@ DATABASE_CONNECTION_KWARGS = {
 
 DB_MAX_DOMAIN_LENGTH = 128
 DB_AUTH_DATA_MAX_LENGTH = 64
+
 
 """
 Fetcher settings
@@ -68,6 +84,7 @@ PROXY_CHECKERS = [
     GoogleComChecker,
 ]
 
+
 """
 Server settings
 """
@@ -82,13 +99,18 @@ PROXY_PROVIDER_SERVER_MAXIMUM_STRING_FIELD_SIZE = 128
 
 PROXY_PROVIDER_SERVER_API_CONFIG_FETCH_CONFIG = {
     'fields': [
-        'address', 'protocol', 'auth_data', 'domain', 'port', 'last_check_time', 'next_check_time', 'number_of_bad_checks',
-        'bad_proxy', 'uptime', 'response_time', 'white_ipv4', 'white_ipv6', 'location'
+        'address', 'protocol', 'auth_data', 'domain', 'port',
+        'last_check_time', 'next_check_time',
+        'number_of_bad_checks', 'bad_proxy', 'uptime',
+        'response_time', 'white_ipv4', 'white_ipv6', 'location',
     ],
     'filter_fields': [
-        'last_check_time', 'protocol', 'number_of_bad_checks', 'bad_proxy', 'uptime', 'response_time'
+        'last_check_time', 'protocol', 'number_of_bad_checks', 'bad_proxy',
+        'uptime', 'response_time'
     ],
-    'order_by_fields': ['last_check_time', 'number_of_bad_checks', 'uptime', 'response_time', 'country_code'],
+    'order_by_fields': [
+        'last_check_time', 'number_of_bad_checks', 'uptime', 'response_time',
+    ],
     'default_order_by_fields': ['response_time', ],
 }
 
@@ -103,3 +125,33 @@ PROXY_PROVIDER_SERVER_API_CONFIG = {
 }
 
 TEMPLATES_PATH = "server/templates"
+
+
+"""
+Loading from the environment
+"""
+
+
+def load_settings_from_environment():
+    for key, val in globals().items():
+        # filter only variables with capital letters or digits or undescore
+        rest = "".join([
+            ch for ch in key
+            if ch not in string.ascii_uppercase and ch not in string.digits and ch != '_'
+        ])
+        if len(rest) > 0:
+            continue
+
+        env_key = "PROXY_PY_" + key
+        if env_key in os.environ:
+            env_value = os.environ[env_key]
+            try:
+                globals()[key] = ast.literal_eval(env_value)
+            except:
+                raise Exception(
+                    f"An error happened during parsing environment value. " +
+                    f"Key = {env_key}, Value = {env_value}"
+                )
+
+
+load_settings_from_environment()

@@ -11,25 +11,20 @@ import json
 import logging
 import aiohttp
 import aiohttp_jinja2
+import sys
 
 
 class ProxyProviderServer(BaseApp):
     def __init__(self, host, port):
         logger = logging.getLogger("proxy_py/server")
+        logger.setLevel(logging.DEBUG if settings.DEBUG else logging.INFO)
 
-        if settings.DEBUG:
-            logger.setLevel(logging.DEBUG)
-        else:
-            logger.setLevel(logging.INFO)
+        logger_handler = logging.StreamHandler(sys.stdout)
+        logger_handler.setLevel(logging.DEBUG if settings.DEBUG else logging.INFO)
+        logger_handler.setFormatter(logging.Formatter(settings.LOG_FORMAT_STRING))
 
-        logger_file_handler = logging.FileHandler("logs/server.log")
-        logger_file_handler.setLevel(logging.DEBUG)
-        logger_file_handler.setFormatter(logging.Formatter(
-            "%(levelname)s ~ %(asctime)s ~ %(client_ip)s ~ %(message)s"
-        ))
-
-        logger.addHandler(logger_file_handler)
-
+        logger.addHandler(logger_handler)
+        
         super(ProxyProviderServer, self).__init__(logger)
 
         self.host = host
@@ -38,14 +33,6 @@ class ProxyProviderServer(BaseApp):
 
     def start(self, loop):
         loop.run_until_complete(self.init())
-
-        '''
-        server = await loop.create_server(
-            self._app.make_handler(),
-            self.host,
-            self.port
-        )
-        '''
 
         return web.run_app(self._app, host=self.host, port=self.port, loop=loop)
 
