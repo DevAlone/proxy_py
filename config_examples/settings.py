@@ -2,6 +2,7 @@ from ._settings import *
 
 DEBUG = False
 
+DATABASE_CONNECTION_KWARGS['host'] = 'db'
 DATABASE_CONNECTION_KWARGS['database'] = 'proxy_py'
 DATABASE_CONNECTION_KWARGS['user'] = 'proxy_py'
 DATABASE_CONNECTION_KWARGS['password'] = 'proxy_py'

@@ -1,9 +1,22 @@
 version: '3'
+
 services:
-    proxy_py:
+    db:
+        image: "postgres:12"
+        restart: always
+        environment:
+            - POSTGRES_USER=proxy_py
+            - POSTGRES_PASSWORD=proxy_py
+            - POSTGRES_DB=proxy_py
+        volumes:
+            - pgdata:/home/user/proxy_py_postgres_data
+    core:
+        restart: always
         build: .
         ports:
             - "55555:55555"
-    postgres:
-        image: "postgres:12"
+        depends_on:
+            - db
 
+volumes: 
+    pgdata:
