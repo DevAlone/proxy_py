@@ -13,6 +13,7 @@ services:
             - ./init_db.sql:/docker-entrypoint-initdb.d/init_db.sql
     core:
         image: "devalone/proxy_py:latest"
+        command: ./run.sh
         restart: always
         ports:
             - "55555:55555"

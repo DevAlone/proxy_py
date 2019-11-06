@@ -16,3 +16,4 @@ write number of asyncio tasks to DB to be able to draw more grahps(everybody lov
 fix issue with domains like this 08.8.8.8
 refresh materialized view periodically
 send request to proxy multiple times
+consider moving to PyPy
