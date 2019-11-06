@@ -2,4 +2,4 @@
 
 source ./env/bin/activate
 
-python main.py
+python main.py "$@"
