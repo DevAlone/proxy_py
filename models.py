@@ -8,11 +8,11 @@ import logging
 log = logging.getLogger("proxy_py/main")
 
 raw_db = peewee_async.PooledPostgresqlDatabase(
-    *settings.DATABASE_CONNECTION_ARGS,
-    **settings.DATABASE_CONNECTION_KWARGS,
+    *settings.DATABASE_CONNECTION_ARGS, **settings.DATABASE_CONNECTION_KWARGS,
 )
 
 location_database_reader = None
+
 
 def init_location_db_reader():
     global location_database_reader
@@ -20,43 +20,46 @@ def init_location_db_reader():
         location_database_reader = geoip2.database.Reader(settings.GEOLITE2_CITY_FILE_LOCATION)
     else:
         # DB doesn`t exists
-        log.warning("Public IP Database is not found. See GEOLITE2_CITY_FILE_LOCATION in settings.py")
+        log.warning(
+            "Public IP Database is not found. See GEOLITE2_CITY_FILE_LOCATION in settings.py"
+        )
+
 
 init_location_db_reader()
+
 
 class Proxy(peewee.Model):
     class Meta:
         database = raw_db
-        db_table = 'proxies'
+        db_table = "proxies"
         indexes = (
-            (('raw_protocol', 'auth_data', 'domain', 'port'), True),
-            (('auth_data', 'domain', 'port'), False),  # important!
-            (('raw_protocol',), False),
-            (('auth_data',), False),
-            (('domain',), False),
-            (('port',), False),
-            (('number_of_bad_checks',), False),
-            (('next_check_time',), False),
-            (('last_check_time',), False),
-            (('checking_period',), False),
-            (('uptime',), False),
-            (('bad_uptime',), False),
-            (('response_time',), False),
-            (('_white_ipv4',), False),
-            (('_white_ipv6',), False),
-            (('country_code',), False),
+            (("raw_protocol", "auth_data", "domain", "port"), True),
+            (("auth_data", "domain", "port"), False),  # important!
+            (("raw_protocol",), False),
+            (("auth_data",), False),
+            (("domain",), False),
+            (("port",), False),
+            (("number_of_bad_checks",), False),
+            (("next_check_time",), False),
+            (("last_check_time",), False),
+            (("checking_period",), False),
+            (("uptime",), False),
+            (("bad_uptime",), False),
+            (("response_time",), False),
+            (("_white_ipv4",), False),
+            (("_white_ipv6",), False),
         )
 
     PROTOCOLS = (
-        'http',
-        'socks4',
-        'socks5',
+        "http",
+        "socks4",
+        "socks5",
     )
 
     raw_protocol = peewee.SmallIntegerField(null=False)
     domain = peewee.CharField(settings.DB_MAX_DOMAIN_LENGTH, null=False)
     port = peewee.IntegerField(null=False)
-    auth_data = peewee.CharField(settings.DB_AUTH_DATA_MAX_LENGTH, default='', null=False)
+    auth_data = peewee.CharField(settings.DB_AUTH_DATA_MAX_LENGTH, default="", null=False)
 
     checking_period = peewee.IntegerField(default=settings.MIN_PROXY_CHECKING_PERIOD, null=False)
     last_check_time = peewee.IntegerField(default=0, null=False)
@@ -72,23 +75,23 @@ class Proxy(peewee.Model):
 
     def get_raw_protocol(self):
         return self.raw_protocol
-    
+
     @property
     def location(self):
         if location_database_reader is None:
             return None
 
         response = location_database_reader.city(self.domain)
-        
+
         return {
-            'latitude': response.location.latitude,
-            'longitude': response.location.longitude,
-            'country_code': response.country.iso_code,
-            'country': response.country.name,
-            'city': response.city.name,            
+            "latitude": response.location.latitude,
+            "longitude": response.location.longitude,
+            "country_code": response.country.iso_code,
+            "country": response.country.name,
+            "city": response.city.name,
         }
-    
-    @property    
+
+    @property
     def address(self):
         return self.to_url()
 
@@ -139,7 +142,7 @@ class Proxy(peewee.Model):
 class ProxyCountItem(peewee.Model):
     class Meta:
         database = raw_db
-        db_table = 'proxy_count_items'
+        db_table = "proxy_count_items"
 
     timestamp = peewee.IntegerField(primary_key=True)
     good_proxies_count = peewee.IntegerField(null=False)
@@ -150,10 +153,10 @@ class ProxyCountItem(peewee.Model):
 class CollectorState(peewee.Model):
     class Meta:
         database = raw_db
-        db_table = 'collector_states'
+        db_table = "collector_states"
         indexes = (
-            (('processing_period',), False),
-            (('last_processing_time',), False),
+            (("processing_period",), False),
+            (("last_processing_time",), False),
         )
 
     # python module name
@@ -175,7 +178,7 @@ class StatBaseModel(peewee.Model):
 
 class NumberOfProxiesToProcess(StatBaseModel):
     class Meta:
-        db_table = 'number_of_proxies_to_process'
+        db_table = "number_of_proxies_to_process"
 
     good_proxies = peewee.IntegerField(null=False)
     bad_proxies = peewee.IntegerField(null=False)
@@ -184,14 +187,14 @@ class NumberOfProxiesToProcess(StatBaseModel):
 
 class NumberOfCollectorsToProcess(StatBaseModel):
     class Meta:
-        db_table = 'number_of_collectors_to_process'
+        db_table = "number_of_collectors_to_process"
 
     value = peewee.IntegerField(null=False)
 
 
 class ProcessorProxiesQueueSize(StatBaseModel):
     class Meta:
-        db_table = 'processor_proxies_queue_size'
+        db_table = "processor_proxies_queue_size"
 
     value = peewee.IntegerField(null=False)
 
@@ -206,6 +209,8 @@ ProcessorProxiesQueueSize.create_table(_silent)
 
 db = peewee_async.Manager(raw_db)
 
-raw_db.execute_sql('''CREATE MATERIALIZED VIEW IF NOT EXISTS working_proxies 
-AS SELECT * FROM proxies WHERE number_of_bad_checks = 0;''')
+raw_db.execute_sql(
+    """CREATE MATERIALIZED VIEW IF NOT EXISTS working_proxies 
+AS SELECT * FROM proxies WHERE number_of_bad_checks = 0;"""
+)
 db.allow_sync()
