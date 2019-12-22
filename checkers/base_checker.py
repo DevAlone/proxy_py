@@ -25,13 +25,13 @@ class CheckerResult:
                 second_val = getattr(second_obj, attribute_name)
                 setattr(first_obj, attribute_name, second_val)
 
-        set_attr_if_is_not_none('ipv4', self, other)
-        set_attr_if_is_not_none('ipv6', self, other)
-        set_attr_if_is_not_none('city', self, other)
-        set_attr_if_is_not_none('region', self, other)
-        set_attr_if_is_not_none('country_code', self, other)
-        set_attr_if_is_not_none('location_coordinates', self, other)
-        set_attr_if_is_not_none('organization_name', self, other)
+        set_attr_if_is_not_none("ipv4", self, other)
+        set_attr_if_is_not_none("ipv6", self, other)
+        set_attr_if_is_not_none("city", self, other)
+        set_attr_if_is_not_none("region", self, other)
+        set_attr_if_is_not_none("country_code", self, other)
+        set_attr_if_is_not_none("location_coordinates", self, other)
+        set_attr_if_is_not_none("organization_name", self, other)
 
 
 class BaseChecker:
@@ -62,7 +62,7 @@ class BaseChecker:
         """
         BaseChecker.aiohttp_connector.close()
 
-    async def check(self, proxy_address: str, timeout: int=None) -> tuple:
+    async def check(self, proxy_address: str, timeout: int = None) -> tuple:
         """
         Checks proxy and returns additional information if such was provided by checker server
 
@@ -76,21 +76,27 @@ class BaseChecker:
 
         try:
             return await self._request(proxy_address, timeout)
-        except (aiohttp.client_exceptions.ServerDisconnectedError,
-                aiohttp.client_exceptions.ClientHttpProxyError,
-                aiohttp.client_exceptions.ClientProxyConnectionError,
-                aiohttp.client_exceptions.ClientResponseError,
-                aiohttp.client_exceptions.ClientPayloadError,
-                aiosocks.errors.SocksError,
-                aiosocks.SocksError,
-                asyncio.TimeoutError,
-                ssl.CertificateError,
-                aiohttp.client_exceptions.ClientOSError,
-                ) as ex:
+        except (
+            aiohttp.client_exceptions.ServerDisconnectedError,
+            aiohttp.client_exceptions.ClientHttpProxyError,
+            aiohttp.client_exceptions.ClientProxyConnectionError,
+            aiohttp.client_exceptions.ClientResponseError,
+            aiohttp.client_exceptions.ClientPayloadError,
+            aiosocks.errors.SocksError,
+            aiosocks.SocksError,
+            asyncio.TimeoutError,
+            ssl.CertificateError,
+            aiohttp.client_exceptions.ClientOSError,
+        ) as ex:
             message = str(ex).lower()
 
             if "too many open file" in message:
                 raise OSError("Too many open files")
+
+            if settings.DEBUG:
+                print(
+                    f"proxy {proxy_address} doesn't work because of exception {type(ex)}, message is {message}"
+                )
 
         return False, None
 
@@ -100,21 +106,22 @@ class BaseChecker:
         if self.url is None:
             raise Exception()
 
-        headers = {
-            'User-Agent': async_requests.get_random_user_agent()
-        }
+        headers = {"User-Agent": async_requests.get_random_user_agent()}
         conn = BaseChecker.get_aiohttp_connector()
 
         async with aiohttp.ClientSession(
-                connector=conn, connector_owner=False, request_class=ProxyClientRequest) as session:
+            connector=conn, connector_owner=False, request_class=ProxyClientRequest
+        ) as session:
             async with session.request(
-                    self.request_type, self.url, proxy=proxy_address, timeout=timeout, headers=headers) as \
-                    response:
+                self.request_type, self.url, proxy=proxy_address, timeout=timeout, headers=headers
+            ) as response:
                 is_working = await self.validate(response, checker_result)
 
         return is_working, checker_result
 
-    async def validate(self, response: aiohttp.ClientResponse, checker_result: CheckerResult) -> bool:
+    async def validate(
+        self, response: aiohttp.ClientResponse, checker_result: CheckerResult
+    ) -> bool:
         """
         Implement this method. It will get response from url with http method you provided in constructor
 
