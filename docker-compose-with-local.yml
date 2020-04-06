@@ -1,0 +1,35 @@
+version: '3'
+
+services:
+    db:
+        image: "postgres:12"
+        restart: always
+        environment:
+            - POSTGRES_USER=proxy_py
+            - POSTGRES_PASSWORD=proxy_py
+            - POSTGRES_DB=proxy_py
+        volumes:
+            - db_data:/var/lib/postgresql/data
+            - ./init_db.sql:/docker-entrypoint-initdb.d/init_db.sql
+    core:
+        image: "devalone/proxy_py:latest"
+        command: >
+          bash -c "
+            source /proxy_py/env/bin/activate &&
+            pip3 install -r /proxy_py/local/requirements.txt &&
+            /proxy_py/run.sh
+          "
+        restart: always
+        ports:
+            - "55555:55555"
+        environment:
+            - PROXY_PY_PROXY_PROVIDER_SERVER_ADDRESS={'HOST':'0.0.0.0','PORT':55555}
+            - PROXY_PY_DATABASE_CONNECTION_KWARGS={'host':'db','database':'proxy_py','user':'proxy_py','password':'proxy_py'}
+        depends_on:
+            - db
+        volumes:
+            - ./local/:/proxy_py/local/
+            - ./proxy_py/settings.py:/proxy_py/proxy_py/settings.py
+
+volumes: 
+    db_data:
