@@ -236,46 +236,42 @@ you can write your own collectors or/and checkers.
 
 // TOOD: add more detailed readme about it
 
-```
+.. code-block::
 
-local/
-├── requirements.txt
-├── checkers
-│   └── custom_checker.py
-└── collectors
-    └── custom_collector.py
-
-```
+        local/
+        ├── requirements.txt
+        ├── checkers
+        │   └── custom_checker.py
+        └── collectors
+            └── custom_collector.py
 
 You can create only checker or collector if you want so
 
 2. Create `proxy_py/settings.py` in current dir with the following content
 
-```python3
+.. code-block:: python3
 
-from ._settings import *
-from local.checkers.custom_checker import CustomChecker
+        from ._settings import *
+        from local.checkers.custom_checker import CustomChecker
 
-PROXY_CHECKERS = [CustomChecker]
+        PROXY_CHECKERS = [CustomChecker]
 
-COLLECTORS_DIRS = ['local/collectors']
-
-```
+        COLLECTORS_DIRS = ['local/collectors']
 
 you can append your checker to PROXY_CHECKERS or COLLECTORS_DIRS instead of overriding to use built in ones as well, it's just normal python file. 
 See `proxy_py/_settings.py` for more detailed instructions on options.
 
 3. Follow the steps in "How to install?" but download this docker-compose config instead    
 
-```bash
-wget "https://raw.githubusercontent.com/DevAlone/proxy_py/master/docker-compose-with-local.yml"
-```
+.. code-block:: bash
+        
+        wget "https://raw.githubusercontent.com/DevAlone/proxy_py/master/docker-compose-with-local.yml"
 
 and run with command
 
-```bash
-docker-compose -f docker-compose-with-local.yml up
-```
+.. code-block:: bash
+        
+        docker-compose -f docker-compose-with-local.yml up
 
 4. ...?
 
