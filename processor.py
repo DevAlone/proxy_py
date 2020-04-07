@@ -50,7 +50,14 @@ class Processor:
         self.proxies_semaphore = asyncio.BoundedSemaphore(settings.NUMBER_OF_CONCURRENT_TASKS)
         self.good_proxies_are_processed = False
 
+    async def init(self):
+        for checker in settings.PROXY_CHECKERS:
+            if hasattr(checker, "init"):
+                await checker.init()
+
     async def worker(self):
+        await self.init()
+
         await asyncio.gather(*[
             self.process_proxies(),
             self.process_collectors(),

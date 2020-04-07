@@ -50,6 +50,15 @@ class BaseChecker:
         self.url = url
 
     @staticmethod
+    async def init():
+        """
+        Override to do some initialization. called once per program life
+
+        :return:
+        """
+        pass
+
+    @staticmethod
     def get_aiohttp_connector():
         return BaseChecker.aiohttp_connector
 
