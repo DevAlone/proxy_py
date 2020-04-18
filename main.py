@@ -1,11 +1,7 @@
 #!/usr/bin/env python3
 
 # should be called before everything else
-import json
-
-import collectors_list
-
-
+# it's very fucking important!
 def init_uvloop():
     import uvloop
     uvloop.install()
@@ -13,7 +9,6 @@ def init_uvloop():
 
 init_uvloop()
 
-import os
 from proxy_py import settings
 from processor import Processor
 from server.proxy_provider_server import ProxyProviderServer
@@ -24,6 +19,7 @@ import materialized_view_updater
 import asyncio
 import logging
 import argparse
+import collectors_list
 import subprocess
 import sys
 
