@@ -12,7 +12,7 @@ RUN apt-get update \
 
 WORKDIR /proxy_py
 USER user
-ARG VERSION=master
+ARG VERSION=f8dffef30b4b816d9ccae48f21d647663fa33fe5
 
 RUN echo "Downloading proxy_py sources..." \
 	&& wget https://github.com/DevAlone/proxy_py/archive/$VERSION.tar.gz -O sources.tar.gz 2> /dev/null \
