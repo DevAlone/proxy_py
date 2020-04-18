@@ -1,10 +1,9 @@
-import json
-
 from proxy_py import settings
 from fake_useragent import UserAgent
 from aiosocks.connector import ProxyConnector, ProxyClientRequest
 
 import aiohttp
+import json
 
 
 class HttpClientResult:

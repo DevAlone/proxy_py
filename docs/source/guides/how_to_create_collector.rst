@@ -99,7 +99,7 @@ you can run proxy_py with `--test-collector` option:
 
 .. code-block:: bash
 
-    python3 main.py --test-collector collectors/web/cn/89ip/collector.py:Collector
+    python3 main.py core --test-collector collectors/web/cn/89ip/collector.py:Collector
 
 which means to take class Collector from the file `collectors/web/cn/89ip/collector.py`
 

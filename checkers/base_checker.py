@@ -94,6 +94,7 @@ class BaseChecker:
                 raise OSError("Too many open files")
 
             if settings.DEBUG:
+                # TODO: move to logs!
                 print(
                     f"proxy {proxy_address} doesn't work because of exception {type(ex)}, message is {message}"
                 )

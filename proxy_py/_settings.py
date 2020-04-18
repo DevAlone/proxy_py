@@ -63,12 +63,12 @@ DEAD_PROXY_THRESHOLD = 12
 DEAD_PROXY_CHECKING_PERIOD = 1 * 24 * 60 * 60
 DO_NOT_CHECK_ON_N_BAD_CHECKS = DEAD_PROXY_THRESHOLD + 14
 # how many seconds to wait for response from proxy
-PROXY_CHECKING_TIMEOUT = 10
+PROXY_CHECKING_TIMEOUT = 30
 # do not check proxy from collector if it has been checked recently
 PROXY_NOT_CHECKING_PERIOD = 15 * 60
 # limiter for maximum number of proxies gotten from collector
 # to fix potential issue with collectors' spamming
-COLLECTOR_MAXIMUM_NUMBER_OF_PROXIES_PER_REQUEST = 16384
+COLLECTOR_MAXIMUM_NUMBER_OF_PROXIES_PER_REQUEST = 2 * 65536
 SLEEP_AFTER_ERROR_PERIOD = 10
 # how many collectors to process concurrently
 NUMBER_OF_CONCURRENT_COLLECTORS = 1

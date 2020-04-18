@@ -31,13 +31,17 @@ async def check_task(ip, port):
                 break
         # if check_result:
         #     print('proxy {} works'.format(proxy_url))
-        print('+' if check_result else '-', end='')
+        print('+' if check_result else '-', end='', file=sys.stderr)
+        sys.stderr.flush()
 
 
 async def main():
     for line in sys.stdin:
         line = line.strip()
-        groups = re.search(proxy_find_regex, line).groups()
+        try:
+            groups = re.search(proxy_find_regex, line).groups()
+        except:
+            continue
         ip = '.'.join(groups[:4])
         port = groups[4]
 

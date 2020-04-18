@@ -15,3 +15,4 @@ pytest-asyncio
 termcolor
 uvloop
 geoip2
+bs4

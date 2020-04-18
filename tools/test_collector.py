@@ -19,6 +19,9 @@ def eprint(*args, **kwargs):
     return print(*args, file=sys.stderr, **kwargs)
 
 
+PROXIES_PER_TIME = 8192
+
+
 async def run(path: str):
     path, class_name = path.split(':', maxsplit=2)
     path = re.sub(r"\.py$", "", path).replace('/', '.')
@@ -27,16 +30,28 @@ async def run(path: str):
     try:
         collector = collectors[path]
     except KeyError:
-        eprint("Collector doesn't exist")
+        eprint("Collector doesn't exist(maybe you forgot to set __collector__ to True)")
         return 1
 
-    result = list(await collector.collect())
+    total = 0
+    result = []
 
-    print("Total number of proxies: {}".format(len(result)))
-    await asyncio.gather(*[process_proxy(proxy) for proxy in result])
+    async for proxy in collector.collect():
+        total += 1
+        result.append(proxy)
+
+        if len(result) >= PROXIES_PER_TIME:
+            print(f"got more than {PROXIES_PER_TIME} proxies, checking this part")
+            # await asyncio.gather(*[process_proxy(proxy) for proxy in result])
+            result = []
+
+    # await asyncio.gather(*[process_proxy(proxy) for proxy in result])
+    print("Total number of proxies: {}".format(total))
 
 
 proxies_semaphore = asyncio.BoundedSemaphore(settings.NUMBER_OF_CONCURRENT_TASKS)
+
+
 async def process_proxy(proxy_url: str):
     async with proxies_semaphore:
         try:

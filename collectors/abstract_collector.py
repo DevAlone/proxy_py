@@ -31,7 +31,14 @@ class AbstractCollector:
 
         ip can be both ipv4 and ipv6
 
-        will support yield in the future, now just return list
+        return either list or async generator:
+
+        ::
+
+            >> async def collect(self):
+            >>     for proxy in something:
+            >>         yield proxy
+
         """
 
         return []
