@@ -50,6 +50,7 @@ class AbstractCollector:
             async def wrapper(f):
                 for item in (await f):
                     yield item
+
             collect = wrapper(collect)
 
         i = 0
@@ -144,4 +145,3 @@ class AbstractCollector:
     """
     Set of variables which are saved to database automatically(inside data dict)
     """
-

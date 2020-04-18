@@ -1,9 +1,15 @@
 #!/usr/bin/env python3
 
 # should be called before everything else
+import json
+
+import collectors_list
+
+
 def init_uvloop():
     import uvloop
     uvloop.install()
+
 
 init_uvloop()
 
@@ -20,7 +26,6 @@ import logging
 import argparse
 import subprocess
 import sys
-
 
 test_collector_path = None
 main_logger = None
@@ -39,12 +44,12 @@ def process_cmd_arguments():
 
     cmd_parser = argparse.ArgumentParser()
     cmd_parser.add_argument("--debug", type=str_to_bool,
-            help="override settings' debug value")
+                            help="override settings' debug value")
     cmd_parser.add_argument(
-            "--proxy-checking-timeout", type=float, help="override settings' proxy checking timeout"
-            )
+        "--proxy-checking-timeout", type=float, help="override settings' proxy checking timeout"
+    )
     cmd_parser.add_argument(
-            "--test-collector", help="test collector with a given path")
+        "--test-collector", help="test collector with a given path")
 
     args = cmd_parser.parse_args()
 
@@ -78,12 +83,11 @@ def prepare_loggers():
     logger_handler = logging.StreamHandler(sys.stdout)
     logger_handler.setFormatter(logging.Formatter(settings.LOG_FORMAT_STRING))
     logger_handler.setLevel(logging.DEBUG if settings.DEBUG else logging.INFO)
-    
+
     main_logger.addHandler(logger_handler)
 
 
 async def core():
-
     process_cmd_arguments()
     prepare_loggers()
 
@@ -97,7 +101,7 @@ async def core():
             proxy_processor.worker(),
             statistics.worker(),
             materialized_view_updater.worker(),
-            ])
+        ])
         BaseChecker.clean()
         return code
     except KeyboardInterrupt:
@@ -110,11 +114,16 @@ async def core():
     return 0
 
 
+async def print_collectors():
+    for collector_name in collectors_list.collectors.keys():
+        print(collector_name)
+
+
 def server():
     proxy_provider_server = ProxyProviderServer(
-            settings.PROXY_PROVIDER_SERVER_ADDRESS['HOST'],
-            settings.PROXY_PROVIDER_SERVER_ADDRESS['PORT'],
-            )
+        settings.PROXY_PROVIDER_SERVER_ADDRESS['HOST'],
+        settings.PROXY_PROVIDER_SERVER_ADDRESS['PORT'],
+    )
 
     return proxy_provider_server.start(asyncio.get_event_loop())
 
@@ -126,6 +135,7 @@ Runs proxy_py
 The commands are:
 
     "core" - runs core part of the project (proxies parsing and processing)
+    "print_collectors" - prints collectors
     "server" - runs server for providing API
     "" - runs both
 
@@ -150,9 +160,10 @@ def main():
     sys.argv = sys.argv[1:]
     try:
         return {
-                'core': lambda: asyncio.get_event_loop().run_until_complete(core()),
-                'server': server,
-                }[command]()
+            'core': lambda: asyncio.get_event_loop().run_until_complete(core()),
+            'print_collectors': lambda: asyncio.get_event_loop().run_until_complete(print_collectors()),
+            'server': server,
+        }[command]()
     except KeyError:
         print_help()
         return 0
