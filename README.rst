@@ -226,39 +226,90 @@ anything, just run
 
 inside virtual environment in proxy_py project directory.
 
+How to use custom checkers/collectors?
+**************************************
+
+If you wan't to collect proxies from your source or you need proxies to work with particular site,
+you can write your own collectors or/and checkers.
+
+1. Create your checkers/collectors in current directory following the next directory structure:
+
+// TOOD: add more detailed readme about it
+
+.. code-block::
+
+        local/
+        ├── requirements.txt
+        ├── checkers
+        │   └── custom_checker.py
+        └── collectors
+            └── custom_collector.py
+
+You can create only checker or collector if you want so
+
+2. Create `proxy_py/settings.py` in current dir with the following content
+
+.. code-block:: python3
+
+        from ._settings import *
+        from local.checkers.custom_checker import CustomChecker
+
+        PROXY_CHECKERS = [CustomChecker]
+
+        COLLECTORS_DIRS = ['local/collectors']
+
+you can append your checker to PROXY_CHECKERS or COLLECTORS_DIRS instead of overriding to use built in ones as well, it's just normal python file. 
+See `proxy_py/_settings.py` for more detailed instructions on options.
+
+3. Follow the steps in "How to install?" but download this docker-compose config instead    
+
+.. code-block:: bash
+        
+        wget "https://raw.githubusercontent.com/DevAlone/proxy_py/master/docker-compose-with-local.yml"
+
+and run with command
+
+.. code-block:: bash
+        
+        docker-compose -f docker-compose-with-local.yml up
+
+4. ...?
+
+5. Profit!
+
 How to build from scratch?
 **************************
 
-1 Clone this repository
+1. Clone this repository
 
 .. code-block:: bash
 
    git clone https://github.com/DevAlone/proxy_py.git
 
-2 Install requirements
+2. Install requirements
 
 .. code-block:: bash
 
    cd proxy_py
    pip3 install -r requirements.txt
 
-3 Create settings file
+3. Create settings file
 
 .. code-block:: bash
 
    cp config_examples/settings.py proxy_py/settings.py
 
-4 Install postgresql and change database configuration in settings.py file
+4. Install postgresql and change database configuration in settings.py file
 
-5 (Optional) Configure alembic
+5. (Optional) Configure alembic
 
-6 Run your application
+6. Run your application
 
 .. code-block:: bash
 
    python3 main.py
 
-7 Enjoy!
+7. Enjoy!
 
 
 Mirrors

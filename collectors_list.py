@@ -1,14 +1,14 @@
 import inspect
-
-from models import db, CollectorState
-from proxy_py import settings
-
 import os
 import asyncio
 import importlib.util
 
+from models import db, CollectorState
+from proxy_py import settings
+
 
 collectors = {}
+
 
 async def init():
     global collectors
