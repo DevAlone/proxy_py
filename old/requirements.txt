@@ -16,3 +16,4 @@ termcolor
 uvloop
 geoip2
 bs4
+pyzmq
