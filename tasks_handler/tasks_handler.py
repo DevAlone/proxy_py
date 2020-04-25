@@ -13,12 +13,11 @@ async def main():
         handler_name="tasks_handler",
         worker=worker,
         number_of_workers=settings.tasks_handler.number_of_workers,
-        socket_type=zmq.REQ,
-        socket_address=settings.tasks_handler.socket_address,
+        socket_descriptions=[(zmq.REQ, settings.tasks_handler.socket_address)],
     )
 
 
-async def worker(socket):
+async def worker(socket: zmq.asyncio.Socket):
     while True:
         try:
             # TODO: replace with zeromq's timeout

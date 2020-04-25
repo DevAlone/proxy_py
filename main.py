@@ -5,6 +5,7 @@ import sys
 
 import broker
 import proxies_handler
+import results_handler
 import settings
 import tasks_handler
 
@@ -25,6 +26,7 @@ async def main() -> int:
             "proxies_handler": proxies_handler.main,
             "tasks_handler": tasks_handler.main,
             "broker": broker.main,
+            "results_handler": results_handler.main,
         }[command]
 
         return await func()
