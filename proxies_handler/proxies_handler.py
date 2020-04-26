@@ -16,8 +16,8 @@ async def main() -> int:
         worker=worker,
         number_of_workers=settings.proxies_handler.number_of_workers,
         socket_descriptions=[
-            (zmq.REP, settings.proxies_handler.proxies_to_check_resp_socket_address),
-            (zmq.PUSH, settings.proxies_handler.results_publish_socket_address),
+            (zmq.PULL, settings.tasks_handler.proxies_to_check_socket_address),
+            (zmq.PUSH, settings.tasks_handler.check_results_socket_address),
         ],
     )
 
@@ -34,6 +34,8 @@ async def worker(
         await asyncio.sleep(random.randint(1, 3))
 
         logging.debug(f"-> {task}")
+        await results_socket.send_string(task)
         # TODO:!!!
-        # await results_socket.send_string(task)
-        await proxies_to_check_socket.send_string(task)
+        # await proxies_to_check_socket.send_string(task)
+
+    return 0

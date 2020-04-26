@@ -13,7 +13,7 @@ async def main() -> int:
         handler_name="results_handler",
         worker=worker,
         number_of_workers=settings.results_handler.number_of_workers,
-        socket_descriptions=[(zmq.PULL, settings.results_handler.listen_socket_address)],
+        socket_descriptions=[(zmq.PULL, settings.tasks_handler.results_to_handle_socket_address)],
     )
 
 
@@ -24,6 +24,6 @@ async def worker(results_socket: zmq.asyncio.Socket):
         logging.debug(f"<- {proxy_checking_result}")
 
         # do some handling
-        res += int(proxy_checking_result)
+        # res += int(proxy_checking_result)
 
         # TODO: handle the results
