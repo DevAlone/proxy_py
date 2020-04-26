@@ -19,7 +19,15 @@ async def handler(
     """
 
     sockets = []
-    for socket_type, socket_address, *use_bind in socket_descriptions:
+    for socket_type, socket_address, *extra in socket_descriptions:
+        if len(extra) > 0:
+            use_bind = extra[0]
+        else:
+            use_bind = False
+
+        logging.debug(
+            f'creating a socket with type "{socket_type}", address "{socket_address}" and use_bind = {use_bind}',
+        )
         socket = context.socket(socket_type)
         if use_bind:
             socket.bind(socket_address)

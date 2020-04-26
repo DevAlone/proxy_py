@@ -13,7 +13,7 @@ async def main():
         handler_name="tasks_handler",
         worker=worker,
         number_of_workers=settings.tasks_handler.number_of_workers,
-        socket_descriptions=[(zmq.REQ, settings.tasks_handler.publish_socket_address)],
+        socket_descriptions=[(zmq.REQ, settings.tasks_handler.proxies_to_check_req_socket)],
     )
 
 
@@ -28,13 +28,14 @@ async def worker(socket: zmq.asyncio.Socket):
 
 
 async def work(socket: zmq.asyncio.Socket):
-    # task = str(int(time.time()))
     task = str(random.randint(0, 9999))
+
     print(f"-> {task}")
     await socket.send_string(task)
+    print(f"trying to recieve something")
+
     resp = await socket.recv_string()
     print(f"<- {resp}")
+
     if resp != task:
         raise Exception("AAAAA")
-
-    await asyncio.sleep(0.1)

@@ -20,9 +20,10 @@ async def main() -> int:
 async def worker(results_socket: zmq.asyncio.Socket):
     res = 0
     while True:
-        # logging.debug(f"r worker")
         proxy_checking_result = await results_socket.recv_string()
-        res += int(proxy_checking_result)
         logging.debug(f"<- {proxy_checking_result}")
+
+        # do some handling
+        res += int(proxy_checking_result)
+
         # TODO: handle the results
-        # pass
