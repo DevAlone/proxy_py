@@ -3,6 +3,8 @@ import asyncio
 import logging
 import sys
 
+import zmq
+
 import broker
 import proxies_handler
 import results_handler
@@ -16,7 +18,7 @@ async def main() -> int:
     if len(sys.argv) < 2:
         print("Command is required")
         print()
-        print_help()
+        await print_help()
         return 1
 
     command = sys.argv[1].strip().lower()
@@ -27,12 +29,16 @@ async def main() -> int:
             "tasks_handler": tasks_handler.main,
             "broker": broker.main,
             "results_handler": results_handler.main,
+            "print_version": print_version,
+            "version": print_version,
+            "--version": print_version,
+            "-v": print_version,
         }[command]
 
         return await func()
     except KeyError:
         print("Unknown command")
-        print_help()
+        await print_help()
         return 2
 
 
@@ -51,8 +57,13 @@ Project's page: https://github.com/DevAlone/proxy_py
 """
 
 
-def print_help():
+async def print_help():
     print(help_message)
+
+
+async def print_version():
+    print(f"libzmq version is\t{zmq.zmq_version()}")
+    print(f"pyzmq version is\t{zmq.__version__}")
 
 
 def init_logging():

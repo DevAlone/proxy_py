@@ -9,17 +9,33 @@ context = zmq.asyncio.Context()
 async def main():
     # TODO: logs
     print("broker")
-    tasks_handler_socket = context.socket(zmq.ROUTER)
-    tasks_handler_socket.bind(settings.tasks_handler.socket_address)
+    tasks_handler_publish_socket = context.socket(zmq.ROUTER)
+    proxies_handler_listen_socket = context.socket(zmq.DEALER)
+    proxies_handler_publish_socket = context.socket(zmq.PULL)
+    results_handler_listen_socket = context.socket(zmq.PUSH)
 
-    proxies_handler_socket = context.socket(zmq.DEALER)
-    proxies_handler_socket.bind(settings.proxies_handler.socket_address)
+    context.setsockopt(zmq.LINGER, 0)
+    # TODO: rewrite this shit
+    tasks_handler_publish_socket.setsockopt(zmq.LINGER, 0)
+    proxies_handler_listen_socket.setsockopt(zmq.LINGER, 0)
+    proxies_handler_publish_socket.setsockopt(zmq.LINGER, 0)
+    results_handler_listen_socket.setsockopt(zmq.LINGER, 0)
 
-    await zmq.proxy(tasks_handler_socket, proxies_handler_socket)
+    try:
+        tasks_handler_publish_socket.bind(settings.tasks_handler.publish_socket_address)
+        proxies_handler_listen_socket.bind(settings.proxies_handler.listen_socket_address)
+        proxies_handler_publish_socket.bind(settings.proxies_handler.publish_socket_address)
+        results_handler_listen_socket.bind(settings.results_handler.listen_socket_address)
 
-    tasks_handler_socket.close()
-    proxies_handler_socket.close()
-    context.term()
+        await zmq.device(zmq.STREAMER, proxies_handler_publish_socket, results_handler_listen_socket)
+        await zmq.proxy(tasks_handler_publish_socket, proxies_handler_listen_socket)
+    finally:
+        tasks_handler_publish_socket.close()
+        proxies_handler_listen_socket.close()
+        proxies_handler_publish_socket.close()
+
+        # TODO: figure out why it hangs everything
+        # context.term()
 
     # poller = zmq.asyncio.Poller()
     # poller.register(tasks_handler_socket, zmq.POLLIN)

@@ -2,9 +2,10 @@ import asyncio
 import logging
 from typing import Callable, Awaitable, Sequence, Tuple, Any
 
-import typing
-import zmq
 import zmq.asyncio
+
+context = zmq.asyncio.Context()
+
 
 async def handler(
         handler_name: str,
@@ -17,7 +18,6 @@ async def handler(
     socket_descirpition (socket_type, socket_address, use_bind = False)
     """
 
-    context = zmq.asyncio.Context()
     sockets = []
     for socket_type, socket_address, *use_bind in socket_descriptions:
         socket = context.socket(socket_type)
@@ -39,6 +39,11 @@ async def handler(
         await task
 
     # TODO: handle error code
+
+    for socket in sockets:
+        socket.close()
+
+    context.destroy()
 
     return 0
 

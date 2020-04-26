@@ -13,7 +13,7 @@ async def main():
         handler_name="tasks_handler",
         worker=worker,
         number_of_workers=settings.tasks_handler.number_of_workers,
-        socket_descriptions=[(zmq.REQ, settings.tasks_handler.socket_address)],
+        socket_descriptions=[(zmq.REQ, settings.tasks_handler.publish_socket_address)],
     )
 
 
