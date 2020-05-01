@@ -23,4 +23,4 @@ high_water_mark = 0
 kernel_buffer_size = 0
 
 # maximum number of simultaneously checking proxies
-proxies_checking_queue_size = 5
+proxies_checking_queue_size = 1

@@ -66,6 +66,10 @@ async def print_version():
 
 def init_logging():
     logging.root.setLevel(settings.log_level)
+    formatter = logging.Formatter(settings.log_format)
+    handler = logging.StreamHandler()
+    handler.setFormatter(formatter)
+    logging.root.addHandler(handler)
 
 
 if __name__ == "__main__":

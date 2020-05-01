@@ -1,6 +1,7 @@
 import asyncio
 import collections
 import logging
+import time
 
 import zmq.asyncio
 
@@ -11,7 +12,7 @@ async def postgres_tasks_producer():
     i = 0
     while True:
         i += 1
-        yield str(i)
+        yield str(int(time.time()))
 
 
 class TasksHandler:
@@ -31,7 +32,7 @@ class TasksHandler:
 
         self.checking_proxies_semaphore = asyncio.Semaphore(settings.tasks_handler.proxies_checking_queue_size)
         self.checking_proxies = set()
-        self.checking_proxies_timeouts = collections.deque()
+        self.checking_proxies_timeouts = asyncio.Queue()
 
     async def run(self):
         tasks = [
@@ -39,6 +40,7 @@ class TasksHandler:
             for task in [
                 self.produce_tasks(),
                 self.fetch_results(),
+                self.timeout_handler(),
             ]
         ]
 
@@ -46,27 +48,53 @@ class TasksHandler:
             await task
 
     async def produce_tasks(self):
-        logging.debug("starting produce_tasks...")
+        logging.info("starting produce_tasks...")
 
         async for task in self.tasks_producer():
             timeout = int(task) + 10
 
-            logging.debug(f"-> [produce_tasks] {task}")
+            logging.debug(f"-> {task}")
             await self.proxies_to_check_socket.send_string(task)
 
             self.checking_proxies.add(task)
-            self.checking_proxies_timeouts.append((task, timeout))
+            await self.checking_proxies_timeouts.put((task, timeout))
 
             await self.checking_proxies_semaphore.acquire()
 
     async def fetch_results(self):
-        logging.debug("starting fetch_results...")
+        logging.info("starting fetch_results...")
 
         while True:
             result = await self.check_results_socket.recv_string()
-            print(f"<- [fetch_results] {result}")
+            logging.debug(f"<- {result}")
 
-            print(f"-> [fetch_results] {result}")
+            self.checking_proxies.remove(result)
+            logging.debug(f"-> {result}")
             await self.results_to_handle_socket.send_string(result)
 
             self.checking_proxies_semaphore.release()
+
+    async def timeout_handler(self):
+        logging.info("starting timeout_handler...")
+
+        while True:
+            logging.debug("waiting to get checking proxy timeout")
+            task, timeout = await self.checking_proxies_timeouts.get()
+            curr_time = time.time()
+            if curr_time >= timeout:
+                logging.debug("curr_time >= timeout")
+                await self.handle_timeout_task(task, timeout)
+            else:
+                logging.debug("sleeping")
+                await asyncio.sleep(timeout - curr_time)
+                logging.debug("curr_time >= timeout")
+                await self.handle_timeout_task(task, timeout)
+
+    async def handle_timeout_task(self, task, timeout):
+        if task in self.checking_proxies:
+            logging.warning("found timed out proxy", extra={
+                "task": task,
+            })
+            self.checking_proxies_semaphore.release()
+            self.checking_proxies.remove(task)
+            # TODO: move to the end in DB(time.now() + some_value)

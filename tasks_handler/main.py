@@ -28,7 +28,7 @@ async def main():
         },
     }
 
-    for socket_name, socket_description in sockets.values():
+    for socket_name, socket_description in sockets.items():
         socket = context.socket(socket_description["type"])
         if settings.tasks_handler.high_water_mark > 0:
             socket.setsockopt(zmq.SNDHWM, settings.tasks_handler.high_water_mark)

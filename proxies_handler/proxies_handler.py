@@ -39,8 +39,7 @@ async def worker(
         logging.debug(f"<- ")
 
         # do some checking
-        await asyncio.sleep(random.randint(1, 3))
-        await asyncio.sleep(999999)
+        # await asyncio.sleep(random.randint(1, 3))
 
         logging.debug(f"-> ")
         await results_socket.send_string(task)
