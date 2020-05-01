@@ -20,19 +20,31 @@ async def handler(
 
     sockets = []
     for socket_type, socket_address, *extra in socket_descriptions:
+        high_water_mark = 0
         if len(extra) > 0:
-            use_bind = extra[0]
-        else:
-            use_bind = False
+            high_water_mark = extra[0]
+
+        kernel_buffer_size = 0
+        if len(extra) > 1:
+            kernel_buffer_size = extra[1]
 
         logging.debug(
-            f'creating a socket with type "{socket_type}", address "{socket_address}" and use_bind = {use_bind}',
+            f'creating a socket with type "{socket_type}", '
+            f'address "{socket_address}" and '
+            f'high water mark = {high_water_mark} and'
+            f'kernel buffer size = {kernel_buffer_size}',
         )
         socket = context.socket(socket_type)
-        if use_bind:
-            socket.bind(socket_address)
-        else:
-            socket.connect(socket_address)
+
+        if high_water_mark > 0:
+            socket.setsockopt(zmq.SNDHWM, high_water_mark)
+            socket.setsockopt(zmq.RCVHWM, high_water_mark)
+
+        if kernel_buffer_size > 0:
+            socket.setsockopt(zmq.SNDBUF, kernel_buffer_size)
+            socket.setsockopt(zmq.RCVBUF, kernel_buffer_size)
+
+        socket.connect(socket_address)
 
         sockets.append(socket)
 

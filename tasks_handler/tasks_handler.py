@@ -1,77 +1,72 @@
 import asyncio
-import random
-import time
+import collections
+import logging
 
-import zmq
 import zmq.asyncio
 
 import settings
-from handler import handler
-
-context = zmq.asyncio.Context()
 
 
-async def main():
-    tasks = [
-        asyncio.create_task(task)
-        for task in [
-            produce_tasks(),
-            fetch_results(),
+async def postgres_tasks_producer():
+    i = 0
+    while True:
+        i += 1
+        yield str(i)
+
+
+class TasksHandler:
+    def __init__(
+            self,
+            proxies_to_check_socket: zmq.asyncio.Socket,
+            check_results_socket: zmq.asyncio.Socket,
+            results_to_handle_socket: zmq.asyncio.Socket,
+            tasks_producer=None,
+    ):
+        self.proxies_to_check_socket = proxies_to_check_socket
+        self.check_results_socket = check_results_socket
+        self.results_to_handle_socket = results_to_handle_socket
+        self.tasks_producer = tasks_producer
+        if self.tasks_producer is None:
+            self.tasks_producer = postgres_tasks_producer
+
+        self.checking_proxies_semaphore = asyncio.Semaphore(settings.tasks_handler.proxies_checking_queue_size)
+        self.checking_proxies = set()
+        self.checking_proxies_timeouts = collections.deque()
+
+    async def run(self):
+        tasks = [
+            asyncio.create_task(task)
+            for task in [
+                self.produce_tasks(),
+                self.fetch_results(),
+            ]
         ]
-    ]
 
-    for task in tasks:
-        await task
+        for task in tasks:
+            await task
 
-    # TODO: handle error code?
-    # TODO: close the sockets
-    # for socket in sockets:
-    #     socket.close()
-    #
-    # context.destroy()
+    async def produce_tasks(self):
+        logging.debug("starting produce_tasks...")
 
+        async for task in self.tasks_producer():
+            timeout = int(task) + 10
 
-# async def worker(socket: zmq.asyncio.Socket):
-#     while True:
-#         try:
-#             # TODO: replace with zeromq's timeout
-#             await asyncio.wait_for(work(socket), timeout=settings.tasks_handler.task_processing_timeout)
-#         except asyncio.TimeoutError:
-#             # TODO: log
-#             print("timeout happened!")
-#
+            logging.debug(f"-> [produce_tasks] {task}")
+            await self.proxies_to_check_socket.send_string(task)
 
+            self.checking_proxies.add(task)
+            self.checking_proxies_timeouts.append((task, timeout))
 
-async def produce_tasks():
-    proxies_to_check_socket = context.socket(zmq.PUSH)
-    proxies_to_check_socket.bind(settings.tasks_handler.proxies_to_check_socket_address)
+            await self.checking_proxies_semaphore.acquire()
 
-    while True:
-        # task = str(random.randint(0, 9999))
-        task = str(time.time())
+    async def fetch_results(self):
+        logging.debug("starting fetch_results...")
 
-        print(f"-> {task}")
-        await proxies_to_check_socket.send_string(task)
-        await asyncio.sleep(5)
-    # print(f"trying to recieve something")
+        while True:
+            result = await self.check_results_socket.recv_string()
+            print(f"<- [fetch_results] {result}")
 
-    # resp = await socket.recv_string()
-    # print(f"<- {resp}")
+            print(f"-> [fetch_results] {result}")
+            await self.results_to_handle_socket.send_string(result)
 
-    # if resp != task:
-    #     raise Exception("AAAAA")
-
-
-async def fetch_results():
-    check_results_socket = context.socket(zmq.PULL)
-    check_results_socket.bind(settings.tasks_handler.check_results_socket_address)
-
-    results_to_handle_socket = context.socket(zmq.PUSH)
-    results_to_handle_socket.bind(settings.tasks_handler.results_to_handle_socket_address)
-
-    while True:
-        result = await check_results_socket.recv_string()
-        print(f"<- {result}")
-
-        print(f"2-> {result}")
-        await results_to_handle_socket.send_string(result)
+            self.checking_proxies_semaphore.release()

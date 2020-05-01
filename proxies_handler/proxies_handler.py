@@ -16,8 +16,16 @@ async def main() -> int:
         worker=worker,
         number_of_workers=settings.proxies_handler.number_of_workers,
         socket_descriptions=[
-            (zmq.PULL, settings.tasks_handler.proxies_to_check_socket_address),
-            (zmq.PUSH, settings.tasks_handler.check_results_socket_address),
+            (
+                zmq.PULL,
+                settings.proxies_handler.proxies_to_check_socket_address,
+                settings.proxies_handler.high_water_mark,
+                settings.proxies_handler.kernel_buffer_size,
+            ),
+            (
+                zmq.PUSH,
+                settings.proxies_handler.check_results_socket_address,
+            ),
         ],
     )
 
@@ -28,12 +36,13 @@ async def worker(
 ) -> int:
     while True:
         task = await proxies_to_check_socket.recv_string()
-        logging.debug(f"<- {task}")
+        logging.debug(f"<- ")
 
         # do some checking
         await asyncio.sleep(random.randint(1, 3))
+        await asyncio.sleep(999999)
 
-        logging.debug(f"-> {task}")
+        logging.debug(f"-> ")
         await results_socket.send_string(task)
         # TODO:!!!
         # await proxies_to_check_socket.send_string(task)

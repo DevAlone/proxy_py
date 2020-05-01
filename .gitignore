@@ -11,3 +11,4 @@ proxypy.egg-info/
 build/
 local/
 .pytest_cache
+sources.tar.gz

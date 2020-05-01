@@ -5,7 +5,6 @@ import sys
 
 import zmq
 
-import broker
 import proxies_handler
 import results_handler
 import settings
@@ -25,11 +24,10 @@ async def main() -> int:
     sys.argv = sys.argv[1:]
     try:
         func = {
-            "proxies_handler": proxies_handler.main,
-            "tasks_handler": tasks_handler.main,
-            "broker": broker.main,
-            "results_handler": results_handler.main,
-            "print_version": print_version,
+            "proxies-handler": proxies_handler.main,
+            "tasks-handler": tasks_handler.main,
+            "results-handler": results_handler.main,
+            "print-version": print_version,
             "version": print_version,
             "--version": print_version,
             "-v": print_version,
