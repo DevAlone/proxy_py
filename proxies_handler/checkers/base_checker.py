@@ -1,11 +1,12 @@
-from aiosocks.connector import ProxyConnector, ProxyClientRequest
-from proxy_py import settings
-
 import ssl
-import aiohttp
-import aiosocks
 import asyncio
+
+from aiosocks.connector import ProxyConnector, ProxyClientRequest
+import aiosocks
+import aiohttp
+
 import async_requests
+import settings
 
 
 class CheckerResult:
@@ -42,11 +43,11 @@ class BaseChecker:
         if BaseChecker.aiohttp_connector is None:
             BaseChecker.aiohttp_connector = ProxyConnector(
                 remote_resolve=True,
-                limit=settings.NUMBER_OF_SIMULTANEOUS_REQUESTS,
-                limit_per_host=settings.NUMBER_OF_SIMULTANEOUS_REQUESTS_PER_HOST,
+                limit=settings.proxies_handler.number_of_simultaneous_requests,
+                limit_per_host=settings.proxies_handler.number_of_simultaneous_requests_per_host,
             )
         self.request_type = request_type
-        self.timeout = timeout if timeout is not None else settings.PROXY_CHECKING_TIMEOUT
+        self.timeout = timeout if timeout is not None else settings.proxies_handler.proxy_checking_timeout
         self.url = url
 
     @staticmethod
@@ -86,16 +87,16 @@ class BaseChecker:
         try:
             return await self._request(proxy_address, timeout)
         except (
-            aiohttp.client_exceptions.ServerDisconnectedError,
-            aiohttp.client_exceptions.ClientHttpProxyError,
-            aiohttp.client_exceptions.ClientProxyConnectionError,
-            aiohttp.client_exceptions.ClientResponseError,
-            aiohttp.client_exceptions.ClientPayloadError,
-            aiosocks.errors.SocksError,
-            aiosocks.SocksError,
-            asyncio.TimeoutError,
-            ssl.CertificateError,
-            aiohttp.client_exceptions.ClientOSError,
+                aiohttp.client_exceptions.ServerDisconnectedError,
+                aiohttp.client_exceptions.ClientHttpProxyError,
+                aiohttp.client_exceptions.ClientProxyConnectionError,
+                aiohttp.client_exceptions.ClientResponseError,
+                aiohttp.client_exceptions.ClientPayloadError,
+                aiosocks.errors.SocksError,
+                aiosocks.SocksError,
+                asyncio.TimeoutError,
+                ssl.CertificateError,
+                aiohttp.client_exceptions.ClientOSError,
         ) as ex:
             message = str(ex).lower()
 
@@ -120,17 +121,17 @@ class BaseChecker:
         conn = BaseChecker.get_aiohttp_connector()
 
         async with aiohttp.ClientSession(
-            connector=conn, connector_owner=False, request_class=ProxyClientRequest
+                connector=conn, connector_owner=False, request_class=ProxyClientRequest
         ) as session:
             async with session.request(
-                self.request_type, self.url, proxy=proxy_address, timeout=timeout, headers=headers
+                    self.request_type, self.url, proxy=proxy_address, timeout=timeout, headers=headers
             ) as response:
                 is_working = await self.validate(response, checker_result)
 
         return is_working, checker_result
 
     async def validate(
-        self, response: aiohttp.ClientResponse, checker_result: CheckerResult
+            self, response: aiohttp.ClientResponse, checker_result: CheckerResult
     ) -> bool:
         """
         Implement this method. It will get response from url with http method you provided in constructor

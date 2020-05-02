@@ -4,15 +4,8 @@ import types
 import pytest
 import zmq.asyncio
 
+from tests_helpers.tests_helpers import create_range_tasks_producer
 from .tasks_handler import TasksHandler
-
-
-def create_range_tasks_producer(n: int):
-    async def producer():
-        for i in range(n):
-            yield i
-
-    return producer
 
 
 # TODO: create sockets which would count number of got messages

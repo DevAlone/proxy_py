@@ -9,7 +9,7 @@ from .tasks_handler import TasksHandler
 context = zmq.asyncio.Context()
 
 
-async def main():
+async def main(tasks_producer=None):
     sockets = {
         "proxies_to_check_socket": {
             "instance": None,
@@ -42,7 +42,11 @@ async def main():
 
         sockets[socket_name] = socket
 
-    await TasksHandler(**sockets).run()
+    tasks_handler = TasksHandler(**sockets, tasks_producer=tasks_producer)
+
+    main.tasks_handler = tasks_handler
+
+    return await tasks_handler.run()
 
     # TODO: handle error code?
     # TODO: close the sockets

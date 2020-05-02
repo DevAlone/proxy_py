@@ -1,4 +1,4 @@
-from checkers.base_checker import BaseChecker, CheckerResult
+from .base_checker import BaseChecker, CheckerResult
 import aiohttp
 
 

@@ -12,6 +12,7 @@ async def handler(
         worker: Callable[[zmq.asyncio.Socket], Awaitable[int]],
         number_of_workers: int,
         socket_descriptions: Sequence[Tuple[Any, ...]],
+        worker_kwargs: dict = None,
 ) -> int:
     """
     // TODO: doc!
@@ -51,7 +52,7 @@ async def handler(
     logging.info(f"starting {handler_name} workers")
 
     tasks = [
-        asyncio.create_task(worker_wrapper(handler_name, worker, sockets))
+        asyncio.create_task(worker_wrapper(handler_name, worker, sockets, worker_kwargs))
         for _ in range(number_of_workers)
     ]
 
@@ -70,8 +71,9 @@ async def handler(
 
 async def worker_wrapper(
         handler_name: str,
-        worker: Callable[[zmq.asyncio.Socket], Awaitable[int]],
+        worker: Callable[[zmq.asyncio.Socket, Any], Awaitable[int]],
         sockets: Sequence[zmq.asyncio.Socket],
+        worker_kwargs: dict = None
 ) -> int:
     logging.debug(f"started {handler_name} worker")
-    return await worker(*sockets)
+    return await worker(*sockets, **worker_kwargs)

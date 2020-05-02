@@ -20,7 +20,7 @@ async def main() -> int:
         await print_help()
         return 1
 
-    command = sys.argv[1].strip().lower()
+    command = sys.argv[1].strip().lower().replace("_", "-")
     sys.argv = sys.argv[1:]
     try:
         func = {

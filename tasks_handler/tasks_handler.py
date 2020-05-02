@@ -1,18 +1,70 @@
 import asyncio
-import collections
 import logging
 import time
 
+import typing
 import zmq.asyncio
 
 import settings
+from proxy_py_types import CheckProxyMessage
+from proxy_py_types.messages import ProxyCheckingResult
+from storage import PostgresStorage, Proxy
 
 
-async def postgres_tasks_producer():
-    i = 0
-    while True:
-        i += 1
-        yield str(int(time.time()))
+# TODO: if collector sent a proxy which exists in db and was checked recently, ignore it
+# TODO: validate proxies from collector(length for example)
+
+
+async def postgres_tasks_producer() -> typing.AsyncGenerator[CheckProxyMessage, None]:
+    good_next_update_timestamp = 0
+    bad_next_update_timestamp = 0
+    dead_next_update_timestamp = 0
+    storage = PostgresStorage()
+    await storage.init()
+
+    try:
+        while True:
+            # TODO: there can be a problem when a lot of proxies with the same timestamp
+            # would make it push same tasks
+            async def fetch(func, next_update_timestamp) -> typing.List[Proxy]:
+                return await func(next_update_timestamp, settings.tasks_handler.fetch_n_proxies_at_time)
+
+            def proxy_to_check_proxy_message(proxy: Proxy) -> CheckProxyMessage:
+                return CheckProxyMessage(
+                    protocol=proxy.protocol,
+                    login=proxy.login,
+                    password=proxy.password,
+                    hostname=proxy.address,
+                    port=proxy.port,
+                )
+
+            proxies = await fetch(storage.get_good_proxies_to_check, good_next_update_timestamp)
+            for proxy in proxies:
+                yield proxy_to_check_proxy_message(proxy)
+
+            if proxies:
+                good_next_update_timestamp = proxies[-1].next_check_time
+                continue
+
+            proxies = await fetch(storage.get_bad_proxies_to_check, bad_next_update_timestamp)
+            for proxy in proxies:
+                yield proxy_to_check_proxy_message(proxy)
+
+            if proxies:
+                bad_next_update_timestamp = proxies[-1].next_check_time
+                continue
+
+            proxies = await fetch(storage.get_dead_proxies_to_check, dead_next_update_timestamp)
+            for proxy in proxies:
+                yield proxy_to_check_proxy_message(proxy)
+
+            if proxies:
+                dead_next_update_timestamp = proxies[-1].next_check_time
+                continue
+
+            await asyncio.sleep(1)
+    finally:
+        await storage.close()
 
 
 class TasksHandler:
@@ -33,8 +85,11 @@ class TasksHandler:
         self.checking_proxies_semaphore = asyncio.Semaphore(settings.tasks_handler.proxies_checking_queue_size)
         self.checking_proxies = set()
         self.checking_proxies_timeouts = asyncio.Queue()
+        self.has_more_tasks = True
+        self.number_of_produced_tasks = 0
+        self.number_of_fetched_results = 0
 
-    async def run(self):
+    async def run(self) -> int:
         tasks = [
             asyncio.create_task(task)
             for task in [
@@ -47,37 +102,45 @@ class TasksHandler:
         for task in tasks:
             await task
 
+        return 0
+
     async def produce_tasks(self):
         logging.info("starting produce_tasks...")
 
         async for task in self.tasks_producer():
-            timeout = int(task) + 10
+            timeout = int(time.time()) + settings.tasks_handler.task_processing_timeout
 
             logging.debug(f"-> {task}")
-            await self.proxies_to_check_socket.send_string(task)
+            await self.proxies_to_check_socket.send_pyobj(task)
 
             self.checking_proxies.add(task)
             await self.checking_proxies_timeouts.put((task, timeout))
 
             await self.checking_proxies_semaphore.acquire()
+            self.number_of_produced_tasks += 1
+
+        self.has_more_tasks = False
 
     async def fetch_results(self):
         logging.info("starting fetch_results...")
 
-        while True:
-            result = await self.check_results_socket.recv_string()
+        while self.has_more_tasks and self.checking_proxies_semaphore:
+            result: ProxyCheckingResult = await self.check_results_socket.recv_pyobj()
             logging.debug(f"<- {result}")
 
-            self.checking_proxies.remove(result)
+            if result.check_proxy_message in self.checking_proxies:
+                self.checking_proxies.remove(result.check_proxy_message)
+
             logging.debug(f"-> {result}")
-            await self.results_to_handle_socket.send_string(result)
+            await self.results_to_handle_socket.send_pyobj(result)
 
             self.checking_proxies_semaphore.release()
+            self.number_of_fetched_results += 1
 
     async def timeout_handler(self):
         logging.info("starting timeout_handler...")
 
-        while True:
+        while self.has_more_tasks and not self.checking_proxies_timeouts.empty():
             logging.debug("waiting to get checking proxy timeout")
             task, timeout = await self.checking_proxies_timeouts.get()
             curr_time = time.time()
@@ -90,7 +153,7 @@ class TasksHandler:
                 logging.debug("curr_time >= timeout")
                 await self.handle_timeout_task(task, timeout)
 
-    async def handle_timeout_task(self, task, timeout):
+    async def handle_timeout_task(self, task: CheckProxyMessage, timeout):
         if task in self.checking_proxies:
             logging.warning("found timed out proxy", extra={
                 "task": task,
