@@ -1,4 +1,7 @@
+import asyncio
 import typing
+
+import peewee
 
 import settings
 from .models import \
@@ -9,6 +12,15 @@ from .models import \
 
 class PostgresStorage:
     async def init(self):
+        while True:
+            try:
+                await self.init_db()
+                break
+            except peewee.OperationalError:
+                await asyncio.sleep(1)
+                continue
+
+    async def init_db(self):
         _silent = True
 
         raw_db.init(**settings.postgres_credentials)

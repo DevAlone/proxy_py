@@ -18,6 +18,7 @@ async def handler(
     // TODO: doc!
     socket_descirpition (socket_type, socket_address, use_bind = False)
     """
+    worker_kwargs = {} if worker_kwargs is None else worker_kwargs
 
     sockets = []
     for socket_type, socket_address, *extra in socket_descriptions:

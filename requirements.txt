@@ -2,7 +2,9 @@ pyzmq
 pytest
 pytest-asyncio
 pytest-timeout
-asyncpg
 gino
-aiohttp
-aiosocks
+aiohttp==2.3.10
+aiohttp-jinja2
+aiosocks==0.2.6
+aiopg
+peewee-async

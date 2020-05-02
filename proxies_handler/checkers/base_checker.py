@@ -1,9 +1,9 @@
 import ssl
 import asyncio
 
-from aiosocks.connector import ProxyConnector, ProxyClientRequest
-import aiosocks
 import aiohttp
+import aiosocks
+from aiosocks.connector import ProxyConnector, ProxyClientRequest
 
 import async_requests
 import settings

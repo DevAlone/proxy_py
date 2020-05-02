@@ -15,16 +15,17 @@ RUN \
 WORKDIR /proxy_py
 USER user
 
-COPY sources.tar.gz .
-
+# TODO: fix
+#COPY sources.tar.gz .
+COPY . .
 
 RUN \
 #    python3 -m venv ./environment \
 #	&& source ./environment/bin/activate \
-	cd /proxy_py/ \
-	&& tar xf sources.tar.gz \
-	&& rm sources.tar.gz \
-	&& echo "Installing dependencies..." \
+#	cd /proxy_py/ \
+#	&& tar xf sources.tar.gz \
+#	&& rm sources.tar.gz \
+	echo "Installing dependencies..." \
 	&& pip3 install -r requirements.txt --no-cache-dir
 
 #EXPOSE 55555
