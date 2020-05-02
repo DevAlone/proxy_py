@@ -1,8 +1,8 @@
-from ..requests_to_models.request import Request, GetRequest, CountRequest
-
 import string
 import copy
 import re
+
+from ..requests_to_models.request import Request, GetRequest, CountRequest
 
 
 class RequestParser:

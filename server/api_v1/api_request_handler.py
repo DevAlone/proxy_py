@@ -1,14 +1,14 @@
 import aiohttp
 
+import settings
 from server.base_app import BaseApp
 from .requests_to_models.request_parser import RequestParser, ParseError
 from .requests_to_models.request_executor import RequestExecutor, ExecutionError
-from proxy_py import settings
 
 
 class ApiRequestHandler:
     def __init__(self, app: BaseApp):
-        self.request_parser = RequestParser(settings.PROXY_PROVIDER_SERVER_API_CONFIG)
+        self.request_parser = RequestParser(settings.server.api_config)
         self.request_executor = RequestExecutor()
         self.app = app
 

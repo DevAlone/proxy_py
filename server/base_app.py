@@ -1,9 +1,10 @@
-from proxy_py import settings
-from aiohttp import web
-
 import abc
+
 import aiohttp_jinja2
 import jinja2
+from aiohttp import web
+
+import settings
 
 
 class BaseApp:
@@ -12,7 +13,7 @@ class BaseApp:
         self._app = web.Application()
 
         aiohttp_jinja2.setup(self.app, loader=jinja2.FileSystemLoader(
-            settings.TEMPLATES_PATH
+            settings.server.templates_path
         ))
 
     async def init(self):

@@ -1,17 +1,15 @@
-import aiohttp
-import re
-
-import os
-
-from proxy_py import settings
-from models import db, Proxy, ProxyCountItem, CollectorState, NumberOfProxiesToProcess, ProcessorProxiesQueueSize
-from server.base_app import BaseApp
-from aiohttp import web
-
 import time
 import datetime
 import functools
+
 import aiohttp_jinja2
+from aiohttp import web
+
+import settings
+from storage import Proxy, ProxyCountItem, CollectorState, NumberOfProxiesToProcess, ProcessorProxiesQueueSize
+from storage.models import db
+from server.base_app import BaseApp
+
 
 
 def get_response_wrapper(template_name):
@@ -26,20 +24,20 @@ def get_response_wrapper(template_name):
             bad_proxies_count = await db.count(
                 Proxy.select().where(
                     Proxy.number_of_bad_checks > 0,
-                    Proxy.number_of_bad_checks < settings.DEAD_PROXY_THRESHOLD,
+                    Proxy.number_of_bad_checks < settings.dead_proxy_threshold,
                 )
             )
 
             dead_proxies_count = await db.count(
                 Proxy.select().where(
-                    Proxy.number_of_bad_checks >= settings.DEAD_PROXY_THRESHOLD,
-                    Proxy.number_of_bad_checks < settings.DO_NOT_CHECK_ON_N_BAD_CHECKS,
+                    Proxy.number_of_bad_checks >= settings.dead_proxy_threshold,
+                    Proxy.number_of_bad_checks < settings.do_not_check_on_n_bad_checks,
                 )
             )
 
             not_checked_proxies_count = await db.count(
                 Proxy.select().where(
-                    Proxy.number_of_bad_checks >= settings.DO_NOT_CHECK_ON_N_BAD_CHECKS,
+                    Proxy.number_of_bad_checks >= settings.do_not_check_on_n_bad_checks,
                 )
             )
 

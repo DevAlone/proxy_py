@@ -3,40 +3,46 @@ import asyncio
 import logging
 import sys
 
+import typing
 import zmq
 
 import proxies_handler
 import results_handler
+import server
 import settings
 import tasks_handler
 
 
-async def main() -> int:
+def main() -> int:
     init_logging()
 
     if len(sys.argv) < 2:
         print("Command is required")
         print()
-        await print_help()
+        print_help()
         return 1
 
     command = sys.argv[1].strip().lower().replace("_", "-")
     sys.argv = sys.argv[1:]
     try:
-        func = {
+        func: typing.Any = {
             "proxies-handler": proxies_handler.main,
             "tasks-handler": tasks_handler.main,
             "results-handler": results_handler.main,
+            "server": server.main,
             "print-version": print_version,
             "version": print_version,
             "--version": print_version,
             "-v": print_version,
         }[command]
 
-        return await func()
+        if asyncio.iscoroutinefunction(func):
+            return asyncio.run(func())
+
+        return func()
     except KeyError:
         print("Unknown command")
-        await print_help()
+        print_help()
         return 2
 
 
@@ -55,11 +61,11 @@ Project's page: https://github.com/DevAlone/proxy_py
 """
 
 
-async def print_help():
+def print_help():
     print(help_message)
 
 
-async def print_version():
+def print_version():
     print(f"libzmq version is\t{zmq.zmq_version()}")
     print(f"pyzmq version is\t{zmq.__version__}")
 

@@ -15,6 +15,9 @@ postgres_credentials = {
 # number of failed checks when proxy is considered dead
 dead_proxy_threshold = 10
 
+# TODO: it is not supported by tasks handler yet
+do_not_check_on_n_bad_checks = 99999999
+
 """
 Database settings (do not try to change after creation of the database)
 """

@@ -1,10 +1,11 @@
-from proxy_py import settings
-from server.base_app import BaseApp
-from .api_request_handler import ApiRequestHandler
+import json
+
+import aiohttp
 from aiohttp import web
 
-import json
-import aiohttp
+import settings
+from server.base_app import BaseApp
+from .api_request_handler import ApiRequestHandler
 
 
 class App(BaseApp):
@@ -30,7 +31,7 @@ class App(BaseApp):
 
             try:
                 data = data.decode()
-                if len(data) > settings.PROXY_PROVIDER_SERVER_MAXIMUM_REQUEST_LENGTH:
+                if len(data) > settings.server.maximum_request_length:
                     response = {
                         'status': 'error',
                         'status_code': 400,

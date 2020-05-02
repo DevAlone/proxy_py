@@ -1,9 +1,10 @@
-from server.base_app import BaseApp
-from .api_request_handler import ApiRequestHandler
-from aiohttp import web
-
 import json
 import aiohttp
+
+from aiohttp import web
+
+from server.base_app import BaseApp
+from .api_request_handler import ApiRequestHandler
 
 
 class App(BaseApp):

@@ -1,3 +1,3 @@
 __all__ = [
-        "api_request_handler",
+    "api_request_handler",
 ]

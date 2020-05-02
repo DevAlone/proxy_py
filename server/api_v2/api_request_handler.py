@@ -1,13 +1,12 @@
 import re
 
-from peewee import RawQuery
+import aiohttp
 
-from models import Proxy, db
-from proxy_py import settings
+import settings
+from storage import Proxy
+from storage.models import db
 from server.api_v1.requests_to_models.request_parser import ParseError
 from server.base_app import BaseApp
-
-import aiohttp
 
 
 class ApiRequestHandler:
@@ -27,7 +26,7 @@ class ApiRequestHandler:
             if method_name not in self.methods:
                 response = {
                     'status': 'error',
-                    'status_code':400,
+                    'status_code': 400,
                     'error_message': "there is no any method with this name",
                 }
             else:
@@ -49,7 +48,7 @@ class ApiRequestHandler:
         except ValueError as ex:
             response = {
                 'status': 'error',
-                'status_code':400,
+                'status_code': 400,
                 'error_message': "something's wrong with your request",
             }
             self.app.log_error(
@@ -91,7 +90,6 @@ class ApiRequestHandler:
         validate_letters_digits_undescores(model_name)
         if model_name not in settings.PROXY_PROVIDER_SERVER_API_CONFIG:
             raise ParseError("You're not allowed to see this model")
-
 
         return {
             "result": "model " + model_name,

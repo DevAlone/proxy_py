@@ -1,17 +1,18 @@
 import asyncio
+import sys
+import json
+import logging
 
-from proxy_py import settings
+import aiohttp
+import aiohttp_jinja2
+from aiohttp import web
+
+import settings
+from storage import PostgresStorage
 from .base_app import BaseApp
 from .api_v1.app import App as ApiV1App
 from .api_v2.app import App as ApiV2App
 from .frontend.app import App as FrontendApp
-from aiohttp import web
-
-import json
-import logging
-import aiohttp
-import aiohttp_jinja2
-import sys
 
 
 class ProxyProviderServer(BaseApp):
@@ -19,20 +20,28 @@ class ProxyProviderServer(BaseApp):
         logger = logging.getLogger("proxy_py/server")
         logger.setLevel(logging.DEBUG if settings.DEBUG else logging.INFO)
 
+        # TODO: rewrite to use the default logger
         logger_handler = logging.StreamHandler(sys.stdout)
         logger_handler.setLevel(logging.DEBUG if settings.DEBUG else logging.INFO)
-        logger_handler.setFormatter(logging.Formatter(settings.LOG_FORMAT_STRING))
+        logger_handler.setFormatter(logging.Formatter(settings.log_format))
 
         logger.addHandler(logger_handler)
-        
+
         super(ProxyProviderServer, self).__init__(logger)
 
         self.host = host
         self.port = port
         self._request_number = 0
 
-    def start(self, loop):
+    def start(self):
+        loop = asyncio.get_event_loop()
+
+        # TODO: use the storage
+        storage = PostgresStorage()
+        loop.run_until_complete(storage.init())
+
         loop.run_until_complete(self.init())
+
 
         return web.run_app(self._app, host=self.host, port=self.port, loop=loop)
 
