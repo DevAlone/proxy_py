@@ -1,4 +1,4 @@
-from proxy_py import settings
+import settings
 from fake_useragent import UserAgent
 from aiosocks.connector import ProxyConnector, ProxyClientRequest
 
@@ -39,8 +39,8 @@ class HttpClient:
         if HttpClient._aiohttp_connector is None:
             HttpClient._aiohttp_connector = ProxyConnector(
                 remote_resolve=True,
-                limit=settings.NUMBER_OF_SIMULTANEOUS_REQUESTS,
-                limit_per_host=settings.NUMBER_OF_SIMULTANEOUS_REQUESTS_PER_HOST,
+                limit=settings.proxies_handler.number_of_simultaneous_requests,
+                limit_per_host=settings.proxies_handler.number_of_simultaneous_requests_per_host,
             )
         self.proxy_address = None
 

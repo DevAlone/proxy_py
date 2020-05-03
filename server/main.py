@@ -1,6 +1,5 @@
 import settings
 
-from storage import PostgresStorage
 from .proxy_provider_server import ProxyProviderServer
 
 

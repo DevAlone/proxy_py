@@ -1,10 +1,9 @@
 # TODO: add wrapper for doing requests and saving its cookies and UserAgent
 import asyncio
-
-from proxy_py import settings
-
 import json
-import models
+
+import settings
+from storage import models
 
 
 class AbstractCollector:
@@ -55,7 +54,7 @@ class AbstractCollector:
 
         i = 0
         async for proxy in collect:
-            if i > settings.COLLECTOR_MAXIMUM_NUMBER_OF_PROXIES_PER_REQUEST:
+            if i > settings.collectors_handler.maximum_number_of_proxies_per_request:
                 break
 
             yield proxy

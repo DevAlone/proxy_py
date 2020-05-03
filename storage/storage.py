@@ -7,7 +7,7 @@ import settings
 from .models import \
     Proxy, ProxyCountItem, CollectorState, \
     NumberOfProxiesToProcess, NumberOfCollectorsToProcess, \
-    ProcessorProxiesQueueSize, raw_db, db
+    raw_db, db
 
 
 class PostgresStorage:
@@ -30,7 +30,6 @@ class PostgresStorage:
         CollectorState.create_table(_silent)
         NumberOfProxiesToProcess.create_table(_silent)
         NumberOfCollectorsToProcess.create_table(_silent)
-        ProcessorProxiesQueueSize.create_table(_silent)
 
         raw_db.execute_sql(
             """
@@ -72,4 +71,12 @@ class PostgresStorage:
                 *number_of_bad_checks_filters,
                 Proxy.next_check_time <= next_update_timestamp,
             ).order_by(Proxy.next_check_time).limit(limit),
+        )
+
+    # TODO: remove since the state should be in redis or other in-memory storage
+    async def get_collectors_to_check(self, next_update_timestamp, limit) -> typing.List[CollectorState]:
+        return await db.execute(
+            CollectorState.select().where(
+                CollectorState.last_processing_time < next_update_timestamp - CollectorState.processing_period
+            ).order_by(peewee.fn.Random()).limit(limit)
         )

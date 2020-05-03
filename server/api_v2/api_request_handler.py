@@ -3,7 +3,7 @@ import re
 import aiohttp
 
 import settings
-from storage import Proxy
+import storage
 from storage.models import db
 from server.api_v1.requests_to_models.request_parser import ParseError
 from server.base_app import BaseApp
@@ -112,7 +112,7 @@ class ApiRequestHandler:
         # TODO: validate id
         results = []
 
-        for item in await db.execute(Proxy.raw(
+        for item in await db.execute(storage.Proxy.raw(
                 f'SELECT * FROM working_proxies TABLESAMPLE SYSTEM_ROWS({number});'
         )):
             obj = {}

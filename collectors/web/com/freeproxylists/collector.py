@@ -9,6 +9,9 @@ import http_client
 SLEEP_BETWEEN_PAGES_SECONDS = 1
 
 
+# TODO: split to different classes
+
+
 class Collector(AbstractCollector):
     __collector__ = True
 

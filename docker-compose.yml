@@ -1,6 +1,11 @@
 version: '3'
 
 services:
+  collectors-handler:
+    build: .
+    command: ./main.sh collectors-handler
+    restart: always
+
   tasks-handler:
     build: .
     command: ./main.sh tasks-handler

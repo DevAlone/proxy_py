@@ -6,6 +6,7 @@ import sys
 import typing
 import zmq
 
+import collectors_handler
 import proxies_handler
 import results_handler
 import server
@@ -26,6 +27,7 @@ def main() -> int:
     sys.argv = sys.argv[1:]
     try:
         func: typing.Any = {
+            "collectors-handler": collectors_handler.main,
             "proxies-handler": proxies_handler.main,
             "tasks-handler": tasks_handler.main,
             "results-handler": results_handler.main,
@@ -79,4 +81,4 @@ def init_logging():
 
 
 if __name__ == "__main__":
-    exit(asyncio.run(main()))
+    exit(main())

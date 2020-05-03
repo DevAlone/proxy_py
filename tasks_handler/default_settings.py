@@ -10,6 +10,9 @@ check_results_socket_address = "tcp://0.0.0.0:65534"
 
 results_to_handle_socket_address = "tcp://0.0.0.0:65533"
 
+# address to take proxies from collectors
+collectors_results_socket_address = "tcp://0.0.0.0:65532"
+
 # TODO: 2 * proxy checking timeout
 task_processing_timeout: int = 60
 

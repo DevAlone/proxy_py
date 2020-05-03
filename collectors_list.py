@@ -1,10 +1,10 @@
 import inspect
 import os
-import asyncio
 import importlib.util
 
-from models import db, CollectorState
-from proxy_py import settings
+import storage
+from storage.models import db
+import settings
 
 
 collectors = {}
@@ -13,7 +13,11 @@ collectors = {}
 async def init():
     global collectors
 
-    _collectors_dirs = settings.COLLECTORS_DIRS
+    # TODO: use storage!
+    postgres_storage = storage.PostgresStorage()
+    await postgres_storage.init()
+
+    _collectors_dirs = settings.collectors_handler.collectors_dirs
     if type(_collectors_dirs) is not list:
         _collectors_dirs = [_collectors_dirs]
 
@@ -47,13 +51,13 @@ async def init():
     for module_name, Collector in collectors.items():
         try:
             await db.get(
-                CollectorState.select().where(
-                    CollectorState.identifier == module_name
+                storage.CollectorState.select().where(
+                    storage.CollectorState.identifier == module_name
                 )
             )
-        except CollectorState.DoesNotExist:
+        except storage.CollectorState.DoesNotExist:
             await db.create(
-                CollectorState,
+                storage.CollectorState,
                 identifier=module_name,
                 processing_period=Collector.processing_period,
                 last_processing_time=0,
@@ -70,13 +74,13 @@ def get_collector_of_module_name(module_name: str):
     return collectors[module_name]
 
 
-async def load_collector(state: CollectorState):
+async def load_collector(state: storage.CollectorState):
     collector = get_collector_of_module_name(state.identifier)
     await collector.load_state(state)
     return collector
 
 
-async def save_collector(state: CollectorState):
+async def save_collector(state: storage.CollectorState):
     collector = get_collector_of_module_name(state.identifier)
     await collector.save_state(state)
     await db.update(state)
@@ -84,6 +88,3 @@ async def save_collector(state: CollectorState):
 
 class CollectorNotFoundException(BaseException):
     pass
-
-
-asyncio.get_event_loop().run_until_complete(init())

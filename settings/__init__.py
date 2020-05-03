@@ -9,6 +9,7 @@ from .default_settings import *
 ```
 """
 
+from collectors_handler import settings as collectors_handler
 from proxies_handler import settings as proxies_handler
 from tasks_handler import settings as tasks_handler
 from results_handler import settings as results_handler

@@ -44,7 +44,7 @@ async def test_produce_tasks_timeout():
         NoopSocket(),
         tasks_producer=create_range_tasks_producer(10),
     )
-    await tasks_handler.produce_tasks()
+    await tasks_handler.produce_check_existing_proxies_tasks()
 
 
 # @pytest.mark.asyncio

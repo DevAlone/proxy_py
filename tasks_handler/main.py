@@ -1,5 +1,3 @@
-import asyncio
-
 import zmq
 import zmq.asyncio
 
@@ -14,7 +12,7 @@ async def main(tasks_producer=None):
         "proxies_to_check_socket": {
             "instance": None,
             "type": zmq.PUSH,
-            "address": settings.tasks_handler.proxies_to_check_socket_address
+            "address": settings.tasks_handler.proxies_to_check_socket_address,
         },
         "check_results_socket": {
             "instance": None,
@@ -24,8 +22,13 @@ async def main(tasks_producer=None):
         "results_to_handle_socket": {
             "instance": None,
             "type": zmq.PUSH,
-            "address": settings.tasks_handler.results_to_handle_socket_address
+            "address": settings.tasks_handler.results_to_handle_socket_address,
         },
+        "collectors_results_socket": {
+            "instance": None,
+            "type": zmq.PULL,
+            "address": settings.tasks_handler.collectors_results_socket_address,
+        }
     }
 
     for socket_name, socket_description in sockets.items():

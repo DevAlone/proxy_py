@@ -8,7 +8,7 @@ import aiohttp_jinja2
 from aiohttp import web
 
 import settings
-from storage import PostgresStorage
+import storage
 from .base_app import BaseApp
 from .api_v1.app import App as ApiV1App
 from .api_v2.app import App as ApiV2App
@@ -37,11 +37,10 @@ class ProxyProviderServer(BaseApp):
         loop = asyncio.get_event_loop()
 
         # TODO: use the storage
-        storage = PostgresStorage()
-        loop.run_until_complete(storage.init())
+        postgres_storage = storage.PostgresStorage()
+        loop.run_until_complete(postgres_storage.init())
 
         loop.run_until_complete(self.init())
-
 
         return web.run_app(self._app, host=self.host, port=self.port, loop=loop)
 

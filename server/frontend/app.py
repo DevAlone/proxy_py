@@ -6,10 +6,9 @@ import aiohttp_jinja2
 from aiohttp import web
 
 import settings
-from storage import Proxy, ProxyCountItem, CollectorState, NumberOfProxiesToProcess, ProcessorProxiesQueueSize
+import storage
 from storage.models import db
 from server.base_app import BaseApp
-
 
 
 def get_response_wrapper(template_name):
@@ -18,26 +17,26 @@ def get_response_wrapper(template_name):
         @aiohttp_jinja2.template(template_name)
         async def wrap(self, *args, **kwargs):
             good_proxies_count = await db.count(
-                Proxy.select().where(Proxy.number_of_bad_checks == 0)
+                storage.Proxy.select().where(storage.Proxy.number_of_bad_checks == 0)
             )
 
             bad_proxies_count = await db.count(
-                Proxy.select().where(
-                    Proxy.number_of_bad_checks > 0,
-                    Proxy.number_of_bad_checks < settings.dead_proxy_threshold,
+                storage.Proxy.select().where(
+                    storage.Proxy.number_of_bad_checks > 0,
+                    storage.Proxy.number_of_bad_checks < settings.dead_proxy_threshold,
                 )
             )
 
             dead_proxies_count = await db.count(
-                Proxy.select().where(
-                    Proxy.number_of_bad_checks >= settings.dead_proxy_threshold,
-                    Proxy.number_of_bad_checks < settings.do_not_check_on_n_bad_checks,
+                storage.Proxy.select().where(
+                    storage.Proxy.number_of_bad_checks >= settings.dead_proxy_threshold,
+                    storage.Proxy.number_of_bad_checks < settings.do_not_check_on_n_bad_checks,
                 )
             )
 
             not_checked_proxies_count = await db.count(
-                Proxy.select().where(
-                    Proxy.number_of_bad_checks >= settings.do_not_check_on_n_bad_checks,
+                storage.Proxy.select().where(
+                    storage.Proxy.number_of_bad_checks >= settings.do_not_check_on_n_bad_checks,
                 )
             )
 
@@ -51,6 +50,7 @@ def get_response_wrapper(template_name):
             response.update(await func(self, *args, **kwargs))
 
             return response
+
         return wrap
 
     return decorator_wrapper
@@ -64,6 +64,7 @@ class App(BaseApp):
         self.app.router.add_get('/get/processor_proxies_queue_size/', self.get_processor_proxies_queue_size_html)
         self.app.router.add_get('/get/collector_state/', self.get_collector_state_html)
         self.app.router.add_get('/get/best/http/proxy/', self.get_best_http_proxy)
+
     #     self.app.router.add_get('/{tail:.*}', self.default_route)
     #
     # async def default_route(self, request: aiohttp.ClientRequest):
@@ -84,13 +85,13 @@ class App(BaseApp):
     @get_response_wrapper("collector_state.html")
     async def get_collector_state_html(self, request):
         return {
-            "collector_states": list(await db.execute(CollectorState.select())),
+            "collector_states": list(await db.execute(storage.CollectorState.select())),
         }
 
     @get_response_wrapper("proxies.html")
     async def get_proxies_html(self, request):
         proxies = await db.execute(
-            Proxy.select().where(Proxy.number_of_bad_checks == 0).order_by(Proxy.response_time)
+            storage.Proxy.select().where(storage.Proxy.number_of_bad_checks == 0).order_by(storage.Proxy.response_time)
         )
         proxies = list(proxies)
         current_timestamp = time.time()
@@ -116,9 +117,9 @@ class App(BaseApp):
     async def get_proxy_count_items_html(self, request):
         return {
             "proxy_count_items": list(await db.execute(
-                ProxyCountItem.select().where(
-                    ProxyCountItem.timestamp >= time.time() - 3600 * 24 * 7,
-                ).order_by(ProxyCountItem.timestamp)
+                storage.ProxyCountItem.select().where(
+                    storage.ProxyCountItem.timestamp >= time.time() - 3600 * 24 * 7,
+                ).order_by(storage.ProxyCountItem.timestamp)
             ))
         }
 
@@ -126,28 +127,18 @@ class App(BaseApp):
     async def get_number_of_proxies_to_process_html(self, request):
         return {
             "number_of_proxies_to_process": list(await db.execute(
-                NumberOfProxiesToProcess.select().where(
-                    NumberOfProxiesToProcess.timestamp >= time.time() - 3600 * 24 * 7,
-                ).order_by(NumberOfProxiesToProcess.timestamp)
-            ))
-        }
-
-    @get_response_wrapper("processor_proxies_queue_size.html")
-    async def get_processor_proxies_queue_size_html(self, request):
-        return {
-            "data": list(await db.execute(
-                ProcessorProxiesQueueSize.select().where(
-                    ProcessorProxiesQueueSize.timestamp >= time.time() - 3600 * 24 * 7,
-                ).order_by(ProcessorProxiesQueueSize.timestamp)
+                storage.NumberOfProxiesToProcess.select().where(
+                    storage.NumberOfProxiesToProcess.timestamp >= time.time() - 3600 * 24 * 7,
+                ).order_by(storage.NumberOfProxiesToProcess.timestamp)
             ))
         }
 
     async def get_best_http_proxy(self, request):
         proxy_address = (await db.get(
-            Proxy.select().where(
-                Proxy.number_of_bad_checks == 0,
-                Proxy.raw_protocol == Proxy.PROTOCOLS.index("http"),
-            ).order_by(Proxy.response_time)
+            storage.Proxy.select().where(
+                storage.Proxy.number_of_bad_checks == 0,
+                storage.Proxy.raw_protocol == storage.Proxy.PROTOCOLS.index("http"),
+            ).order_by(storage.Proxy.response_time)
         )).address
 
         return web.Response(text=proxy_address)

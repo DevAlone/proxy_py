@@ -8,3 +8,7 @@ aiohttp-jinja2
 aiosocks==0.2.6
 aiopg
 peewee-async
+fake_useragent
+lxml
+py_mini_racer
+bs4

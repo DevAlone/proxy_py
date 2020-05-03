@@ -1,4 +1,4 @@
-from proxy_py import settings
+import settings
 from collectors.abstract_collector import AbstractCollector
 
 
@@ -24,7 +24,7 @@ class PagesCollector(AbstractCollector):
     async def collect(self):
         proxies = list(
             await self.process_page(self.current_page)
-        )[:settings.COLLECTOR_MAXIMUM_NUMBER_OF_PROXIES_PER_REQUEST]
+        )[:settings.collectors_handler.maximum_number_of_proxies_per_request]
 
         if self.dynamic_pages_count:
             if proxies:
