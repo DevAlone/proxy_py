@@ -1,5 +1,8 @@
 import typing
 
+import zmq
+import zmq.asyncio
+
 from proxy_py_types import Protocol, CheckProxyMessage
 from proxy_py_types.messages import ProxyCheckingResult
 
@@ -32,3 +35,30 @@ def create_mock_proxy_checker(
         return result
 
     return checker
+
+
+async def bind_and_produce_messages_to_socket(
+        context: zmq.asyncio.Context, socket_type, socket_address, messages,
+):
+    socket = context.socket(socket_type)
+    try:
+        socket.bind(socket_address)
+
+        for message in messages:
+            await socket.send_pyobj(message)
+    finally:
+        socket.close()
+
+
+async def bind_and_expect_messages_from_socket(
+        context: zmq.asyncio.Context, socket_type, socket_address, messages,
+):
+    socket = context.socket(socket_type)
+    try:
+        socket.bind(socket_address)
+
+        for expected_message in messages:
+            message = await socket.recv_pyobj()
+            assert message == expected_message
+    finally:
+        socket.close()
