@@ -61,7 +61,6 @@ class App(BaseApp):
         self.app.router.add_get('/get/proxy/', self.get_proxies_html)
         self.app.router.add_get('/get/proxy_count_item/', self.get_proxy_count_items_html)
         self.app.router.add_get('/get/number_of_proxies_to_process/', self.get_number_of_proxies_to_process_html)
-        self.app.router.add_get('/get/processor_proxies_queue_size/', self.get_processor_proxies_queue_size_html)
         self.app.router.add_get('/get/collector_state/', self.get_collector_state_html)
         self.app.router.add_get('/get/best/http/proxy/', self.get_best_http_proxy)
 
