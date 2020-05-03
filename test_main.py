@@ -41,3 +41,6 @@ async def test_mock_tasks_producer():
 
     for task in tasks:
         task.cancel()
+
+
+# TODO: test message flow
