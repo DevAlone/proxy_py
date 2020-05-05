@@ -122,8 +122,8 @@ class Proxy(peewee.Model):
             proxy_py_types.Protocol(int(self.raw_protocol)),
             login,
             password,
-            self.address,
-            self.port,
+            str(self.domain),
+            int(self.port),
         )
 
     def __str__(self) -> str:

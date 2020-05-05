@@ -1,4 +1,3 @@
-import asyncio
 import logging
 import time
 
@@ -6,6 +5,7 @@ import zmq
 import zmq.asyncio
 
 import settings
+import storage
 from handler import handler
 from proxy_py_types.messages import ProxyCheckingResult
 from storage import models
@@ -22,10 +22,17 @@ async def main() -> int:
 
 
 async def worker(results_socket: zmq.asyncio.Socket):
-    while True:
-        proxy_checking_result: ProxyCheckingResult = await results_socket.recv_string()
-        logging.debug(f"<- {proxy_checking_result}")
-        await create_or_update_proxy(proxy_checking_result)
+    postgres_storage = storage.PostgresStorage()
+    await postgres_storage.init()
+    # TODO: use storage for saving proxies
+
+    try:
+        while True:
+            proxy_checking_result: ProxyCheckingResult = await results_socket.recv_pyobj()
+            logging.debug(f"<- {proxy_checking_result}")
+            await create_or_update_proxy(proxy_checking_result)
+    finally:
+        await postgres_storage.close()
 
 
 async def create_or_update_proxy(
