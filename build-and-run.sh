@@ -14,7 +14,7 @@ rm sources.tar.gz 2> /dev/null
 #git ls-files | tar Tzcf - sources.tar.gz || exit 1
 
 docker-compose up --build \
-#  --scale proxies-handler="$number_of_threads" \
-#  --scale results-handler="$number_of_threads" \
+  --scale proxies-handler="$number_of_threads" \
+  --scale results-handler="$number_of_threads" \
 
 exit $?

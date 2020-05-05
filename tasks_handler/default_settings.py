@@ -25,6 +25,7 @@ high_water_mark: int = 0
 # Kernel can not care about this value
 kernel_buffer_size: int = 0
 
+# TODO: sync with proxies_handler's settings
 # maximum number of simultaneously checking proxies
 proxies_checking_queue_size: int = 128
 

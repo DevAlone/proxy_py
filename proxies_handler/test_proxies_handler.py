@@ -38,3 +38,6 @@ async def test_proxies_handler():
     )
 
     proxies_handler_task.cancel()
+
+
+# TODO: make test with real proxy(run http proxy server using python)

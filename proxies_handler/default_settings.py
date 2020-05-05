@@ -11,7 +11,7 @@ proxies_to_check_socket_address = "tcp://tasks-handler:65535"
 check_results_socket_address = "tcp://tasks-handler:65534"
 
 # TODO: find the best value here
-number_of_workers = 4
+number_of_workers = 128
 number_of_simultaneous_requests = number_of_workers
 number_of_simultaneous_requests_per_host = number_of_simultaneous_requests
 

@@ -5,8 +5,7 @@ Default settings for package collectors_handler
 # address to push proxies to
 collectors_results_socket_address = "tcp://tasks-handler:65532"
 
-# number_of_workers = 4
-number_of_workers = 1
+number_of_workers = 4
 
 # limits number of messages in queue. But it's not a number of messages
 # because there's also kernel buffer size which adds size to queue
