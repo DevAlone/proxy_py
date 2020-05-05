@@ -143,11 +143,11 @@ class TasksHandler:
                     password = auth_data.split(":")[1]
 
                 task = CheckProxyMessage(
-                    protocol=protocol.name,
+                    protocol=proxy_py_types.Protocol[protocol.name],
                     login=login,
                     password=password,
                     hostname=domain,
-                    port=port,
+                    port=int(port),
                 )
                 await self.push_task_to_the_queue(task)
 

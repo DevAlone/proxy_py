@@ -47,5 +47,4 @@ def retrieve(proxy) -> tuple:
     if type(port) is not str:
         raise ValidationError("Bad proxy(port isn't string)")
 
-
     return protocol, auth_data, domain, port

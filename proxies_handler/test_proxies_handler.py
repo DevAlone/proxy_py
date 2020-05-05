@@ -11,7 +11,7 @@ zmq_context = zmq.asyncio.Context()
 
 
 @pytest.mark.asyncio
-# @pytest.mark.timeout(10)
+@pytest.mark.timeout(10)
 async def test_proxies_handler():
     expects = [
         CheckProxyMessage(Protocol.http, "login1", "password1", "hostname1", 1),

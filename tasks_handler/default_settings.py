@@ -26,6 +26,6 @@ high_water_mark: int = 0
 kernel_buffer_size: int = 0
 
 # maximum number of simultaneously checking proxies
-proxies_checking_queue_size: int = 1
+proxies_checking_queue_size: int = 128
 
 fetch_n_proxies_at_time: int = 1024

@@ -1,6 +1,5 @@
 import typing
 
-import zmq
 import zmq.asyncio
 
 from proxy_py_types import Protocol, CheckProxyMessage
@@ -15,6 +14,10 @@ def create_range_tasks_producer(n: int) -> typing.Callable[
             yield CheckProxyMessage(Protocol.http, "", "", "localhost", 8080)
 
     return producer
+
+
+def noop_tasks_producer() -> typing.AsyncGenerator[CheckProxyMessage, None]:
+    pass
 
 
 def create_mock_proxy_checker(
@@ -37,15 +40,46 @@ def create_mock_proxy_checker(
     return checker
 
 
-async def bind_and_produce_messages_to_socket(
-        context: zmq.asyncio.Context, socket_type, socket_address, messages,
+async def connect_and_produce_messages_to_socket(
+        context: zmq.asyncio.Context, socket_type, socket_address, messages, use_bind=False,
 ):
     socket = context.socket(socket_type)
     try:
-        socket.bind(socket_address)
+        if use_bind:
+            socket.bind(socket_address)
+        else:
+            socket.connect(socket_address)
 
         for message in messages:
-            await socket.send_pyobj(message)
+            if type(message) is str:
+                await socket.send_string(message)
+            else:
+                await socket.send_pyobj(message)
+    finally:
+        socket.close()
+
+
+async def bind_and_produce_messages_to_socket(
+        context: zmq.asyncio.Context, socket_type, socket_address, messages,
+):
+    return connect_and_produce_messages_to_socket(
+        context, socket_type, socket_address, messages, True,
+    )
+
+
+async def connect_and_expect_messages_from_socket(
+        context: zmq.asyncio.Context, socket_type, socket_address, messages, use_bind=False,
+):
+    socket = context.socket(socket_type)
+    try:
+        if use_bind:
+            socket.bind(socket_address)
+        else:
+            socket.connect(socket_address)
+
+        for expected_message in messages:
+            message = await socket.recv_pyobj()
+            assert message == expected_message, f"expected '{expected_message}', got '{message}'"
     finally:
         socket.close()
 
@@ -53,12 +87,6 @@ async def bind_and_produce_messages_to_socket(
 async def bind_and_expect_messages_from_socket(
         context: zmq.asyncio.Context, socket_type, socket_address, messages,
 ):
-    socket = context.socket(socket_type)
-    try:
-        socket.bind(socket_address)
-
-        for expected_message in messages:
-            message = await socket.recv_pyobj()
-            assert message == expected_message
-    finally:
-        socket.close()
+    return connect_and_expect_messages_from_socket(
+        context, socket_type, socket_address, messages, True,
+    )
