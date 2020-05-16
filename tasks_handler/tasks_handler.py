@@ -26,6 +26,11 @@ async def postgres_tasks_producer() -> typing.AsyncGenerator[CheckProxyMessage, 
 
     try:
         while True:
+            # TODO: fix
+            good_next_update_timestamp = time.time()
+            bad_next_update_timestamp = time.time()
+            dead_next_update_timestamp = time.time()
+
             # TODO: there can be a problem when a lot of proxies with the same timestamp
             # would make it push same tasks
             async def fetch(func, next_update_timestamp) -> typing.List[storage.Proxy]:

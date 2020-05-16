@@ -52,9 +52,9 @@ async def worker(
 
 
 async def process_collector_of_state(collector_state: CollectorState) -> typing.AsyncGenerator[str, None]:
-    try:
-        collector = await collectors_list.load_collector(collector_state)
+    collector = await collectors_list.load_collector(collector_state)
 
+    try:
         logging.debug(
             "start processing collector of type \"{}\"".format(type(collector))
         )
@@ -77,3 +77,6 @@ async def process_collector_of_state(collector_state: CollectorState) -> typing.
             f'Error in collector of type "{collector_state.identifier}": {ex}',
         )
         logging.exception(ex)
+    finally:
+        collector.last_processing_time = int(time.time())
+        await collectors_list.save_collector(collector_state)

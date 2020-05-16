@@ -12,3 +12,4 @@ fake_useragent
 lxml
 py_mini_racer
 bs4
+termcolor
