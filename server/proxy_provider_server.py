@@ -42,6 +42,7 @@ class ProxyProviderServer(BaseApp):
 
         loop.run_until_complete(self.init())
 
+        print("starting a server")
         return web.run_app(self._app, host=self.host, port=self.port, loop=loop)
 
     async def setup_router(self):

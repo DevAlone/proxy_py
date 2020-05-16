@@ -12,3 +12,4 @@ build/
 sources.tar.gz
 user_settings.py
 local/
+.coverage

@@ -64,7 +64,7 @@ async def test_produce_tasks_timeout():
 #     await tasks_handler.run()
 
 @pytest.mark.asyncio
-# @pytest.mark.timeout(10)
+@pytest.mark.timeout(10)
 async def test_tasks_handler():
     new_proxies = [
         "http://localhost1.com:8080",

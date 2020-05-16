@@ -1,4 +1,5 @@
 import asyncio
+import logging
 import typing
 
 import peewee
@@ -16,7 +17,8 @@ class PostgresStorage:
             try:
                 await self.init_db()
                 break
-            except peewee.OperationalError:
+            except peewee.OperationalError as ex:
+                logging.exception(ex)
                 await asyncio.sleep(1)
                 continue
 

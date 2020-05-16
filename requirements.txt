@@ -4,7 +4,7 @@ pytest-asyncio
 pytest-timeout
 gino
 aiohttp==2.3.10
-aiohttp-jinja2
+aiohttp-jinja2==0.16.0
 aiosocks==0.2.6
 aiopg
 peewee-async
