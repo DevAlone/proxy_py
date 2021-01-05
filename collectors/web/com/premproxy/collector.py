@@ -1,11 +1,10 @@
 import re
 
+import async_requests
 import lxml.html
+from collectors.pages_collector import PagesCollector
 from lxml import etree
 from py_mini_racer import py_mini_racer
-
-import async_requests
-from collectors.pages_collector import PagesCollector
 
 
 class BaseCollectorPremProxyCom(PagesCollector):
@@ -16,10 +15,10 @@ class BaseCollectorPremProxyCom(PagesCollector):
 
     async def process_page(self, page_index):
         result = []
-        if page_index > 0:
-            self.url += "%02d.htm" % (page_index + 1,)
 
-        resp = await async_requests.get(url=self.url)
+        url = self.url + "%02d.htm" % (page_index + 1)
+
+        resp = await async_requests.get(url=url)
         html = resp.text
         tree = lxml.html.fromstring(html)
         elements = tree.xpath(".//td[starts-with(@data-label, 'IP:port')]")
