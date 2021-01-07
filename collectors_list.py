@@ -1,11 +1,10 @@
-import inspect
-import os
 import asyncio
 import importlib.util
+import inspect
+import os
 
-from models import db, CollectorState
+from models import CollectorState, db
 from proxy_py import settings
-
 
 collectors = {}
 
@@ -18,38 +17,42 @@ async def init():
         _collectors_dirs = [_collectors_dirs]
 
     for collectors_dir in _collectors_dirs:
-        if collectors_dir.startswith('/'):
+        if collectors_dir.startswith("/"):
             raise Exception("Collector's dir cannot be absolute")
-        if collectors_dir.startswith('..'):
+        if collectors_dir.startswith(".."):
             raise Exception("Collector's dir cannot be in parent directory")
 
         for root, dirs, files in os.walk(collectors_dir):
             for file in files:
-                if file.endswith('.py'):
+                if file.endswith(".py"):
                     file_path = os.path.join(root, file)
-                    if file_path.startswith('./'):
+                    if file_path.startswith("./"):
                         file_path = file_path[2:]
-                    module_name = os.path.splitext(file_path)[0].replace('/', '.')
-                    spec = importlib.util.spec_from_file_location(module_name, file_path)
+                    module_name = os.path.splitext(file_path)[0].replace("/", ".")
+                    spec = importlib.util.spec_from_file_location(
+                        module_name, file_path
+                    )
                     collector_module = importlib.util.module_from_spec(spec)
                     spec.loader.exec_module(collector_module)
 
                     # TODO: iterate through all classes independent of their names
-                    for name, member in inspect.getmembers(collector_module, inspect.isclass):
+                    for name, member in inspect.getmembers(
+                        collector_module, inspect.isclass
+                    ):
                         # if inspect.isclass(member):
-                        if member.__module__ == collector_module.__name__ \
-                                and hasattr(member, '__collector__') \
-                                and member.__collector__:
-                            collectors[module_name + '.' + member.__name__] = member()
+                        if (
+                            member.__module__ == collector_module.__name__
+                            and hasattr(member, "__collector__")
+                            and member.__collector__
+                        ):
+                            collectors[module_name + "." + member.__name__] = member()
 
     # init db
 
     for module_name, Collector in collectors.items():
         try:
             await db.get(
-                CollectorState.select().where(
-                    CollectorState.identifier == module_name
-                )
+                CollectorState.select().where(CollectorState.identifier == module_name)
             )
         except CollectorState.DoesNotExist:
             await db.create(

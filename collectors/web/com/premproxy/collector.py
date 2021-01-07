@@ -1,10 +1,11 @@
-from collectors.pages_collector import PagesCollector
+import re
+
+import lxml.html
 from lxml import etree
 from py_mini_racer import py_mini_racer
 
-import lxml.html
-import re
 import async_requests
+from collectors.pages_collector import PagesCollector
 
 
 class BaseCollectorPremProxyCom(PagesCollector):
@@ -16,7 +17,7 @@ class BaseCollectorPremProxyCom(PagesCollector):
     async def process_page(self, page_index):
         result = []
         if page_index > 0:
-            self.url += '%02d.htm' % (page_index + 1, )
+            self.url += "%02d.htm" % (page_index + 1,)
 
         resp = await async_requests.get(url=self.url)
         html = resp.text
@@ -26,8 +27,8 @@ class BaseCollectorPremProxyCom(PagesCollector):
         code_table_url = re.findall(r'script src="(/js(-socks)?/.+?\.js)', html)[0][0]
 
         code_table = (
-            await async_requests.get('https://premproxy.com' + code_table_url)
-        ).text.replace('eval', '')
+            await async_requests.get("https://premproxy.com" + code_table_url)
+        ).text.replace("eval", "")
         ports_code_table = {
             match[0]: match[1]
             for match in re.findall(
@@ -38,14 +39,18 @@ class BaseCollectorPremProxyCom(PagesCollector):
         for el in elements:
             element_html = str(etree.tostring(el))
             address, port = re.search(
-                r'(?P<address>[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3})\|(?P<port>[a-z0-9]+)',
-                element_html
+                r"(?P<address>[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3})\|(?P<port>[a-z0-9]+)",
+                element_html,
             ).groups()
             try:
                 port = ports_code_table[port]
             except KeyError as ex:
-                raise Exception('symbol is not present in code table: {}. address: {}'.format(str(ex), address))
-            proxy = '{}:{}'.format(address, port)
+                raise Exception(
+                    "symbol is not present in code table: {}. address: {}".format(
+                        str(ex), address
+                    )
+                )
+            proxy = "{}:{}".format(address, port)
             result.append(proxy)
 
         return result
@@ -55,11 +60,13 @@ class Collector(BaseCollectorPremProxyCom):
     __collector__ = True
 
     def __init__(self):
-        super(Collector, self).__init__('https://premproxy.com/list/', 20)
+        super(Collector, self).__init__("https://premproxy.com/list/", 20)
 
 
 class CollectorSocksList(BaseCollectorPremProxyCom):
     __collector__ = True
 
     def __init__(self):
-        super(CollectorSocksList, self).__init__('https://premproxy.com/socks-list/', 20)
+        super(CollectorSocksList, self).__init__(
+            "https://premproxy.com/socks-list/", 20
+        )

@@ -1,9 +1,10 @@
-from proxy_py import settings
-from aiohttp import web
-
 import abc
+
 import aiohttp_jinja2
 import jinja2
+from aiohttp import web
+
+from proxy_py import settings
 
 
 class BaseApp:
@@ -11,9 +12,9 @@ class BaseApp:
         self.logger = logger
         self._app = web.Application()
 
-        aiohttp_jinja2.setup(self.app, loader=jinja2.FileSystemLoader(
-            settings.TEMPLATES_PATH
-        ))
+        aiohttp_jinja2.setup(
+            self.app, loader=jinja2.FileSystemLoader(settings.TEMPLATES_PATH)
+        )
 
     async def init(self):
         """Call it before anything else"""
@@ -32,30 +33,36 @@ class BaseApp:
         return self._app
 
     def log_critical(self, *args, **kwargs):
-        self.log('critical', *args, **kwargs)
+        self.log("critical", *args, **kwargs)
 
     def log_error(self, *args, **kwargs):
-        self.log('error', *args, **kwargs)
+        self.log("error", *args, **kwargs)
 
     def log_exception(self, *args, **kwargs):
-        self.log('exception', *args, **kwargs)
+        self.log("exception", *args, **kwargs)
 
     def log_warning(self, *args, **kwargs):
-        self.log('warning', *args, **kwargs)
+        self.log("warning", *args, **kwargs)
 
     def log_info(self, *args, **kwargs):
-        self.log('info', *args, **kwargs)
+        self.log("info", *args, **kwargs)
 
     def log_debug(self, *args, **kwargs):
-        self.log('debug', *args, **kwargs)
+        self.log("debug", *args, **kwargs)
 
     def log(self, level, request, message):
         # behind nginx or other reverse proxy
         client_ip = str(request.headers.get("X-Real-IP", "None"))
 
         if client_ip == "None" or client_ip.startswith("127.0.0.1"):
-            self.logger.error("Your reverse proxy doesn't present user's IP", extra={"client_ip": client_ip})
+            self.logger.error(
+                "Your reverse proxy doesn't present user's IP",
+                extra={"client_ip": client_ip},
+            )
 
-        getattr(self.logger, level)(message, extra={
-            "client_ip": client_ip,
-        })
+        getattr(self.logger, level)(
+            message,
+            extra={
+                "client_ip": client_ip,
+            },
+        )

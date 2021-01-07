@@ -4,24 +4,26 @@
 # it's very fucking important!
 def init_uvloop():
     import uvloop
+
     uvloop.install()
 
 
 init_uvloop()
 
-from proxy_py import settings
-from processor import Processor
-from server.proxy_provider_server import ProxyProviderServer
-from statistics import statistics
-from checkers.base_checker import BaseChecker
-from tools import test_collector
-import materialized_view_updater
+import argparse
 import asyncio
 import logging
-import argparse
-import collectors_list
 import subprocess
 import sys
+from statistics import statistics
+
+import collectors_list
+import materialized_view_updater
+from checkers.base_checker import BaseChecker
+from processor import Processor
+from proxy_py import settings
+from server.proxy_provider_server import ProxyProviderServer
+from tools import test_collector
 
 test_collector_path = None
 main_logger = None
@@ -39,13 +41,15 @@ def process_cmd_arguments():
             raise argparse.ArgumentTypeError("Boolean value expected.")
 
     cmd_parser = argparse.ArgumentParser()
-    cmd_parser.add_argument("--debug", type=str_to_bool,
-                            help="override settings' debug value")
     cmd_parser.add_argument(
-        "--proxy-checking-timeout", type=float, help="override settings' proxy checking timeout"
+        "--debug", type=str_to_bool, help="override settings' debug value"
     )
     cmd_parser.add_argument(
-        "--test-collector", help="test collector with a given path")
+        "--proxy-checking-timeout",
+        type=float,
+        help="override settings' proxy checking timeout",
+    )
+    cmd_parser.add_argument("--test-collector", help="test collector with a given path")
 
     args = cmd_parser.parse_args()
 
@@ -68,9 +72,7 @@ def prepare_loggers():
     asyncio_logger.setLevel(logging.DEBUG if settings.DEBUG else logging.INFO)
     asyncio_logger_handler = logging.StreamHandler(sys.stdout)
     asyncio_logger_handler.setLevel(logging.DEBUG if settings.DEBUG else logging.INFO)
-    asyncio_logger_handler.setFormatter(
-        logging.Formatter(settings.LOG_FORMAT_STRING)
-    )
+    asyncio_logger_handler.setFormatter(logging.Formatter(settings.LOG_FORMAT_STRING))
     asyncio_logger.addHandler(asyncio_logger_handler)
     asyncio.get_event_loop().set_debug(settings.DEBUG)
 
@@ -93,11 +95,13 @@ async def core():
     proxy_processor = Processor.get_instance()
 
     try:
-        code = await asyncio.gather(*[
-            proxy_processor.worker(),
-            statistics.worker(),
-            materialized_view_updater.worker(),
-        ])
+        code = await asyncio.gather(
+            *[
+                proxy_processor.worker(),
+                statistics.worker(),
+                materialized_view_updater.worker(),
+            ]
+        )
         BaseChecker.clean()
         return code
     except KeyboardInterrupt:
@@ -117,15 +121,16 @@ async def print_collectors():
 
 def server():
     proxy_provider_server = ProxyProviderServer(
-        settings.PROXY_PROVIDER_SERVER_ADDRESS['HOST'],
-        settings.PROXY_PROVIDER_SERVER_ADDRESS['PORT'],
+        settings.PROXY_PROVIDER_SERVER_ADDRESS["HOST"],
+        settings.PROXY_PROVIDER_SERVER_ADDRESS["PORT"],
     )
 
     return proxy_provider_server.start(asyncio.get_event_loop())
 
 
 def print_help():
-    print("""Usage: ./main.py [COMMAND] [OPTION]...
+    print(
+        """Usage: ./main.py [COMMAND] [OPTION]...
 Runs proxy_py
 
 The commands are:
@@ -138,14 +143,15 @@ The commands are:
 use ./main.py COMMAND --help to get more information
 
 Project's page: https://github.com/DevAlone/proxy_py
-""")
+"""
+    )
 
 
 def main():
     if len(sys.argv) < 2:
         # run default configuration
         # server
-        p = subprocess.Popen(["python3", sys.argv[0], 'server'])
+        p = subprocess.Popen(["python3", sys.argv[0], "server"])
 
         # and core
         code = asyncio.get_event_loop().run_until_complete(core())
@@ -156,9 +162,11 @@ def main():
     sys.argv = sys.argv[1:]
     try:
         return {
-            'core': lambda: asyncio.get_event_loop().run_until_complete(core()),
-            'print_collectors': lambda: asyncio.get_event_loop().run_until_complete(print_collectors()),
-            'server': server,
+            "core": lambda: asyncio.get_event_loop().run_until_complete(core()),
+            "print_collectors": lambda: asyncio.get_event_loop().run_until_complete(
+                print_collectors()
+            ),
+            "server": server,
         }[command]()
     except KeyError:
         print_help()

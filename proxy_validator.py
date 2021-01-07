@@ -1,6 +1,6 @@
-from parsers.regex_parser import PROXY_VALIDATE_REGEX
-
 import re
+
+from parsers.regex_parser import PROXY_VALIDATE_REGEX
 
 
 class ValidationError(Exception):
@@ -23,29 +23,26 @@ def retrieve(proxy) -> tuple:
         auth_data = proxy["auth_data"] if "auth_data" in proxy else None
         domain = proxy["domain"] if "domain" in proxy else None
         port = proxy["port"] if "port" in proxy else None
-        str_proxy = ''
+        str_proxy = ""
         if auth_data is not None and auth_data:
-            str_proxy += auth_data + '@'
+            str_proxy += auth_data + "@"
 
-        str_proxy += domain + ':' + port
+        str_proxy += domain + ":" + port
         return retrieve(str_proxy)
     else:
-        raise ValidationError(
-            "Bad type. Type is \"{}\"".format(type(proxy), proxy)
-        )
+        raise ValidationError('Bad type. Type is "{}"'.format(type(proxy), proxy))
 
     if protocol is not None:
-        if protocol not in ('socks', 'socks4', 'socks5', 'http'):
+        if protocol not in ("socks", "socks4", "socks5", "http"):
             raise ValidationError("Bad protocol")
 
     if auth_data is None:
-        auth_data = ''
+        auth_data = ""
 
     if type(domain) is not str:
         raise ValidationError("Bad proxy(domain isn't string)")
 
     if type(port) is not str:
         raise ValidationError("Bad proxy(port isn't string)")
-
 
     return protocol, auth_data, domain, port

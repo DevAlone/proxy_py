@@ -1,8 +1,7 @@
-import asyncio
-import aiohttp
 import json
-import pytest
 
+import aiohttp
+import pytest
 
 API_URL = "http://localhost:55555/api/v1/"
 
@@ -10,15 +9,11 @@ API_URL = "http://localhost:55555/api/v1/"
 async def get_proxies(session, request):
     async with session.post(API_URL, json=request) as resp:
         json_data = json.loads(await resp.text())
-        return json_data['data']
+        return json_data["data"]
 
 
 async def check_ordering(session, field_name):
-    request_data = {
-        'method': 'get',
-        'model': 'proxy',
-        'order_by': field_name
-    }
+    request_data = {"method": "get", "model": "proxy", "order_by": field_name}
 
     previous_proxy = None
 
@@ -35,11 +30,7 @@ async def check_ordering(session, field_name):
 async def check_complex_ordering(session, *args):
     fields = args
 
-    request_data = {
-        'method': 'get',
-        'model': 'proxy',
-        'order_by': ', '.join(fields)
-    }
+    request_data = {"method": "get", "model": "proxy", "order_by": ", ".join(fields)}
 
     previous_proxy = None
 
@@ -62,10 +53,10 @@ async def check_complex_ordering(session, *args):
 @pytest.mark.asyncio
 async def test_ordering():
     tests = [
-        (check_ordering, 'response_time'),
-        (check_ordering, 'uptime'),
-        (check_ordering, 'number_of_bad_checks'),
-        (check_ordering, 'last_check_time'),
+        (check_ordering, "response_time"),
+        (check_ordering, "uptime"),
+        (check_ordering, "number_of_bad_checks"),
+        (check_ordering, "last_check_time"),
     ]
 
     for test in tests:
@@ -77,8 +68,8 @@ async def test_ordering():
 @pytest.mark.asyncio
 async def test_complex_ordering():
     tests = [
-        (check_complex_ordering, 'uptime', 'last_check_time'),
-        (check_complex_ordering, 'number_of_bad_checks', 'uptime', 'response_time'),
+        (check_complex_ordering, "uptime", "last_check_time"),
+        (check_complex_ordering, "number_of_bad_checks", "uptime", "response_time"),
     ]
 
     for test in tests:

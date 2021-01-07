@@ -1,18 +1,15 @@
+import asyncio
+import re
+import sys
 import time
 
 from termcolor import colored
-import termcolor
+
+import proxy_utils
+import proxy_validator
+from collectors_list import collectors
 from models import Proxy
 from proxy_py import settings
-from collectors_list import collectors
-
-import re
-import sys
-import proxy_utils
-import asyncio
-import proxy_validator
-
-from parsers.regex_parser import RegexParser
 
 
 def eprint(*args, **kwargs):
@@ -23,9 +20,9 @@ PROXIES_PER_TIME = 8192
 
 
 async def run(path: str):
-    path, class_name = path.split(':', maxsplit=2)
-    path = re.sub(r"\.py$", "", path).replace('/', '.')
-    path += '.' + class_name
+    path, class_name = path.split(":", maxsplit=2)
+    path = re.sub(r"\.py$", "", path).replace("/", ".")
+    path += "." + class_name
 
     try:
         collector = collectors[path]
@@ -58,7 +55,9 @@ async def process_proxy(proxy_url: str):
             _, auth_data, domain, port = proxy_validator.retrieve(proxy_url)
         except proxy_validator.ValidationError as ex:
             raise ValueError(
-                "Your collector returned bad proxy \"{}\". Message: \"{}\"".format(proxy_url, ex)
+                'Your collector returned bad proxy "{}". Message: "{}"'.format(
+                    proxy_url, ex
+                )
             )
 
         is_working = False
@@ -70,7 +69,9 @@ async def process_proxy(proxy_url: str):
             proxy_url += domain + ":" + str(port)
 
             start_checking_time = time.time()
-            check_result, checker_additional_info = await proxy_utils.check_proxy(proxy_url)
+            check_result, checker_additional_info = await proxy_utils.check_proxy(
+                proxy_url
+            )
             end_checking_time = time.time()
 
             if check_result:
@@ -79,19 +80,19 @@ async def process_proxy(proxy_url: str):
 
         response_time = end_checking_time - start_checking_time
 
-        color = ''
+        color = ""
 
         if not is_working:
-            color = 'red'
+            color = "red"
         elif response_time < 1:
-            color = 'cyan'
+            color = "cyan"
         elif response_time < 5:
-            color = 'green'
+            color = "green"
         elif response_time < 10:
-            color = 'yellow'
+            color = "yellow"
         else:
-            color = 'magenta'
+            color = "magenta"
 
-        print(colored(' ', on_color='on_' + color), end='')
+        print(colored(" ", on_color="on_" + color), end="")
 
         sys.stdout.flush()

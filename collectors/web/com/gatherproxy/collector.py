@@ -1,10 +1,9 @@
-from collectors.pages_collector import PagesCollector
-
-import async_requests
 import re
 
-from lxml import etree
-from lxml import html
+from lxml import etree, html
+
+import async_requests
+from collectors.pages_collector import PagesCollector
 
 
 class Collector(PagesCollector):
@@ -17,21 +16,17 @@ class Collector(PagesCollector):
 
     async def process_page(self, page_index):
         result = []
-        form_data = {
-            'Type': 'elite',
-            'PageIdx': page_index + 1,
-            'Uptime': 0
-        }
-        url = 'http://www.gatherproxy.com/proxylist/anonymity/?t=Elite'
+        form_data = {"Type": "elite", "PageIdx": page_index + 1, "Uptime": 0}
+        url = "http://www.gatherproxy.com/proxylist/anonymity/?t=Elite"
         res = await async_requests.post(url, data=form_data)
         html_res = res.text
         tree = html.fromstring(html_res)
-        table_element = \
-            tree.xpath(".//table[@id='tblproxy']")[0]
+        table_element = tree.xpath(".//table[@id='tblproxy']")[0]
         table_text = etree.tostring(table_element).decode()
         matches = re.findall(
             r"document\.write\('([0-9.]+)'\).+?document\.write\(gp\.dep\('(.+?)'\)\)",
-            table_text, re.DOTALL
+            table_text,
+            re.DOTALL,
         )
 
         for m in matches:
@@ -42,4 +37,3 @@ class Collector(PagesCollector):
             result.append(proxy)
 
         return result
-
