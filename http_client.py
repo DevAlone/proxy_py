@@ -1,9 +1,10 @@
-from proxy_py import settings
-from fake_useragent import UserAgent
-from aiosocks.connector import ProxyConnector, ProxyClientRequest
+import json
 
 import aiohttp
-import json
+from aiosocks.connector import ProxyClientRequest, ProxyConnector
+from fake_useragent import UserAgent
+
+from proxy_py import settings
 
 
 class HttpClientResult:
@@ -31,6 +32,7 @@ class HttpClient:
     Simple class for making http requests,
     user-agent is set to random one in constructor
     """
+
     _aiohttp_connector = None
 
     def __init__(self):
@@ -51,7 +53,7 @@ class HttpClient:
         :param url:
         :return:
         """
-        return await self.request('GET', url, None)
+        return await self.request("GET", url, None)
 
     async def post(self, url, data):
         """
@@ -61,23 +63,26 @@ class HttpClient:
         :param data:
         :return:
         """
-        return await self.request('POST', url, data)
+        return await self.request("POST", url, data)
 
     async def request(self, method, url, data) -> HttpClientResult:
         headers = {
-            'User-Agent': self.user_agent,
+            "User-Agent": self.user_agent,
         }
 
-        async with aiohttp.ClientSession(connector=HttpClient._aiohttp_connector,
-                                         connector_owner=False,
-                                         request_class=ProxyClientRequest
-                                         ) as session:
-            async with session.request(method,
-                                       url=url,
-                                       data=data,
-                                       proxy=self.proxy_address,
-                                       timeout=self.timeout,
-                                       headers=headers) as response:
+        async with aiohttp.ClientSession(
+            connector=HttpClient._aiohttp_connector,
+            connector_owner=False,
+            request_class=ProxyClientRequest,
+        ) as session:
+            async with session.request(
+                method,
+                url=url,
+                data=data,
+                proxy=self.proxy_address,
+                timeout=self.timeout,
+                headers=headers,
+            ) as response:
                 return await HttpClientResult.make(response)
 
     @staticmethod

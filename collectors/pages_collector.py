@@ -1,5 +1,5 @@
-from proxy_py import settings
 from collectors.abstract_collector import AbstractCollector
+from proxy_py import settings
 
 
 # TODO: save pages to collector state
@@ -17,14 +17,14 @@ class PagesCollector(AbstractCollector):
     def __init__(self):
         super(PagesCollector, self).__init__()
         self.last_proxies_list = []
-        self.saved_variables.add('current_page')
-        self.saved_variables.add('pages_count')
-        self.saved_variables.add('last_proxies_list')
+        self.saved_variables.add("current_page")
+        self.saved_variables.add("pages_count")
+        self.saved_variables.add("last_proxies_list")
 
     async def collect(self):
-        proxies = list(
-            await self.process_page(self.current_page)
-        )[:settings.COLLECTOR_MAXIMUM_NUMBER_OF_PROXIES_PER_REQUEST]
+        proxies = list(await self.process_page(self.current_page))[
+            : settings.COLLECTOR_MAXIMUM_NUMBER_OF_PROXIES_PER_REQUEST
+        ]
 
         if self.dynamic_pages_count:
             if proxies:

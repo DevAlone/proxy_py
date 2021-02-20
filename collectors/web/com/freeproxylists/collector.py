@@ -1,10 +1,10 @@
 import asyncio
 import re
 
-from collectors import AbstractCollector
 from bs4 import BeautifulSoup
 
 import http_client
+from collectors import AbstractCollector
 
 SLEEP_BETWEEN_PAGES_SECONDS = 1
 

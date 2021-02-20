@@ -1,8 +1,8 @@
-from collectors.abstract_collector import AbstractCollector
+import datetime
+import json
 
 import async_requests
-import json
-import datetime
+from collectors.abstract_collector import AbstractCollector
 
 
 class Collector(AbstractCollector):
@@ -14,14 +14,16 @@ class Collector(AbstractCollector):
         self.time_delta = datetime.timedelta(-1)
 
     async def collect(self):
-        url = "https://checkerproxy.net/api/archive/{}".format(str(datetime.date.today() + self.time_delta))
+        url = "https://checkerproxy.net/api/archive/{}".format(
+            str(datetime.date.today() + self.time_delta)
+        )
 
         res = await async_requests.get(url)
         text = res.text
 
         json_data = json.loads(text)
 
-        return [proxy['addr'] for proxy in json_data]
+        return [proxy["addr"] for proxy in json_data]
 
 
 class CollectorToday(Collector):

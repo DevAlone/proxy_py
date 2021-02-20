@@ -1,9 +1,9 @@
-import peewee_async
-
-from proxy_py import settings
-from models import db
-from ..requests_to_models.request import Request, GetRequest, CountRequest, FetchRequest
 import importlib
+
+
+from models import db
+
+from ..requests_to_models.request import FetchRequest, GetRequest, Request
 
 
 class RequestExecutor:
@@ -27,16 +27,19 @@ class RequestExecutor:
 
         queryset = class_name.select().where(
             # class_name.number_of_bad_checks < settings.DEAD_PROXY_THRESHOLD
-            class_name.number_of_bad_checks == 0
+            class_name.number_of_bad_checks
+            == 0
         )
 
         result = {
-            'count': await db.count(queryset),
+            "count": await db.count(queryset),
         }
 
         if type(request) is GetRequest:
             if request.order_by:
-                queryset = queryset.order_by(*self.order_by_list_to_peewee(request.order_by, class_name))
+                queryset = queryset.order_by(
+                    *self.order_by_list_to_peewee(request.order_by, class_name)
+                )
 
             if request.limit > 0:
                 queryset = queryset.limit(request.limit)
@@ -54,15 +57,17 @@ class RequestExecutor:
 
                 data.append(obj)
 
-            result['data'] = data
+            result["data"] = data
 
             if not data:
-                result['has_more'] = False
+                result["has_more"] = False
             else:
                 if request.limit > 0:
-                    result['has_more'] = request.offset + request.limit < result['count']
+                    result["has_more"] = (
+                        request.offset + request.limit < result["count"]
+                    )
                 else:
-                    result['has_more'] = False
+                    result["has_more"] = False
 
         return result
 
@@ -71,7 +76,7 @@ class RequestExecutor:
         result = []
         for field in order_by_fields:
             reverse = False
-            if field[0] == '-':
+            if field[0] == "-":
                 reverse = True
                 field = field[1:]
 
@@ -87,7 +92,7 @@ class RequestExecutor:
         result = []
         for field in order_by_fields:
             reverse = False
-            if field[0] == '-':
+            if field[0] == "-":
                 reverse = True
                 field = field[1:]
 

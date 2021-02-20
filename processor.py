@@ -1,15 +1,16 @@
-import proxy_validator
-from checkers.base_checker import CheckerResult
-from proxy_py import settings
-from models import Proxy, CollectorState, db
+import asyncio
+import logging
+import sys
+import time
+
+import peewee
 
 import collectors_list
 import proxy_utils
-import asyncio
-import time
-import logging
-import peewee
-import sys
+import proxy_validator
+from checkers.base_checker import CheckerResult
+from models import CollectorState, Proxy, db
+from proxy_py import settings
 
 
 class Processor:
@@ -17,6 +18,7 @@ class Processor:
     main class which collects proxies from collectors,
     checks them and saves in database
     """
+
     instance = None
 
     @staticmethod
@@ -37,17 +39,25 @@ class Processor:
         self.logger.addHandler(logger_handler)
 
         self.collectors_logger = logging.getLogger("proxy_py/collectors")
-        self.collectors_logger.setLevel(logging.DEBUG if settings.DEBUG else logging.INFO)
+        self.collectors_logger.setLevel(
+            logging.DEBUG if settings.DEBUG else logging.INFO
+        )
 
         collectors_logger_handler = logging.StreamHandler(sys.stdout)
-        collectors_logger_handler.setLevel(logging.DEBUG if settings.DEBUG else logging.INFO)
-        collectors_logger_handler.setFormatter(logging.Formatter(settings.LOG_FORMAT_STRING))
+        collectors_logger_handler.setLevel(
+            logging.DEBUG if settings.DEBUG else logging.INFO
+        )
+        collectors_logger_handler.setFormatter(
+            logging.Formatter(settings.LOG_FORMAT_STRING)
+        )
 
         self.collectors_logger.addHandler(collectors_logger_handler)
 
         self.logger.debug("processor initialization...")
 
-        self.proxies_semaphore = asyncio.BoundedSemaphore(settings.NUMBER_OF_CONCURRENT_TASKS)
+        self.proxies_semaphore = asyncio.BoundedSemaphore(
+            settings.NUMBER_OF_CONCURRENT_TASKS
+        )
         self.good_proxies_are_processed = False
 
     async def init(self):
@@ -58,10 +68,12 @@ class Processor:
     async def worker(self):
         await self.init()
 
-        await asyncio.gather(*[
-            self.process_proxies(),
-            self.process_collectors(),
-        ])
+        await asyncio.gather(
+            *[
+                self.process_proxies(),
+                self.process_collectors(),
+            ]
+        )
 
     async def process_proxies(self):
         while True:
@@ -69,10 +81,13 @@ class Processor:
             try:
                 # check good proxies
                 proxies = await db.execute(
-                    Proxy.select().where(
+                    Proxy.select()
+                    .where(
                         Proxy.number_of_bad_checks == 0,
                         Proxy.next_check_time < time.time(),
-                    ).order_by(Proxy.next_check_time).limit(settings.NUMBER_OF_CONCURRENT_TASKS)
+                    )
+                    .order_by(Proxy.next_check_time)
+                    .limit(settings.NUMBER_OF_CONCURRENT_TASKS)
                 )
                 if proxies:
                     self.good_proxies_are_processed = False
@@ -86,11 +101,14 @@ class Processor:
 
                 # check bad proxies
                 proxies = await db.execute(
-                    Proxy.select().where(
+                    Proxy.select()
+                    .where(
                         Proxy.number_of_bad_checks > 0,
                         Proxy.number_of_bad_checks < settings.DEAD_PROXY_THRESHOLD,
                         Proxy.next_check_time < time.time(),
-                    ).order_by(Proxy.next_check_time).limit(settings.NUMBER_OF_CONCURRENT_TASKS)
+                    )
+                    .order_by(Proxy.next_check_time)
+                    .limit(settings.NUMBER_OF_CONCURRENT_TASKS)
                 )
 
                 await self.add_proxies_to_queue(proxies)
@@ -100,11 +118,15 @@ class Processor:
 
                 # check dead proxies
                 proxies = await db.execute(
-                    Proxy.select().where(
+                    Proxy.select()
+                    .where(
                         Proxy.number_of_bad_checks >= settings.DEAD_PROXY_THRESHOLD,
-                        Proxy.number_of_bad_checks < settings.DO_NOT_CHECK_ON_N_BAD_CHECKS,
+                        Proxy.number_of_bad_checks
+                        < settings.DO_NOT_CHECK_ON_N_BAD_CHECKS,
                         Proxy.next_check_time < time.time(),
-                    ).order_by(Proxy.next_check_time).limit(settings.NUMBER_OF_CONCURRENT_TASKS)
+                    )
+                    .order_by(Proxy.next_check_time)
+                    .limit(settings.NUMBER_OF_CONCURRENT_TASKS)
                 )
 
                 await self.add_proxies_to_queue(proxies)
@@ -123,15 +145,21 @@ class Processor:
             try:
                 # check collectors
                 collector_states = await db.execute(
-                    CollectorState.select().where(
-                        CollectorState.last_processing_time < time.time() - CollectorState.processing_period
-                    ).order_by(peewee.fn.Random()).limit(settings.NUMBER_OF_CONCURRENT_COLLECTORS)
+                    CollectorState.select()
+                    .where(
+                        CollectorState.last_processing_time
+                        < time.time() - CollectorState.processing_period
+                    )
+                    .order_by(peewee.fn.Random())
+                    .limit(settings.NUMBER_OF_CONCURRENT_COLLECTORS)
                 )
 
-                await asyncio.gather(*[
-                    self.process_collector_of_state(collector_state)
-                    for collector_state in collector_states
-                ])
+                await asyncio.gather(
+                    *[
+                        self.process_collector_of_state(collector_state)
+                        for collector_state in collector_states
+                    ]
+                )
             except KeyboardInterrupt as ex:
                 raise ex
             except BaseException as ex:
@@ -143,13 +171,15 @@ class Processor:
 
     async def add_proxy_to_queue(self, proxy: Proxy, collector_id=None):
         async with self.proxies_semaphore:
-            asyncio.ensure_future(self.process_proxy(
-                proxy.get_raw_protocol(),
-                proxy.auth_data,
-                proxy.domain,
-                proxy.port,
-                collector_id,
-            ))
+            asyncio.ensure_future(
+                self.process_proxy(
+                    proxy.get_raw_protocol(),
+                    proxy.auth_data,
+                    proxy.domain,
+                    proxy.port,
+                    collector_id,
+                )
+            )
 
     async def add_proxies_to_queue(self, proxies: list):
         for proxy in proxies:
@@ -159,7 +189,7 @@ class Processor:
         collector = await collectors_list.load_collector(collector_state)
         try:
             self.logger.debug(
-                "start processing collector of type \"{}\"".format(type(collector))
+                'start processing collector of type "{}"'.format(type(collector))
             )
 
             tasks = []
@@ -177,17 +207,17 @@ class Processor:
 
             if number_of_proxies == 0:
                 self.collectors_logger.warning(
-                    "got 0 proxies from collector of type \"{}\"".format(type(collector))
+                    'got 0 proxies from collector of type "{}"'.format(type(collector))
                 )
             else:
                 self.collectors_logger.info(
-                    f"got {number_of_proxies} proxies from collector of type \"{type(collector)}\""
+                    f'got {number_of_proxies} proxies from collector of type "{type(collector)}"'
                 )
         except KeyboardInterrupt as ex:
             raise ex
         except BaseException as ex:
             self.collectors_logger.error(
-                "Error in collector of type \"{}\"".format(collector_state.identifier)
+                'Error in collector of type "{}"'.format(collector_state.identifier)
             )
             self.collectors_logger.exception(ex)
         finally:
@@ -196,17 +226,16 @@ class Processor:
             await collectors_list.save_collector(collector_state)
 
     async def process_raw_proxy(self, proxy, collector_id):
-        self.logger.debug("processing raw proxy \"{}\"".format(proxy))
+        self.logger.debug('processing raw proxy "{}"'.format(proxy))
 
         try:
             _, auth_data, domain, port = proxy_validator.retrieve(proxy)
         except proxy_validator.ValidationError as ex:
             self.collectors_logger.error(
-                "Collector with id \"{}\" returned bad raw proxy \"{}\". "
+                'Collector with id "{}" returned bad raw proxy "{}". '
                 "Message: {}".format(collector_id, proxy, ex)
             )
             return
-
 
         # don't care about protocol
         try:
@@ -218,7 +247,10 @@ class Processor:
                 )
             )
 
-            if proxy.last_check_time + settings.PROXY_NOT_CHECKING_PERIOD >= time.time():
+            if (
+                proxy.last_check_time + settings.PROXY_NOT_CHECKING_PERIOD
+                >= time.time()
+            ):
                 proxy_short_address = ""
                 if auth_data:
                     proxy_short_address += auth_data + "@"
@@ -226,8 +258,9 @@ class Processor:
                 proxy_short_address += "{}:{}".format(domain, port)
 
                 self.logger.debug(
-                    "skipping proxy \"{}\" from collector \"{}\"".format(
-                        proxy_short_address, collector_id)
+                    'skipping proxy "{}" from collector "{}"'.format(
+                        proxy_short_address, collector_id
+                    )
                 )
                 return
         except Proxy.DoesNotExist:
@@ -246,11 +279,14 @@ class Processor:
 
             await self.add_proxy_to_queue(new_proxy, collector_id)
 
-    async def process_proxy(self, raw_protocol: int, auth_data: str, domain: str, port: int, collector_id):
+    async def process_proxy(
+        self, raw_protocol: int, auth_data: str, domain: str, port: int, collector_id
+    ):
         async with self.proxies_semaphore:
             self.logger.debug(
                 "start processing proxy {}://{}@{}:{} with collector id {}".format(
-                    raw_protocol, auth_data, domain, port, collector_id)
+                    raw_protocol, auth_data, domain, port, collector_id
+                )
             )
 
             if auth_data is None:
@@ -263,7 +299,9 @@ class Processor:
             proxy_url += domain + ":" + str(port)
 
             start_checking_time = time.time()
-            check_result, checker_additional_info = await proxy_utils.check_proxy(proxy_url)
+            check_result, checker_additional_info = await proxy_utils.check_proxy(
+                proxy_url
+            )
             end_checking_time = time.time()
 
             if check_result:
@@ -275,7 +313,7 @@ class Processor:
                     port,
                     start_checking_time,
                     end_checking_time,
-                    checker_additional_info
+                    checker_additional_info,
                 )
             else:
                 self.logger.debug("proxy {0} doesn't work".format(proxy_url))
@@ -290,15 +328,22 @@ class Processor:
                     )
 
                     proxy.last_check_time = int(time.time())
-                    proxy.next_check_time = proxy.last_check_time + proxy.checking_period
+                    proxy.next_check_time = (
+                        proxy.last_check_time + proxy.checking_period
+                    )
                     proxy.number_of_bad_checks += 1
                     proxy.uptime = int(time.time())
 
                     if proxy.number_of_bad_checks >= settings.DEAD_PROXY_THRESHOLD:
                         proxy.bad_uptime = int(time.time())
 
-                    if proxy.number_of_bad_checks == settings.DO_NOT_CHECK_ON_N_BAD_CHECKS:
-                        self.logger.debug("proxy {} isn't checked anymore".format(proxy.to_url()))
+                    if (
+                        proxy.number_of_bad_checks
+                        == settings.DO_NOT_CHECK_ON_N_BAD_CHECKS
+                    ):
+                        self.logger.debug(
+                            "proxy {} isn't checked anymore".format(proxy.to_url())
+                        )
 
                     await db.update(proxy)
                 except Proxy.DoesNotExist:
@@ -312,10 +357,16 @@ class Processor:
         port: int,
         start_checking_time: int,
         end_checking_time: int,
-        additional_info: CheckerResult
+        additional_info: CheckerResult,
     ):
-        if raw_protocol is None or domain is None or port is None or auth_data is None or start_checking_time is None\
-                or end_checking_time is None:
+        if (
+            raw_protocol is None
+            or domain is None
+            or port is None
+            or auth_data is None
+            or start_checking_time is None
+            or end_checking_time is None
+        ):
             raise ValueError("Processor.create_or_update_proxy: Bad arguments")
 
         if raw_protocol < 0 or raw_protocol >= len(Proxy.PROTOCOLS):
@@ -343,8 +394,11 @@ class Processor:
             if proxy.bad_proxy or proxy.uptime is None or proxy.uptime == 0:
                 proxy.uptime = int(time.time())
 
-            if proxy.bad_uptime is None or proxy.bad_uptime == 0 or \
-                    proxy.number_of_bad_checks >= settings.DEAD_PROXY_THRESHOLD:
+            if (
+                proxy.bad_uptime is None
+                or proxy.bad_uptime == 0
+                or proxy.number_of_bad_checks >= settings.DEAD_PROXY_THRESHOLD
+            ):
                 proxy.bad_uptime = int(time.time())
 
             proxy.response_time = response_time
@@ -355,14 +409,15 @@ class Processor:
                 if additional_info.ipv4 is not None:
                     proxy.white_ipv4 = additional_info.ipv4
 
-
             checking_time = int(end_checking_time - start_checking_time)
             if checking_time > settings.PROXY_CHECKING_TIMEOUT:
                 checking_time = settings.PROXY_CHECKING_TIMEOUT
 
-            proxy.checking_period = settings.MIN_PROXY_CHECKING_PERIOD \
-                + (checking_time / settings.PROXY_CHECKING_TIMEOUT) \
-                * (settings.MAX_PROXY_CHECKING_PERIOD - settings.MIN_PROXY_CHECKING_PERIOD)
+            proxy.checking_period = settings.MIN_PROXY_CHECKING_PERIOD + (
+                checking_time / settings.PROXY_CHECKING_TIMEOUT
+            ) * (
+                settings.MAX_PROXY_CHECKING_PERIOD - settings.MIN_PROXY_CHECKING_PERIOD
+            )
 
             # TODO: bad and not working proxies period
 

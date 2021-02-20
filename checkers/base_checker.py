@@ -1,11 +1,12 @@
-from aiosocks.connector import ProxyConnector, ProxyClientRequest
-from proxy_py import settings
-
+import asyncio
 import ssl
+
 import aiohttp
 import aiosocks
-import asyncio
+from aiosocks.connector import ProxyClientRequest, ProxyConnector
+
 import async_requests
+from proxy_py import settings
 
 
 class CheckerResult:
@@ -46,7 +47,9 @@ class BaseChecker:
                 limit_per_host=settings.NUMBER_OF_SIMULTANEOUS_REQUESTS_PER_HOST,
             )
         self.request_type = request_type
-        self.timeout = timeout if timeout is not None else settings.PROXY_CHECKING_TIMEOUT
+        self.timeout = (
+            timeout if timeout is not None else settings.PROXY_CHECKING_TIMEOUT
+        )
         self.url = url
 
     @staticmethod
@@ -56,7 +59,6 @@ class BaseChecker:
 
         :return:
         """
-        pass
 
     @staticmethod
     def get_aiohttp_connector():
@@ -123,7 +125,11 @@ class BaseChecker:
             connector=conn, connector_owner=False, request_class=ProxyClientRequest
         ) as session:
             async with session.request(
-                self.request_type, self.url, proxy=proxy_address, timeout=timeout, headers=headers
+                self.request_type,
+                self.url,
+                proxy=proxy_address,
+                timeout=timeout,
+                headers=headers,
             ) as response:
                 is_working = await self.validate(response, checker_result)
 

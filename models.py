@@ -1,14 +1,17 @@
-from proxy_py import settings
+import logging
+import os.path
+
+import geoip2.database
 import peewee
 import peewee_async
-import os.path
-import geoip2.database
-import logging
+
+from proxy_py import settings
 
 log = logging.getLogger("proxy_py/main")
 
 raw_db = peewee_async.PooledPostgresqlDatabase(
-    *settings.DATABASE_CONNECTION_ARGS, **settings.DATABASE_CONNECTION_KWARGS,
+    *settings.DATABASE_CONNECTION_ARGS,
+    **settings.DATABASE_CONNECTION_KWARGS,
 )
 
 location_database_reader = None
@@ -17,7 +20,9 @@ location_database_reader = None
 def init_location_db_reader():
     global location_database_reader
     if os.path.isfile(settings.GEOLITE2_CITY_FILE_LOCATION):
-        location_database_reader = geoip2.database.Reader(settings.GEOLITE2_CITY_FILE_LOCATION)
+        location_database_reader = geoip2.database.Reader(
+            settings.GEOLITE2_CITY_FILE_LOCATION
+        )
     else:
         # DB doesn`t exists
         log.warning(
@@ -59,9 +64,13 @@ class Proxy(peewee.Model):
     raw_protocol = peewee.SmallIntegerField(null=False)
     domain = peewee.CharField(settings.DB_MAX_DOMAIN_LENGTH, null=False)
     port = peewee.IntegerField(null=False)
-    auth_data = peewee.CharField(settings.DB_AUTH_DATA_MAX_LENGTH, default="", null=False)
+    auth_data = peewee.CharField(
+        settings.DB_AUTH_DATA_MAX_LENGTH, default="", null=False
+    )
 
-    checking_period = peewee.IntegerField(default=settings.MIN_PROXY_CHECKING_PERIOD, null=False)
+    checking_period = peewee.IntegerField(
+        default=settings.MIN_PROXY_CHECKING_PERIOD, null=False
+    )
     last_check_time = peewee.IntegerField(default=0, null=False)
     next_check_time = peewee.IntegerField(default=0, null=False)
     number_of_bad_checks = peewee.IntegerField(default=0, null=False)
@@ -124,7 +133,9 @@ class Proxy(peewee.Model):
         self._white_ipv6 = value
 
     def to_url(self, protocol=None):
-        address = protocol if protocol is not None else self.PROTOCOLS[int(self.raw_protocol)]
+        address = (
+            protocol if protocol is not None else self.PROTOCOLS[int(self.raw_protocol)]
+        )
         address += "://"
         if self.auth_data:
             address += self.auth_data + "@"

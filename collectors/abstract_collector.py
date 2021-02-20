@@ -1,10 +1,9 @@
 # TODO: add wrapper for doing requests and saving its cookies and UserAgent
 import asyncio
-
-from proxy_py import settings
-
 import json
+
 import models
+from proxy_py import settings
 
 
 class AbstractCollector:
@@ -47,8 +46,9 @@ class AbstractCollector:
         """Do not call yourself! It is called on collector's processing automatically"""
         collect = self.collect()
         if asyncio.iscoroutine(collect):
+
             async def wrapper(f):
-                for item in (await f):
+                for item in await f:
                     yield item
 
             collect = wrapper(collect)
@@ -78,10 +78,12 @@ class AbstractCollector:
         self.last_processing_time = state.last_processing_time
         self.processing_period = state.processing_period
         self.last_processing_proxies_count = state.last_processing_proxies_count
-        self.data = json.loads(state.data) if state.data is not None and state.data else {}
-        if '_variables' in self.data:
-            for var_name in self.data['_variables']:
-                setattr(self, var_name, self.data['_variables'][var_name])
+        self.data = (
+            json.loads(state.data) if state.data is not None and state.data else {}
+        )
+        if "_variables" in self.data:
+            for var_name in self.data["_variables"]:
+                setattr(self, var_name, self.data["_variables"][var_name])
 
     async def save_state(self, state: models.CollectorState):
         """
@@ -93,10 +95,10 @@ class AbstractCollector:
         state.last_processing_proxies_count = self.last_processing_proxies_count
 
         if self.saved_variables is not None:
-            if '_variables' not in self.data:
-                self.data['_variables'] = {}
+            if "_variables" not in self.data:
+                self.data["_variables"] = {}
             for var_name in self.saved_variables:
-                self.data['_variables'][var_name] = getattr(self, var_name)
+                self.data["_variables"][var_name] = getattr(self, var_name)
 
         state.data = json.dumps(self.data)
 

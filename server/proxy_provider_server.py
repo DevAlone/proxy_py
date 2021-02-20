@@ -1,17 +1,17 @@
-import asyncio
-
-from proxy_py import settings
-from .base_app import BaseApp
-from .api_v1.app import App as ApiV1App
-from .api_v2.app import App as ApiV2App
-from .frontend.app import App as FrontendApp
-from aiohttp import web
-
 import json
 import logging
+import sys
+
 import aiohttp
 import aiohttp_jinja2
-import sys
+from aiohttp import web
+
+from proxy_py import settings
+
+from .api_v1.app import App as ApiV1App
+from .api_v2.app import App as ApiV2App
+from .base_app import BaseApp
+from .frontend.app import App as FrontendApp
 
 
 class ProxyProviderServer(BaseApp):
@@ -24,7 +24,7 @@ class ProxyProviderServer(BaseApp):
         logger_handler.setFormatter(logging.Formatter(settings.LOG_FORMAT_STRING))
 
         logger.addHandler(logger_handler)
-        
+
         super(ProxyProviderServer, self).__init__(logger)
 
         self.host = host
@@ -44,15 +44,17 @@ class ProxyProviderServer(BaseApp):
         frontend_app = FrontendApp(logger=self.logger)
         await frontend_app.init()
 
-        self._app.add_subapp('/api/v1/', api_v1_app.app)
-        self._app.add_subapp('/api/v2/', api_v2_app.app)
-        self._app.add_subapp('/i/', frontend_app.app)
+        self._app.add_subapp("/api/v1/", api_v1_app.app)
+        self._app.add_subapp("/api/v2/", api_v2_app.app)
+        self._app.add_subapp("/i/", frontend_app.app)
 
     async def setup_middlewares(self):
-        error_middleware = self.error_pages_handler({
-            404: self.handle_404,
-            500: self.handle_500,
-        })
+        error_middleware = self.error_pages_handler(
+            {
+                404: self.handle_404,
+                500: self.handle_500,
+            }
+        )
 
         self.app.middlewares.append(error_middleware)
         self.app.middlewares.append(self.logging_middleware)
@@ -89,11 +91,18 @@ class ProxyProviderServer(BaseApp):
             exc = ex
             raise ex
         finally:
-            self.log_info(request, "<- data={}".format(json.dumps({
-                "request_number": current_request_number,
-                "status_code": status_code,
-                "exception": str(exc),
-            })))
+            self.log_info(
+                request,
+                "<- data={}".format(
+                    json.dumps(
+                        {
+                            "request_number": current_request_number,
+                            "status_code": status_code,
+                            "exception": str(exc),
+                        }
+                    )
+                ),
+            )
 
         return response
 
@@ -117,9 +126,7 @@ class ProxyProviderServer(BaseApp):
         return middleware
 
     async def handle_404(self, request, _):
-        resp = aiohttp_jinja2.render_template(
-            "index.html", request, {}
-        )
+        resp = aiohttp_jinja2.render_template("index.html", request, {})
 
         resp.set_status(404)
 

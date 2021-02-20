@@ -1,12 +1,13 @@
-from collectors.pages_collector import PagesCollector
-
-import async_requests
 import json
 
+import async_requests
+from collectors.pages_collector import PagesCollector
 
-URL_PATTERN = "https://nordvpn.com/wp-admin/admin-ajax.php?searchParameters[0][name]=proxy-country" \
-      "&searchParameters[0][value]=&searchParameters[1][name]=proxy-ports&searchParameters[1][value]=" \
-      "&offset={}&limit={}&action=getProxies"
+URL_PATTERN = (
+    "https://nordvpn.com/wp-admin/admin-ajax.php?searchParameters[0][name]=proxy-country"
+    "&searchParameters[0][value]=&searchParameters[1][name]=proxy-ports&searchParameters[1][value]="
+    "&offset={}&limit={}&action=getProxies"
+)
 
 
 class Collector(PagesCollector):
