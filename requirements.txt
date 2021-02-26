@@ -1,4 +1,4 @@
-aiohttp==2.3.10
+aiohttp==3.7.4
 aiohttp-jinja2==0.16.0
 aiosocks==0.2.6
 lxml==4.3.1
