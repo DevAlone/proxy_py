@@ -1,7 +1,7 @@
 aiohttp==2.3.10
 aiohttp-jinja2==0.16.0
 aiosocks==0.2.6
-lxml==4.3.1
+lxml==4.6.3
 fake-useragent
 jinja2
 peewee-async==0.5.12
